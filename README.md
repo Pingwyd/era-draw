@@ -34,3 +34,11 @@ No build step. Run `python3 -m http.server` in this folder, then open http://loc
 - `feature/<name>`: one per major feature (e.g. `feature/drawing`, `feature/run-loop`, `feature/powerups`, `feature/shop-meta`). Merge into `dev`.
 - `bugfix/<short-desc>`: branch off `dev` (or off `main` for a hotfix), e.g. `bugfix/circle-misdetect`. Merge back into `dev`. A hotfix also goes into `main`.
 - Promotion order: `feature/*` → `dev` → `mvp` → `main`
+
+## Look & feel (v0.3)
+- **Pixel art:** the game draws into a low-res buffer and scales it up with smoothing off. Every sprite (mage, weapons, enemies, ground decor, pickups, icons) is a hand-authored pixel grid in `sprites.js` / `enemies.js`. No image files.
+- **Enemies (Stone Age):** Giant Gnat swarms, Terror Bird flocks, Sabertooth (winds up, then lunges), Rival Caveman (keeps its distance and throws rocks), Cave Bear (slow, tanky), Woolly Rhino (charges; elite, may drop a chest), **Grael the Woolly Elder** (charging boss, from 3:00) and **Ur-Kesh, Bone Shaman** (fires orb rings and summons gnats, from 5:00). Bosses have a named HP bar and drop a chest. Enemies are capped at 320, with a spatial grid so big hordes stay smooth.
+- **HUD:** thin XP bar along the top, timer in the centre, health top-left, kills and coins top-right, and bottom slots showing each loadout weapon with its active count and durability. A dithered light radius darkens the edges of the screen.
+- **Menus:** editorial layout. Instrument Serif display type, Silkscreen / VT323 pixel fonts (self-hosted, OFL), thin rules, numbered items, dark wine palette.
+- **Audio:** small WebAudio synth sound effects (`audio.js`). Turn them off in Settings → Sound.
+- Screenshots are in `shots/`.
