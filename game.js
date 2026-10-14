@@ -1,7 +1,7 @@
 'use strict';
 // ================= CONFIG =================
 const ERAS = {
-  stone: { name:'Stone Age', durability:1.0, enemyHp:1.0, enemyDmg:1.0, ground:'#2a2019', ink:'#ffb35c' },
+  stone: { name:'Stone Age', date:'c. 10,000 BC', no:'I', durability:1.0, enemyHp:1.0, enemyDmg:1.0, ground:'#2a2019', ink:'#ffb35c' },
   // Later eras: weapons last longer, enemies hit harder. Older-era weapons do OLD_ERA_DMG.
   bronze:{ name:'Bronze Age', durability:1.6, enemyHp:1.8, enemyDmg:1.5, ground:'#2b2416', ink:'#e8c070' },
   iron:  { name:'Iron Age',   durability:2.2, enemyHp:2.8, enemyDmg:2.0, ground:'#1f2226', ink:'#b8d0ff' },
@@ -36,6 +36,7 @@ const POWERUPS = [
   {id:'focus',name:'Deep Focus',  icon:'🌀', base:'rare',   desc:r=>`+${[.3,.4,.6][r]}s slow-mo (cap ${MAX_FOCUS}s)`, apply:(p,r)=>p.focus=Math.min(MAX_FOCUS,p.focus+[.3,.4,.6][r])},
   {id:'homing',name:'Homing Will',icon:'🎯', base:'rare',   desc:r=>`Projectiles home ${['slightly','well','fiercely'][r]}`, apply:(p,r)=>p.homing+=[1.5,2.5,4][r]},
   {id:'echo', name:'Echo Stroke', icon:'👥', base:'rare',   desc:r=>`${[15,20,30][r]}% chance a creation spawns twice`, apply:(p,r)=>p.echo=Math.min(.6,p.echo+[.15,.20,.30][r])},
+  {id:'coin', name:'Coin Sense', icon:'', base:'rare', desc:r=>`+${[25,35,50][r]}% coins this run`, apply:(p,r)=>p.coinMul*=1+[.25,.35,.5][r]},
   {id:'wind', name:'Second Wind', icon:'🕊️', base:'epic',   once:true, desc:()=>`Once per run, survive a fatal hit at 1 HP`, apply:p=>p.secondWind=true},
 ];
 const RAR = ['common','rare','epic'];
@@ -103,14 +104,16 @@ function resample(pts,n){
 
 const ICON={};
 for(const id of ['club','spear','rock','sling','dagger'])ICON[id]=iconURL(SPR[id].r,3);
+for(const k in SPR.pu)ICON['pu_'+k]=iconURL(SPR.pu[k],4);ICON.gemHard=iconURL(SPR.gemHard,3);ICON.slot4=iconURL(SPR.chest,3);
 ICON.skull=iconURL(SPR.deco.skull,3);ICON.coin=iconURL(SPR.coin,3);ICON.chest=iconURL(SPR.chest,3);ICON.gem=iconURL(SPR.gem1,3);
+function sfx(){}
 // ================= GAME STATE =================
 let G=null; // current run
 let mode='home';
 function newRun(){
   const era=ERAS[CURRENT_ERA];
   G={t:0,wave:1,kills:0,coins:0,spawnT:0,level:1,xp:0,xpNext:5,ink:[],trails:[],
-    player:{x:0,y:0,r:16,hp:100,maxHp:100,speed:190,dmgMul:1,cdMul:1,durMul:1,focus:BASE_FOCUS,homing:0,echo:0,magnet:90,secondWind:false,caps:{...BASE_CAPS},usedWind:false,invul:0,face:0},
+    player:{x:0,y:0,r:16,hp:100,maxHp:100,speed:190,dmgMul:1,cdMul:1,durMul:1,focus:BASE_FOCUS,homing:0,echo:0,magnet:90,secondWind:false,coinMul:1,caps:{...BASE_CAPS},usedWind:false,invul:0,face:0},
     picks:{},dnums:[],chests:[],eshots:[],enemies:[],creations:[],shots:[],orbs:[],fx:[],texts:[],castCd:0,focusLeft:BASE_FOCUS,drawing:null,
     era, loadout:save.loadout.slice(),paused:false,shake:0,dbl:false};
 }
@@ -293,12 +296,18 @@ function rollPicks(){
   }
   return out;
 }
-function levelUp(){
+function levelUp(fromChest){
   G.paused=true;stick.id=null;stick.active=false;G.drawing=null;
   const picks=rollPicks();
-  screenEl.innerHTML=`<div class="panel picks"><h2>Level ${G.level}!</h2><div class="sub">Choose an upgrade for this run</div>${picks.map((k,i)=>`<div class="card ${RAR[k.r]}" data-i="${i}"><span class="tag">${RAR[k.r]}</span><b>${k.pu.icon} ${k.pu.name}</b>${k.pu.desc(k.r)}</div>`).join('')}</div>`;
-  screenEl.querySelectorAll('.card').forEach(el=>el.onclick=()=>{const k=picks[+el.dataset.i];k.pu.apply(G.player,k.r);G.picks[k.pu.id]=(G.picks[k.pu.id]||0)+1;screenEl.innerHTML='';G.paused=false;last=performance.now()});
+  show(`<div class="sheet lv">
+   <header class="row"><span class="lab">${fromChest?'Chest opened · +25 coins':'Level up'}</span><span class="lab">Choose one · ${fmt(G.t)}</span></header>
+   <h2 class="disp">${fromChest?'Treasure':'Level '+G.level}</h2>
+   <div class="picks">${picks.map((k,i)=>{const own=G.picks[k.pu.id]||0;return `<button class="pick r-${RAR[k.r]}" data-i="${i}">
+     <span class="pk-top"><span class="ic"><img src="${ICON['pu_'+k.pu.id]}" alt=""></span><span class="lvtag">${own?'LV '+(own+1):'NEW'}</span></span>
+     <span class="pk-name">${k.pu.name}</span><span class="pk-rar">${RAR[k.r]}</span><span class="pk-desc">${k.pu.desc(k.r)}</span></button>`}).join('')}</div></div>`);
+  screenEl.querySelectorAll('.pick').forEach(el=>el.onclick=()=>{const k=picks[+el.dataset.i];k.pu.apply(G.player,k.r);G.picks[k.pu.id]=(G.picks[k.pu.id]||0)+1;sfx('pick');show('');G.paused=false;last=performance.now()});
 }
+
 
 // ================= FX =================
 function burst(x,y,col,n){for(let i=0;i<n;i++){const a=Math.random()*6.283,s=rnd(40,220);G.fx.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rnd(.3,.7),max:.7,col,r:rnd(1.5,4)})}}
@@ -346,7 +355,7 @@ function kiteVector(p){
   if(best){const dx=best.x-p.x,dy=best.y-p.y,d=Math.hypot(dx,dy)||1;x+=dx/d*.6;y+=dy/d*.6}
   const m=Math.hypot(x,y);if(m<0.15)return{x:0,y:0};return m>1?{x:x/m,y:y/m}:{x,y};
 }
-function calcCoins(){let c=10+G.t*0.25+G.kills*0.08+(G.bonus||0);if(G.picks.coin)c*=1.25;if(G.dbl)c*=2;return Math.floor(c)}
+function calcCoins(){let c=10+G.t*0.25+G.kills*0.08+(G.bonus||0);c*=G.player.coinMul;if(G.dbl)c*=2;return Math.floor(c)}
 
 // ================= RENDER =================
 const cam={x:0,y:0};
@@ -509,71 +518,84 @@ function updateHud(){
 }
 function togglePause(){
   if(!G)return;
-  if(G.paused&&screenEl.innerHTML.includes('Paused')){screenEl.innerHTML='';G.paused=false;last=performance.now();return}
+  if(G.paused&&$('resume')){show('');G.paused=false;last=performance.now();return}
   if(G.paused)return;
   G.paused=true;
-  screenEl.innerHTML=`<div class="panel"><h2>Paused</h2><button class="btn" id="resume">Resume</button><button class="btn" id="quit">Give up (keep coins)</button></div>`;
-  $('resume').onclick=togglePause;$('quit').onclick=()=>{screenEl.innerHTML='';endRun()};
+  const build=Object.keys(G.picks).map(id=>{const pu=POWERUPS.find(p=>p.id===id);return `<li><img src="${ICON['pu_'+id]}" alt=""><span>${pu.name}</span><em>LV ${G.picks[id]}</em></li>`}).join('')||'<li class="mute">No upgrades yet</li>';
+  show(`<div class="sheet"><header class="row"><span class="lab">${ERAS[CURRENT_ERA].name} · ${fmt(G.t)} · Wave ${G.wave}</span><span class="lab">${G.kills} kills</span></header>
+   <h2 class="disp">Paused</h2>
+   <div class="cols"><div><div class="lab rule">Build</div><ul class="build">${build}</ul></div>
+   <div><div class="lab rule">Stats</div><ul class="stats"><li>Damage<em>x${G.player.dmgMul.toFixed(2)}</em></li><li>Cast cooldown<em>x${G.player.cdMul.toFixed(2)}</em></li><li>Durability<em>x${(G.player.durMul*G.era.durability).toFixed(2)}</em></li><li>Focus<em>${G.player.focus.toFixed(1)}s</em></li><li>Move<em>${Math.round(G.player.speed)}</em></li></ul></div></div>
+   <nav class="menu"><button id="resume"><b>01</b>Resume<i>&rarr;</i></button><button id="quit"><b>02</b>Give up and keep coins<i>&rarr;</i></button></nav></div>`);
+  $('resume').onclick=togglePause;$('quit').onclick=()=>{show('');endRun()};
 }
+
 $('pauseBtn').onclick=togglePause;
 
 // ================= SCREENS =================
-function show(html){screenEl.innerHTML=html}
+function show(html){screenEl.innerHTML=html;if(html){$('toast').style.opacity=0;clearTimeout(toastT)}}
+const coinI=()=>`<img class="pi" src="${ICON.coin}" alt="coins">`,gemI=()=>`<img class="pi" src="${ICON.gemHard}" alt="gems">`;
 function home(){
-  mode='home';G=null;$('hud').classList.add('hidden');
-  show(`<div class="panel"><h1>Era Draw</h1><div class="sub">A time-hopping mage. Draw your weapons. Survive the ages.</div>
-  <div class="wallet">🪙 ${save.coins} &nbsp; 💎 ${save.gems}${save.best?` &nbsp; 🏆 ${fmt(save.best)}`:''}</div>
-  <button class="btn gold" id="play">▶ Play — ${ERAS[CURRENT_ERA].name}</button>
-  <button class="btn" id="lo">Loadout (${save.loadout.length}/${save.slots})</button>
-  <button class="btn" id="shop">Shop</button>
-  <button class="btn" id="how">How to play</button>
-  <button class="btn" id="set">⚙ Settings</button></div>`);
-  $('set').onclick=settings;
-  $('play').onclick=()=>{goLandscape();startRun()};$('lo').onclick=loadout;$('shop').onclick=shop;$('how').onclick=how;
+  mode='home';G=null;$('hud').classList.add('hidden');const E=ERAS[CURRENT_ERA];
+  show(`<div class="home">
+   <div class="home-l"><div class="lab">Era ${E.no} &mdash; ${E.name} &middot; ${E.date}</div>
+    <h1 class="mast">Era<br>Draw</h1>
+    <p class="tag">Draw weapons from the age you are trapped in. Hold the line until the ink runs dry.</p>
+    <div class="wallet">${coinI()}<b>${save.coins}</b>${gemI()}<b>${save.gems}</b><span class="lab">Best ${save.best?fmt(save.best):'&mdash;'} &middot; Runs ${save.runs}</span></div></div>
+   <nav class="menu home-r">
+    <button id="play" class="prim"><b>01</b>Enter the ${E.name}<i>&rarr;</i></button>
+    <button id="lo"><b>02</b>Loadout<span>${save.loadout.length} / ${save.slots}</span><i>&rarr;</i></button>
+    <button id="shop"><b>03</b>Shop<i>&rarr;</i></button>
+    <button id="set"><b>04</b>Settings<i>&rarr;</i></button>
+    <button id="how"><b>05</b>How to play<i>&rarr;</i></button>
+   </nav></div>`);
+  $('play').onclick=()=>{goLandscape();startRun()};$('lo').onclick=loadout;$('shop').onclick=shop;$('how').onclick=how;$('set').onclick=settings;
 }
+function sheet(title,lab,body,back='Back'){return `<div class="sheet"><header class="row"><span class="lab">${lab}</span><button class="lab back" id="back">&larr; ${back}</button></header><h2 class="disp">${title}</h2>${body}</div>`}
 function settings(){
-  show(`<div class="panel"><h2>Settings</h2>
-  <button class="btn ${save.autoMove?'gold':''}" id="am">Auto-move (kite): ${save.autoMove?'ON':'OFF'}</button>
-  <div class="help">When ON and you're not steering, the mage moves away from nearby enemies and toward XP on its own, so you can just draw. Your own input always takes over.</div>
-  <button class="btn" id="back">Back</button></div>`);
-  $('am').onclick=()=>{save.autoMove=!save.autoMove;persist();settings()};$('back').onclick=home;
+  show(sheet('Settings','04 &mdash; Options',`<nav class="menu">
+   <button id="am"><b>01</b>Auto-move (kite)<span>${save.autoMove?'On':'Off'}</span><i>${save.autoMove?'&#9632;':'&#9633;'}</i></button>
+   <button id="snd"><b>02</b>Sound<span>${save.mute?'Off':'On'}</span><i>${save.mute?'&#9633;':'&#9632;'}</i></button></nav>
+   <p class="note">Auto-move steers the mage away from nearby enemies and toward XP whenever you are not steering, so you can just draw.</p>`));
+  $('am').onclick=()=>{save.autoMove=!save.autoMove;persist();settings()};$('snd').onclick=()=>{save.mute=!save.mute;persist();settings()};$('back').onclick=home;
 }
 function controlsHint(){return isTouch?'Left thumb: move · Right thumb: draw':'Hold right-click: walk · Left-drag: draw · WASD also works'}
 function fmt(s){s=Math.floor(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
 function how(){
-  show(`<div class="panel"><h2>How to play</h2><div class="help">
-  <b>Phone:</b> drag the <b>left half</b> to move, drag the <b>right half</b> to draw.<br>
-  <b>Laptop:</b> <b>hold right mouse button</b> to walk toward the cursor, <b>left-drag</b> to draw (anywhere). WASD / arrows also move.<br>
-  Optional <b>Auto-move (kite)</b> in Settings. Time slows while you draw (up to 2s).<br><br>
-  ${save.owned.map(id=>`${CREATIONS[id].icon} <b>${CREATIONS[id].name}</b> — draw a <i>${CREATIONS[id].shape}</i>`).join('<br>')}<br><br>
-  Creations fight <b>on their own</b>: melee ones orbit &amp; smash, ranged ones fire at the nearest enemy. Each has <b>durability</b> (the ring around it) and breaks — redraw it! Up to ${BASE_CAPS.melee} melee (Club, Bone Dagger) or ${BASE_CAPS.ranged} ranged (Spear, Rock, Sling) at once; drawing one more replaces the oldest; drawing a <b>different</b> type shatters all active ones.<br><br>
-  Collect XP orbs, pick upgrades on level-up, earn coins when you fall.</div>
-  <button class="btn" id="back">Back</button></div>`);$('back').onclick=home;
+  show(sheet('How to play','05 &mdash; Field notes',`<div class="cols">
+   <div><div class="lab rule">Controls</div><ul class="stats"><li>Phone<em>left thumb moves, right thumb draws</em></li><li>Laptop<em>hold right-click to walk, left-drag to draw</em></li><li>Keys<em>WASD / arrows</em></li><li>Focus<em>time slows while drawing, up to ${BASE_FOCUS}s</em></li></ul>
+   <p class="note">Creations fight on their own and wear out. Up to ${BASE_CAPS.melee} melee or ${BASE_CAPS.ranged} ranged at once; one more replaces the oldest. Drawing a different weapon shatters the ones you have out.</p></div>
+   <div><div class="lab rule">Shapes</div><ul class="build">${save.owned.map(id=>`<li><img src="${ICON[id]}" alt=""><span>${CREATIONS[id].name}</span><em>${CREATIONS[id].shape}</em></li>`).join('')}</ul></div></div>`));
+  $('back').onclick=home;
 }
+function wStats(d){return `DMG ${d.dmg} &middot; ${d.kind==='melee'?'MELEE':'RANGED'} &middot; ${d.life}s`}
 function loadout(){
   const sel=save.loadout.slice();
-  const render=()=>{show(`<div class="panel"><h2>Loadout</h2><div class="sub">Pick up to ${save.slots} creations to bring (${sel.length}/${save.slots})</div>
-  <div class="grid">${Object.keys(CREATIONS).map(id=>{const d=CREATIONS[id],own=save.owned.includes(id);return `<div class="card ${sel.includes(id)?'on':''} ${own?'':'locked'}" data-id="${id}"><div class="ic">${d.icon}</div><b>${d.name}</b>${own?d.shape:'🔒 shop'}</div>`}).join('')}</div>
-  <button class="btn gold" id="ok" ${sel.length?'':'disabled'}>Save</button></div>`);
-  screenEl.querySelectorAll('.card').forEach(el=>el.onclick=()=>{const id=el.dataset.id;if(!save.owned.includes(id))return;const i=sel.indexOf(id);if(i>=0)sel.splice(i,1);else if(sel.length<save.slots)sel.push(id);else toast('Slots full');render()});
-  $('ok').onclick=()=>{if(!sel.length)return;save.loadout=sel;persist();home()}};
+  const render=()=>{show(sheet('Loadout',`02 &mdash; Choose up to ${save.slots} &middot; ${sel.length} selected`,`<div class="tbl">${Object.keys(CREATIONS).map((id,i)=>{const d=CREATIONS[id],own=save.owned.includes(id),on=sel.includes(id);
+      return `<button class="cell ${on?'on':''} ${own?'':'lock'}" data-id="${id}"><b>0${i+1}</b><img src="${ICON[id]}" alt=""><span class="nm">${d.name}</span><span class="sh">Draw a ${d.shape}</span><span class="st">${own?wStats(d):'Locked &middot; '+d.cost+' coins in shop'}</span>${on?'<i class="chk">&#9632; In loadout</i>':''}</button>`}).join('')}</div>
+      <nav class="menu"><button id="ok" class="prim" ${sel.length?'':'disabled'}><b>&mdash;</b>Save loadout<i>&rarr;</i></button></nav>`));
+  screenEl.querySelectorAll('.cell').forEach(el=>el.onclick=()=>{const id=el.dataset.id;if(!save.owned.includes(id)){toast('Unlock it in the shop');return}const i=sel.indexOf(id);if(i>=0)sel.splice(i,1);else if(sel.length<save.slots)sel.push(id);else toast('Slots full');render()});
+  $('ok').onclick=()=>{if(!sel.length)return;save.loadout=sel;persist();home()};$('back').onclick=home};
   render();
 }
 function shop(){
-  show(`<div class="panel"><h2>Shop</h2><div class="wallet">🪙 ${save.coins} &nbsp; 💎 ${save.gems}</div><div class="grid">${SHOP.map(it=>{
+  show(sheet('Shop',`03 &mdash; ${coinI()} ${save.coins} &nbsp; ${gemI()} ${save.gems}`,`<div class="list">${SHOP.map((it,i)=>{
     const d=it.type==='creation'?CREATIONS[it.id]:it;const owned=it.type==='creation'?save.owned.includes(it.id):it.type==='slot'?save.slots>=4:false;
-    return `<div class="card ${owned?'on':''}" data-id="${it.id}"><div class="ic">${d.icon}</div><b>${d.name}</b>${it.type==='creation'?'Draw: '+d.shape+'<br>':''}${owned?'✔ Owned':(it.cur==='coins'?'🪙 ':'💎 ')+it.cost}${it.note?`<br><small>${it.note}</small>`:''}</div>`}).join('')}</div>
-    <button class="btn" id="back">Back</button></div>`);
-  screenEl.querySelectorAll('.card').forEach(el=>el.onclick=()=>buy(SHOP.find(s=>s.id===el.dataset.id)));
+    const desc=it.type==='creation'?`New creation &middot; draw a ${d.shape} &middot; ${wStats(d)}`:it.type==='slot'?'Bring a fourth creation into each run':it.note;
+    const icon=it.type==='creation'?ICON[it.id]:it.id==='slot4'?ICON.slot4:it.id==='dbl'?ICON.pu_coin:ICON.pu_wind;
+    const afford=it.cur==='coins'?save.coins>=it.cost:save.gems>=it.cost;
+    return `<div class="li"><b>0${i+1}</b><img src="${icon}" alt=""><div class="li-t"><span class="nm">${d.name}</span><span class="sh">${desc}</span></div>
+     <button class="buy ${owned?'own':''} ${afford||owned?'':'poor'}" data-id="${it.id}">${owned?'Owned':(it.cur==='coins'?coinI():gemI())+' '+it.cost}</button></div>`}).join('')}</div>`));
+  screenEl.querySelectorAll('.buy').forEach(el=>el.onclick=()=>buy(SHOP.find(s=>s.id===el.dataset.id)));
   $('back').onclick=home;
 }
 function buy(it){
-  if(it.type==='stub'){toast('Gems & ads coming soon');return}
+  if(it.type==='stub'){toast('Gems and ads are coming soon');return}
   if(it.type==='creation'&&save.owned.includes(it.id))return;if(it.type==='slot'&&save.slots>=4)return;
   if(save.coins<it.cost){toast('Not enough coins');return}
-  save.coins-=it.cost;
-  if(it.type==='creation'){save.owned.push(it.id);if(save.loadout.length<save.slots)save.loadout.push(it.id);toast(CREATIONS[it.id].name+' unlocked!')}
-  if(it.type==='slot'){save.slots=4;toast('4th slot unlocked!')}
+  save.coins-=it.cost;sfx('pick');
+  if(it.type==='creation'){save.owned.push(it.id);if(save.loadout.length<save.slots)save.loadout.push(it.id);toast(CREATIONS[it.id].name+' unlocked')}
+  if(it.type==='slot'){save.slots=4;toast('Fourth slot unlocked')}
   persist();shop();
 }
 function goLandscape(){
@@ -595,17 +617,20 @@ function checkOrientation(){
 addEventListener('resize',checkOrientation);addEventListener('orientationchange',()=>setTimeout(checkOrientation,200));
 function startRun(){
   newRun();mode='run';show('');$('hud').classList.remove('hidden');updateHud.sig=null;cam.x=0;cam.y=0;last=performance.now();
-  toast(ERAS[CURRENT_ERA].name+' — survive!');setTimeout(()=>mode==='run'&&toast(controlsHint()),1700);mouse.walk=false;checkOrientation();
+  toast(ERAS[CURRENT_ERA].name+' · survive');setTimeout(()=>mode==='run'&&toast(controlsHint()),1700);mouse.walk=false;checkOrientation();
 }
 function endRun(){
   if(mode!=='run')return;mode='dead';$('bossbar').classList.add('hidden');
   const coins=calcCoins();save.coins+=coins;save.runs++;const newBest=G.t>save.best;if(newBest)save.best=G.t;persist();
-  $('hud').classList.add('hidden');
-  show(`<div class="panel"><h2>The ink fades…</h2><div class="sub">${ERAS[CURRENT_ERA].name}${newBest?' · 🏆 New best!':''}</div>
-  <div class="help" style="text-align:center;font-size:16px">⏱ ${fmt(G.t)} &nbsp; 🌊 Wave ${G.wave} &nbsp; ☠ ${G.kills} &nbsp; ⭐ Lv ${G.level}<br><br><b style="font-size:24px;color:#ffd98a">+${coins} 🪙</b><br>Total: ${save.coins} 🪙</div>
-  <button class="btn gold" id="retry">Retry</button><button class="btn" id="hm">Home</button></div>`);
+  $('hud').classList.add('hidden');sfx('die');
+  show(`<div class="sheet res"><header class="row"><span class="lab">${ERAS[CURRENT_ERA].name} &middot; Run ${save.runs}</span><span class="lab">${newBest?'New best':'Best '+fmt(save.best)}</span></header>
+   <h2 class="disp">The ink fades.</h2>
+   <div class="resgrid"><div><b>01</b><span class="lab">Survived</span><em>${fmt(G.t)}</em></div><div><b>02</b><span class="lab">Wave</span><em>${G.wave}</em></div><div><b>03</b><span class="lab">Kills</span><em>${G.kills}</em></div><div><b>04</b><span class="lab">Level</span><em>${G.level}</em></div><div class="gold"><b>05</b><span class="lab">Coins earned</span><em>+${coins}</em></div></div>
+   <p class="note">Total ${coinI()} ${save.coins}</p>
+   <nav class="menu"><button id="retry" class="prim"><b>01</b>Draw again<i>&rarr;</i></button><button id="hm"><b>02</b>Home<i>&rarr;</i></button></nav></div>`);
   $('retry').onclick=()=>{goLandscape();startRun()};$('hm').onclick=home;
 }
+
 // expose for tests
 window.EraDraw={mouse,kiteVector,recognize,get G(){return G},get mode(){return mode},startRun,save:()=>save,spawnCreation,ERAS,CREATIONS};
 home();checkOrientation();requestAnimationFrame(frame);

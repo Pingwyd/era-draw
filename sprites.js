@@ -92,7 +92,7 @@ SPR.p_orb=outline(grid(['.uu.','uyyu','uyyu','.uu.']),'#2a0f2a');
 SPR.gem1=outline(grid(['..e..','.eEe.','eewEe','.eEe.','..E..']));
 SPR.gem2=outline(grid(['..n..','.nNn.','nnwNn','nnnNn','.nNn.','..N..']));
 SPR.gem3=outline(grid(['...m...','..mMm..','.mmwMm.','mmmmMMm','.mmMMm.','..mMm..','...M...']));
-SPR.coin=outline(grid(['.aa.','ayAa','aaAa','.AA.']));
+SPR.coin=outline(grid(['.aaaa.','aayyaa','ayaaAa','aaaaAa','aaAAAa','.AAAA.']));
 SPR.chest=outline(grid([
 '.bbbbbbbb.','bBBBBBBBBb','baaaaaaaab','bBBByaBBBb','bbbbAAbbbb','bBBBBBBBBb','bbbbbbbbbb','BBBBBBBBBB']));
 SPR.heart=outline(grid(['.mm.mm.','mmymmmm','mmmmmmM','.mmmmM.','..mmM..','...M...']));
@@ -129,3 +129,20 @@ function digitsWidth(str,scale=1){return str.length*4*scale-scale}
 
 // ---------- ICON → data URL (for HTML menus) ----------
 function iconURL(c,scale=4){const [o,x]=mk(c.width*scale,c.height*scale);x.imageSmoothingEnabled=false;x.drawImage(c,0,0,o.width,o.height);return o.toDataURL()}
+
+// ---------- POWERUP ICONS (9x9, outlined) ----------
+const PU_ART={
+  ink:   ['.......wk','......wwk','.....wwk.','....wwk..','...wwk...','..wWk....','.kWk.....','.ok......','o........'],
+  quick: ['.....yy..','....yy...','...yy....','..yyyyy..','....yy...','...yy....','..yy.....','.yy......','.y.......'],
+  swift: ['..bbb....','..bbb....','..bbb....','..bbb....','..bbbb...','..bbbbbb.','.bbbbbbbb','.BBBBBBBB','.........'],
+  iron:  ['.ttttttt.','tTwwwwwTt','tTwttwtTt','tTwttwtTt','.tTwwwTt.','.tTTwTTt.','..tTTTt..','...tTt...','....t....'],
+  magnet:['.mm...mm.','.mm...mm.','.mm...mm.','.mm...mm.','.mm...mm.','.mMm.mMm.','..mMMMm..','...mmm...','.w.....w.'],
+  heavy: ['.ttttttt.','.tTTTTTt.','.ttttttt.','....b....','....b....','....b....','....b....','....B....','....B....'],
+  focus: ['aaaaaaaaa','.w.....w.','..wyyyw..','...wyw...','....w....','...w.w...','..wyyyw..','.wyyyyyw.','aaaaaaaaa'],
+  homing:['...mmm...','.mm...mm.','.m..w..m.','m..www..m','m.wwmww.m','m..www..m','.m..w..m.','.mm...mm.','...mmm...'],
+  echo:  ['....o..o.','...o..o..','..o..o...','.o..o....','o..o.....','..o..o...','.o..o....','o..o.....','.........'],
+  wind:  ['......ww.','.....wWw.','....wWw..','...wWw...','..wWww...','..wWw....','.wWw.....','.ww......','w........'],
+  coin:  ['..aaaaa..','.aayyyaa.','aaya.Aaaa','aayaAAaaa','aaaa.Aaaa','aaaaAAaaA','.aaaaaaA.','..AAAAA..','.........'],
+};
+SPR.pu={};for(const k in PU_ART)SPR.pu[k]=outline(grid(PU_ART[k]));
+SPR.gemHard=outline(grid(['..mmm..','.mwmmM.','mmmmmMM','.mmmMM.','..mMM..','...M...']));
