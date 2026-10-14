@@ -2,7 +2,8 @@
 // ================= SFX (WebAudio synth, no files) =================
 let AC=null,master=null;const lastSfx={};
 function audioUnlock(){if(AC)return;try{AC=new (window.AudioContext||window.webkitAudioContext)();master=AC.createGain();master.gain.value=.35;master.connect(AC.destination)}catch(e){AC=null}}
-addEventListener('pointerdown',audioUnlock,{once:false});addEventListener('keydown',audioUnlock);
+function audioKick(){audioUnlock();if(AC&&AC.state==='suspended'&&AC.resume)AC.resume()}
+for(const ev of ['pointerdown','touchstart','touchend','click','keydown'])addEventListener(ev,audioKick,{passive:true});
 function tone(f0,f1,dur,type='square',vol=.3,t0=0){const t=AC.currentTime+t0,o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.setValueAtTime(f0,t);o.frequency.exponentialRampToValueAtTime(Math.max(20,f1),t+dur);g.gain.setValueAtTime(vol,t);g.gain.exponentialRampToValueAtTime(.001,t+dur);o.connect(g);g.connect(master);o.start(t);o.stop(t+dur+.02)}
 function noise(dur,vol=.3,hp=800,t0=0){const t=AC.currentTime+t0,n=Math.floor(AC.sampleRate*dur),b=AC.createBuffer(1,n,AC.sampleRate),d=b.getChannelData(0);for(let i=0;i<n;i++)d[i]=(Math.random()*2-1)*(1-i/n);
   const s=AC.createBufferSource(),f=AC.createBiquadFilter(),g=AC.createGain();s.buffer=b;f.type='highpass';f.frequency.value=hp;g.gain.value=vol;s.connect(f);f.connect(g);g.connect(master);s.start(t)}

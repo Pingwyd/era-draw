@@ -67,7 +67,7 @@ function updateSpawns(dt){
   G.wave=1+Math.floor(G.t/30);
   const scale=1+G.t/100;
   G.spawnT+=dt*(1+G.t/13);
-  const cap=Math.min(ENEMY_CAP,45+G.wave*18);
+  const cap=Math.min((typeof save!=='undefined'&&save.perf)?140:ENEMY_CAP,45+G.wave*18);
   while(G.spawnT>=1){G.spawnT-=1;if(G.enemies.length>=cap)break;
     const pool=G.era.spawns.filter(s=>G.t>=s.from);let tot=0;for(const s of pool)tot+=s.w;let r=Math.random()*tot,type=pool[0].type;
     for(const s of pool){r-=s.w;if(r<=0){type=s.type;break}}

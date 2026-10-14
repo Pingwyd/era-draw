@@ -1,8 +1,8 @@
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent;user-select:none;-webkit-user-select:none}
 html,body{width:100%;height:100%;overflow:hidden;background:#140b0c;font-family:VT323,monospace;color:#e9dcc3;touch-action:none}
-canvas{image-rendering:pixelated;image-rendering:crisp-edges;position:fixed;inset:0;width:100%;height:100%;display:block}
+canvas{image-rendering:pixelated;image-rendering:crisp-edges;position:fixed;top:0;right:0;bottom:0;left:0;width:100%;height:100%;display:block}
 .hidden{display:none!important}
-#hud{position:fixed;inset:0;pointer-events:none;font-family:Silkscreen,monospace;color:#e9dcc3;text-shadow:1px 1px 0 #1a0f0e}
+#hud{position:fixed;top:0;right:0;bottom:0;left:0;pointer-events:none;font-family:Silkscreen,monospace;color:#e9dcc3;text-shadow:1px 1px 0 #1a0f0e}
 #hud img{image-rendering:pixelated;width:16px;height:16px;vertical-align:-3px;margin:0 8px 0 4px}
 #xptop{position:absolute;top:0;left:0;right:0;height:7px;background:#1a0f0e;border-bottom:1px solid #3a2622}
 #xptop i{position:absolute;left:0;top:1px;bottom:1px;width:0;background:#4ea6e0;box-shadow:inset 0 -2px 0 #2a5fa8;display:block}
@@ -26,7 +26,7 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;position:fixed;inse
 .slot .du i{position:absolute;left:0;top:0;bottom:0;background:#ff9a3c;display:block}
 #pauseBtn{position:absolute;right:calc(12px + env(safe-area-inset-right));top:44px;pointer-events:auto;background:#1a0f0e;color:#e9dcc3;border:1px solid #4a3328;width:34px;height:28px;font:11px Silkscreen,monospace}
 #toast{position:fixed;left:50%;top:26%;transform:translateX(-50%);font:12px Silkscreen,monospace;letter-spacing:1px;color:#e9dcc3;background:#1a0f0ee6;border-top:1px solid #8f2430;border-bottom:1px solid #8f2430;padding:6px 14px;pointer-events:none;opacity:0;transition:opacity .25s;white-space:nowrap;z-index:6}
-#rotate{position:fixed;inset:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:#120d1f;padding:20px}
+#rotate{position:fixed;top:0;right:0;bottom:0;left:0;z-index:50;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;background:#120d1f;padding:20px}
 .rot-ic{margin-bottom:18px;animation:rot 2s ease-in-out infinite}
 @keyframes rot{0%,20%{transform:rotate(0)}50%,80%{transform:rotate(-90deg)}100%{transform:rotate(0)}}
 
@@ -37,11 +37,11 @@ canvas{image-rendering:pixelated;image-rendering:crisp-edges;position:fixed;inse
 .bb-frame:before,.bb-frame:after{content:'';position:absolute;top:50%;width:8px;height:8px;background:#d9c27a;border:1px solid #1a0f0e;transform:translateY(-50%) rotate(45deg)}
 .bb-frame:before{left:-9px}.bb-frame:after{right:-9px}
 .bb-frame i{position:absolute;left:1px;top:1px;bottom:1px;background:repeating-linear-gradient(90deg,#b3243b 0 6px,#8f1d30 6px 7px);display:block}
-.bb-frame span{position:absolute;inset:0;font-family:Silkscreen,monospace;font-size:9px;line-height:11px;color:#fff6e0;text-shadow:1px 1px 0 #1a0f0e}
+.bb-frame span{position:absolute;top:0;right:0;bottom:0;left:0;font-family:Silkscreen,monospace;font-size:9px;line-height:11px;color:#fff6e0;text-shadow:1px 1px 0 #1a0f0e}
 
 /* ============ MENUS: editorial, dark wine, thin rules ============ */
 :root{--bg:#140b0c;--panel:#1c1112;--rule:#3d2522;--ink:#e9dcc3;--mute:#9c8a76;--ox:#8f2430;--ember:#ff9a3c;--gold:#d9c27a}
-#screen{position:fixed;inset:0;display:flex;align-items:center;justify-content:center;overflow:auto;background:rgba(20,11,12,.94);
+#screen{position:fixed;top:0;right:0;bottom:0;left:0;display:flex;align-items:center;justify-content:center;overflow:auto;background:rgba(20,11,12,.94);
  padding:max(14px,env(safe-area-inset-top)) max(24px,env(safe-area-inset-right)) max(14px,env(safe-area-inset-bottom)) max(24px,env(safe-area-inset-left))}
 #screen:empty{display:none}
 button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
@@ -62,7 +62,7 @@ img{image-rendering:pixelated}
 .menu button span{margin-left:auto;font-size:18px;color:var(--mute)}
 .menu button i{font-style:normal;color:var(--mute);margin-left:12px}
 .menu button span+i{margin-left:12px}
-.menu button:not(:has(span)) i{margin-left:auto}
+.menu button i{margin-left:auto}.menu button span+i{margin-left:14px}
 .menu button:hover,.menu button:active{padding-left:10px;color:#fff}
 .menu button.prim{color:var(--ember)}.menu button.prim b{color:var(--ember)}
 .menu button:disabled{opacity:.35}
@@ -195,3 +195,11 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;background:var(--embe
 #tut{position:fixed;left:50%;top:9vh;transform:translateX(-50%);z-index:15;background:rgba(20,11,12,.88);border:1px solid var(--rule);padding:6px 16px;max-width:min(460px,70vw);text-align:center;zoom:var(--hud,1)}#tut b{display:block;font-family:'Instrument Serif',serif;font-size:22px;font-weight:400;color:var(--ink,#efe6d2)}#tut p{font-family:VT323,monospace;font-size:17px;margin:4px 0 6px;color:#cbbfa6}#tut button{background:none;border:0;color:var(--mute);cursor:pointer}
 #screen.live{background:rgba(20,11,12,.55)}#screen.live>.sheet{background:rgba(20,11,12,.82);padding:18px 24px;border:1px solid var(--rule)}
 #screen button:focus-visible,#screen input:focus-visible,#screen [data-m]:focus-visible{outline:2px solid var(--gold,#d9c27a);outline-offset:2px}
+#install{position:fixed;left:50%;width:min(600px,94vw);box-sizing:border-box;top:calc(6px + env(safe-area-inset-top));transform:translateX(-50%);z-index:40;display:flex;align-items:center;background:#1e1213;border:1px solid var(--rule);padding:8px 10px 8px 14px;font-family:VT323,monospace;font-size:18px;color:#e9dcc3;max-width:92vw;box-shadow:0 6px 24px #0008}
+#install>*+*{margin-left:12px}#install span{flex:1;line-height:1.15}#install b{font-family:Silkscreen,monospace;font-size:11px;letter-spacing:.08em;font-weight:400;white-space:nowrap}
+#install img{width:14px;height:17px;vertical-align:-3px;image-rendering:pixelated}#install em{font-style:normal;color:#ffd34a}
+#install button{background:none;border:1px solid var(--rule);color:#e9dcc3;font:inherit;min-width:40px;min-height:40px;padding:0 10px;cursor:pointer}
+/* small screens (iPod touch 568x320 etc.): 40px tap targets */
+html.small #screen button,html.small #screen [data-m],html.small .menu button{min-height:calc(40px / var(--ui,1));min-width:calc(40px / var(--ui,1))}
+html.small #pauseBtn{min-width:calc(42px / var(--hud,1));min-height:calc(42px / var(--hud,1))}
+html.small #install{font-size:15px;padding:4px 6px 4px 10px}html.small #install button{min-height:36px}
