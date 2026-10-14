@@ -14,11 +14,12 @@
 </head><body>
 <canvas id="c"></canvas>
 <div id="hud" class="hidden">
-  <div class="bar hp"><i id="hpb"></i><span id="hpt"></span></div>
-  <div class="bar xp"><i id="xpb"></i><span id="lvt"></span></div>
-  <div id="stats"><span id="timer">0:00</span> · Wave <span id="wave">1</span> · <span id="kills">0</span>☠ · <span id="runcoins">0</span>🪙</div>
+  <div id="xptop"><i id="xpb"></i></div><span id="lvt">LV 1</span>
+  <div id="hudL"><b>HEALTH</b><div class="hbar"><i id="hpb"></i></div><span id="hpt"></span></div>
+  <div id="hudC"><div id="timer">0:00</div><div id="wave">WAVE 1</div></div>
+  <div id="hudR"><span id="kills">0</span><img id="icSkull" alt=""><span id="runcoins">0</span><img id="icCoin" alt=""></div>
   <div id="slots"></div>
-  <button id="pauseBtn">❚❚</button>
+  <button id="pauseBtn" aria-label="Pause">II</button>
 </div>
 <div id="bossbar" class="hidden"><div class="bb-name"><span id="bbName"></span><small id="bbTitle"></small></div><div class="bb-frame"><i id="bbFill"></i><span id="bbHp"></span></div></div>
 <div id="toast"></div>
