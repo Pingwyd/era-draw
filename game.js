@@ -356,7 +356,7 @@ function step(dt,realDt){
   p.dashCd=Math.max(0,(p.dashCd||0)-dt);
   const spd=p.dashT>0?p.speed*DASH.mult:p.speed;
   p.x+=mx*spd*dt;p.y+=my*spd*dt;if(m>0.1)p.face=Math.atan2(my,mx);p.moving=m>0.1;
-  updateSpawns(dt);updateEnemies(dt);if(mode!=='run')return;updateCreations(dt);updateShots(dt);updateOrbs(dt);updateFx(dt);
+  updateSpawns(dt);updateEnemies(dt);if(mode!=='run')return;updateCreations(dt);updateShots(dt);updateOrbs(dt);if(window.updatePickups)updatePickups(dt);updateFx(dt);
   if(G.t>=ERA_CLEAR_T&&!G.cleared){G.cleared=true;eraCleared();return}
   G.coins=calcCoins();updateHud();
 }
@@ -408,6 +408,7 @@ function render(dt){
   for(const s of G.ink){bx.fillStyle=`rgba(26,15,14,${s.a})`;const r=Math.round(s.r/Z),sx=X(s.x),sy=Y(s.y);bx.fillRect(sx-r,sy-(r>>1),r*2,r);bx.fillRect(sx-(r>>1),sy-r+1,r,r*2-2)}
   for(const o of G.orbs){const im=o.v>=10?SPR.gem3:o.v>=3?SPR.gem2:SPR.gem1;bx.drawImage(im,X(o.x)-(im.width>>1),Y(o.y)-(im.height>>1)-((Math.floor(G.t*3+o.x*.1)&1)))}
   if(G.chests)for(const c of G.chests){shadow(c.x,c.y,6);blit(SPR.chest,c.x,c.y-((Math.floor(G.t*4)&1)))}
+  if(window.renderPickups)renderPickups();
   // y-sorted actors
   const actors=G.enemies.slice();actors.push(p);for(const c of G.creations)if(c.def.kind==='melee')actors.push(c);
   actors.sort((a,b)=>a.y-b.y);

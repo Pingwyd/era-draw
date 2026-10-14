@@ -154,4 +154,28 @@ function openChest(c){
   $('rok').onclick=()=>{for(const k of rewards){k.pu.apply(G.player,k.r);G.picks[k.pu.id]=(G.picks[k.pu.id]||0)+1}show('');G.paused=false;last=performance.now()};
 }
 
+
+// ================= MAP PICKUPS =================
+const PICKUP_ART={
+ magnet:['.RR..RR.','RrR..RrR','RrR..RrR','RrR..RrR','RrRRRRrR','.RrrrrR.','..RRRR..'],
+ meat:['....ww','...wWw','.mmmw.','mMMMm.','mMMMm.','mMMm..','.mm...'],
+ bomb:['....y.','...Ky.','.KKK..','KkkkK.','KkKkK.','KkkkK.','.KKK..'],
+};
+const PICKUP_PAL={R:'#b8382f',r:'#e8e0cc',w:'#efe6d2',W:'#b9ab90',m:'#7a2e22',M:'#b8583c',K:'#1a1416',k:'#3b3438',y:'#ffd34a'};
+SPR.pick={};for(const k in PICKUP_ART)SPR.pick[k]=outline(grid(PICKUP_ART[k],{...PAL,...PICKUP_PAL}));
+const PICKUPS={
+ magnet:{name:'Magnet',w:3,fn:G=>{for(const o of G.orbs)o.pull=true;toast('Magnet: all gems pulled')}},
+ meat:{name:'Drumstick',w:4,fn:G=>{const p=G.player,h=Math.round(p.maxHp*.3);p.hp=Math.min(p.maxHp,p.hp+h);floatText(p.x,p.y-40,'+'+h+' HP','#8fd17a',1.2)}},
+ bomb:{name:'Bomb',w:2,fn:G=>{const p=G.player;G.shake=18;burst(p.x,p.y,'#ffd34a',60);ring(p.x,p.y,420,'#ffd34a');
+   for(const e of G.enemies.slice())if(!e.T.boss&&Math.hypot(e.x-p.x,e.y-p.y)<460)killEnemy(e);toast('Bomb!')}},
+};
+function dropPickup(x,y,type){if(!type){const tot=Object.values(PICKUPS).reduce((a,b)=>a+b.w,0);let r=Math.random()*tot;for(const k in PICKUPS){r-=PICKUPS[k].w;if(r<=0){type=k;break}}}
+  (G.pickups||(G.pickups=[])).push({x,y,type,t:0})}
+runHooks.push(G=>{G.pickups=[];G.pickT=45});
+function updatePickups(dt){const p=G.player;if(!G.pickups)G.pickups=[];
+  G.pickT-=dt;if(G.pickT<=0){G.pickT=40+Math.random()*25;const a=Math.random()*6.283,d=260+Math.random()*200;dropPickup(p.x+Math.cos(a)*d,p.y+Math.sin(a)*d)}
+  for(let i=G.pickups.length-1;i>=0;i--){const k=G.pickups[i];k.t+=dt;if(k.t>60){G.pickups.splice(i,1);continue}
+    if(Math.hypot(k.x-p.x,k.y-p.y)<p.r+14){G.pickups.splice(i,1);sfx('pick');haptic(15);PICKUPS[k.type].fn(G);if(mode!=='run')return}}}
+function renderPickups(){if(!G.pickups)return;for(const k of G.pickups){if(k.t>54&&(Math.floor(k.t*8)&1))continue;shadow(k.x,k.y,5);blit(SPR.pick[k.type],k.x,k.y-((Math.floor(G.t*3)&1)))}}
+
 boot();
