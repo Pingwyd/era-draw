@@ -179,3 +179,11 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;background:var(--embe
 .eras .cell{min-height:120px}
 @media (max-height:500px){.subgrid button{padding:5px 8px;font-size:15px}.home .plate{display:none}}
 #screen{align-items:flex-start;justify-content:flex-start}#screen>*{margin:auto}
+
+.tree{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.node{border-bottom:1px solid var(--rule);padding:8px 0;display:flex;flex-direction:column;gap:4px}
+.node-t{display:flex;justify-content:space-between;align-items:center}.node .nm{font-family:'Instrument Serif',serif;font-size:24px;line-height:1}
+.node .sh{font-size:15px;color:var(--mute)}
+.node .buy{margin-left:0;align-self:flex-start;font-size:10px;padding:5px 8px}
+.pips{display:flex;gap:2px}.pips i{width:7px;height:7px;border:1px solid var(--mute);display:block}.pips i.on{background:var(--ember);border-color:var(--ember)}
+@media (max-width:1000px){.tree{grid-template-columns:repeat(2,1fr)}}
