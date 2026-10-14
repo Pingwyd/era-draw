@@ -8,7 +8,7 @@ const ERAS = {
 };
 const ERA_ORDER = ['stone','bronze','iron'];
 const OLD_ERA_DMG = 0.65;
-const CURRENT_ERA = 'stone';
+let CURRENT_ERA = 'stone';
 
 // shape: how to draw it. life = seconds before breaking, uses = hits before breaking
 const CREATIONS = {
@@ -159,14 +159,15 @@ cv.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'&&mode==='run')m
 
 function finishDraw(){
   const d=G.drawing;G.drawing=null;
-  const id=recognize(d.pts);
+  let id=recognize(d.pts);
   const pts=d.pts.slice();
   if(!id){fizzle(pts,'?');return}
-  if(!G.loadout.includes(id)){fizzle(pts,CREATIONS[id].name+' not in loadout');return}
+  const sid=id;const pick=creationForShape(sid);if(!pick){fizzle(pts,CREATIONS[sid].shape+' not in loadout');return}
+  id=pick;
   if(G.castCd>0){fizzle(pts,'recharging…');return}
   const a=pts[0],b=pts[pts.length-1];
   const dir=Math.atan2(b.y-a.y,b.x-a.x);
-  const kindQ=(id==='club'||id==='spear')?'line':id==='rock'?'circle':'poly';const q=lastQuality[kindQ];
+  const kindQ=(sid==='club'||sid==='spear')?'line':sid==='rock'?'circle':'poly';const q=lastQuality[kindQ];
   const power=0.85+0.45*q;const fid=resolveDraw(id);spawnCreation(fid,dir,false,power);
   if(q>=.85){floatText(G.player.x,G.player.y-64,'PERFECT DRAW','#ffe08a',1.2);sfx('lvl');haptic(30)}else if(q>=.6)floatText(G.player.x,G.player.y-64,'CLEAN','#e9dcc3',.8);
   if(Math.random()<G.player.echo){setTimeout(()=>G&&spawnCreation(fid,dir+0.4,true),150)}
@@ -356,6 +357,7 @@ function step(dt,realDt){
   const spd=p.dashT>0?p.speed*DASH.mult:p.speed;
   p.x+=mx*spd*dt;p.y+=my*spd*dt;if(m>0.1)p.face=Math.atan2(my,mx);p.moving=m>0.1;
   updateSpawns(dt);updateEnemies(dt);if(mode!=='run')return;updateCreations(dt);updateShots(dt);updateOrbs(dt);updateFx(dt);
+  if(G.t>=ERA_CLEAR_T&&!G.cleared){G.cleared=true;eraCleared();return}
   G.coins=calcCoins();updateHud();
 }
 // Auto-move (kite): steer away from nearby enemies, drift toward nearby XP
@@ -431,10 +433,10 @@ function render(dt){
   for(const t of G.texts){ctx.globalAlpha=Math.min(1,t.life/t.max*2);ctx.font=`${S*5}px Silkscreen, monospace`;const sx=X(t.x)*S,sy=Y(t.y)*S;ctx.fillStyle='#1a0f0e';ctx.fillText(t.txt,sx+S,sy+S);ctx.fillStyle=t.col;ctx.fillText(t.txt,sx,sy)}
   ctx.globalAlpha=1;
   if(G.drawing){const id=recognize(G.drawing.pts);const l=G.drawing.pts[G.drawing.pts.length-1];
-    const ok=id&&G.loadout.includes(id),txt=id?(ok?CREATIONS[id].name:CREATIONS[id].name+' (not equipped)').toUpperCase():'...';
+    const cid=id&&creationForShape(id),ok=!!cid,txt=id?(ok?CREATIONS[cid].name:CREATIONS[id].shape+' (not equipped)').toUpperCase():'...';
     ctx.font='11px Silkscreen, monospace';ctx.textAlign='left';const w=ctx.measureText(txt).width+(ok?30:12),x0=Math.min(W-w-8,l.x+18),y0=Math.max(8,l.y-36);
     ctx.fillStyle='#1a0f0ee6';ctx.fillRect(x0,y0,w,22);ctx.fillStyle=ok?'#ff9a3c':'#5a3a30';ctx.fillRect(x0,y0+21,w,1);
-    if(ok){const im=SPR[id].r;ctx.drawImage(im,x0+4,y0+3,Math.round(im.width*16/im.height*.9),15)}
+    if(ok){const im=SPR[cid].r;ctx.drawImage(im,x0+4,y0+3,Math.round(im.width*16/im.height*.9),15)}
     ctx.fillStyle=ok?'#fff1d0':'#9c8a76';ctx.fillText(txt,x0+(ok?26:6),y0+15)}
   // focus meter (bottom right)
   const k=HUDK,fw=Math.round(120*k),fx=W-fw-16*k,fy=H-20*k;
@@ -456,17 +458,17 @@ function drawLight(p){
 }
 function hash(a,b){let h=(a*374761393+b*668265263)|0;h=(h^(h>>>13))*1274126177|0;return((h^(h>>>16))>>>0)/4294967295}
 function drawGround(){
-  const T=SPR.tile,tw=T.width;
+  const T=SPR.tiles[G.era.tile]||SPR.tile,tw=T.width;
   const offx=((Math.round(-cam.x/Z+BW/2+ox))%tw+tw)%tw-tw,offy=((Math.round(-cam.y/Z+BH/2+oy))%tw+tw)%tw-tw;
   for(let x=offx;x<BW;x+=tw)for(let y=offy;y<BH;y+=tw)bx.drawImage(T,x,y);
   // deterministic decor per world cell
   const C=150,vw=viewW()/2+60,vh=viewH()/2+60;
   const x0=Math.floor((cam.x-vw)/C),x1=Math.floor((cam.x+vw)/C),y0=Math.floor((cam.y-vh)/C),y1=Math.floor((cam.y+vh)/C);
-  const D=SPR.deco;
+  const D=SPR.decos[G.era.decor]||SPR.deco;
   for(let i=x0;i<=x1;i++)for(let j=y0;j<=y1;j++){
     const h=hash(i,j),h2=hash(j*7+3,i*13+1);const wx=i*C+h2*C,wy=j*C+((h*7)%1)*C;
-    if(h<.10)bx.drawImage(SPR.dirt,X(wx)-24,Y(wy)-24);
-    else if(h<.14)drawTar(wx,wy,h2);
+    if(h<.10)bx.drawImage(SPR.dirts[G.era.decor]||SPR.dirt,X(wx)-24,Y(wy)-24);
+    else if(h<.14&&G.era.decor==='stone')drawTar(wx,wy,h2);
     if(h2<.18)blit(D.rock1,wx+30,wy+10);else if(h2<.26)blit(D.rock2,wx-20,wy+40);
     else if(h2<.32)blit(D.bones,wx,wy+30);else if(h2<.35)blit(D.skull,wx+10,wy-20);
     else if(h2<.55)blit(D.fern,wx-30,wy-10);
@@ -693,6 +695,7 @@ function checkOrientation(){
 addEventListener('resize',checkOrientation);addEventListener('orientationchange',()=>setTimeout(checkOrientation,200));
 function startRun(){
   sessionStorage.removeItem(RUN_KEY);setRoute('play');
+  CURRENT_ERA=(save.era&&ERAS[save.era]&&!ERAS[save.era].locked&&(save.eras||['stone']).includes(save.era))?save.era:'stone';
   newRun();mode='run';show('');$('hud').classList.remove('hidden');updateHud.sig=null;cam.x=0;cam.y=0;last=performance.now();
   toast(ERAS[CURRENT_ERA].name+' · survive');setTimeout(()=>mode==='run'&&toast(controlsHint()),1700);mouse.walk=false;checkOrientation();
 }
@@ -750,4 +753,4 @@ addEventListener('popstate',route);
 
 // expose for tests
 window.EraDraw={step:(a,b)=>step(a,b),mouse,kiteVector,recognize,get G(){return G},get mode(){return mode},startRun,save:()=>save,spawnCreation,ERAS,CREATIONS};
-applyScale();if(!location.hash)history.replaceState(null,'','#/home');route();checkOrientation();requestAnimationFrame(frame);
+function boot(){applyScale();if(!location.hash)history.replaceState(null,'','#/home');route();checkOrientation();requestAnimationFrame(frame)}
