@@ -1,0 +1,31 @@
+'use strict';
+// ================= UPDATE: INK AND PAPER =================
+// ---- ink colours: choose one per run (#/inks). Each adds an on-hit effect ----
+const INKS={
+  soot:{name:'Soot Ink',col:'#ff9a3c',cost:0,desc:'Plain ink. No side effects.'},
+  crimson:{name:'Crimson Ink',col:'#ff4a3a',cost:400,desc:'Hits burn: 30% of the hit as fire over 2s.',hit:(e,d)=>{e.burn={t:2,dps:Math.max(e.burn?e.burn.dps:0,d*.15)}}},
+  azure:{name:'Azure Ink',col:'#7fd8ff',cost:500,desc:'8% chance to freeze an enemy solid for 1.2s (bosses: slow).',hit:e=>{if(Math.random()<.08){if(e.T.boss)e.slow=Math.max(e.slow||0,1.5);else e.frozen=1.2}}},
+  violet:{name:'Violet Ink',col:'#c48cff',cost:450,desc:'Hits slow enemies by 40% for 2s.',hit:e=>{e.slow=2}},
+};
+if(!save.inks)save.inks=['soot'];if(!save.ink)save.ink='soot';
+function inkCol(){return (INKS[(G&&G.ink)||save.ink]||INKS.soot).col}
+runHooks.push(G=>{G.ink=save.inks.includes(save.ink)?save.ink:'soot'});
+DMG_MODS.push((e,d,src)=>{const k=G&&INKS[G.ink];if(k&&k.hit&&src!=='fire'&&src!=='dot')k.hit(e,d);return d});
+const _inkUpd=updatePickups;updatePickups=function(dt){_inkUpd(dt);if(mode!=='run'||!G)return;
+  for(const e of G.enemies.slice()){if(e.baseSpeed==null)e.baseSpeed=e.speed;
+    if(e.burn){e.burn.t-=dt;e.burnTick=(e.burnTick||0)-dt;if(e.burnTick<=0){e.burnTick=.4;hurtEnemy(e,e.burn.dps*.4,'dot');if(Math.random()<.6)G.fx.push({x:e.x+rnd(-5,5),y:e.y-rnd(4,14),vx:0,vy:-30,life:.35,max:.35,col:'#ff6a2a',r:1.5})}if(e.burn&&e.burn.t<=0)e.burn=null}
+    if(e.frozen>0)e.frozen-=dt;if(e.slow>0)e.slow-=dt;
+    e.speed=e.baseSpeed*(e.frozen>0?0:e.slow>0?.6:1)}};
+const _inkRP=renderPickups;renderPickups=function(){_inkRP()};
+const _inkTop=drawLootTop;drawLootTop=function(){_inkTop();if(!G)return;for(const e of G.enemies){if(!(e.frozen>0||e.slow>0||e.burn))continue;const sx=X(e.x),sy=Y(e.y);
+  if(e.frozen>0){bx.globalAlpha=.45;bx.fillStyle='#bfefff';bx.fillRect(sx-Math.round(e.r/Z),sy-Math.round(e.r*1.6/Z),Math.round(e.r*2/Z),Math.round(e.r*1.6/Z))}
+  else if(e.slow>0){bx.globalAlpha=.8;bx.fillStyle='#c48cff';bx.fillRect(sx-2,sy+1,4,1)}bx.globalAlpha=1}};
+function inks(){
+  leaveRun();setRoute('inks');
+  show(sheet('Inks',`12 &mdash; Choose the colour of your magic &middot; ${coinI()} ${save.coins}`,`<div class="tbl">${Object.entries(INKS).map(([id,k],i)=>{const own=save.inks.includes(id),on=save.ink===id;
+    return `<button class="cell ${on?'on':''}" data-ink="${id}"><span class="cell-h"><b>0${i+1}</b>${on?'<i class="chk">&#9632; Chosen</i>':''}</span><span class="swatch" style="background:${k.col}"></span><span class="nm">${k.name}</span><span class="sh">${k.desc}</span><span class="st">${own?'Unlocked':coinI()+' '+k.cost}</span></button>`}).join('')}</div>`));
+  screenEl.querySelectorAll('[data-ink]').forEach(el=>el.onclick=()=>{const id=el.dataset.ink,k=INKS[id];
+    if(!save.inks.includes(id)){if(save.coins<k.cost){toast('Not enough coins');return}save.coins-=k.cost;save.inks.push(id);sfx('chest')}save.ink=id;persist();inks()});
+  $('back').onclick=home;
+}
+hub('inks','Inks',inks);
