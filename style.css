@@ -206,3 +206,5 @@ html.small #install{font-size:15px;padding:4px 6px 4px 10px}html.small #install 
 #quest{position:absolute;top:calc(64px * var(--hud,1));left:50%;transform:translateX(-50%);font-family:VT323,monospace;font-size:calc(17px * var(--hud,1));color:#e9dcc3;white-space:nowrap;background:rgba(20,11,12,.55);padding:1px 8px}
 #quest b{font-family:Silkscreen,monospace;font-size:.6em;color:#ffd34a;font-weight:400;letter-spacing:.1em}#quest i{font-style:normal;color:#b9ab90}
 .swatch{display:block;width:44px;height:14px;margin:8px 0 6px;box-shadow:0 0 0 1px #1a0f0e,0 0 12px currentColor}
+.slider select,.slider input:not([type=range]){background:#1e1213;color:#e9dcc3;border:1px solid var(--rule);font:inherit;font-family:VT323,monospace;font-size:18px;padding:4px 6px;min-height:34px;width:100%}
+.code{font-family:Silkscreen,monospace;font-size:20px;letter-spacing:.08em;color:#ffd34a;margin:6px 0 10px;user-select:all;-webkit-user-select:all}
