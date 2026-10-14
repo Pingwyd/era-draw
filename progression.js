@@ -113,4 +113,24 @@ function bestiary(){
 }
 hub('bestiary','Bestiary',bestiary);
 
+
+// ================= DAILY CHALLENGE =================
+function todayKey(){const d=new Date();return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0')}
+function seedOf(s){let h=2166136261;for(const c of s)h=Math.imul(h^c.charCodeAt(0),16777619);return h>>>0}
+function mulberry(a){return function(){a|=0;a=a+0x6D2B79F5|0;let t=Math.imul(a^a>>>15,1|a);t=t+Math.imul(t^t>>>7,61|t)^t;return((t^t>>>14)>>>0)/4294967296}}
+const DAILY_MODS=[{n:'Glass Ink',d:'Weapons break 40% faster',f:G=>G.player.durMul*=.6},{n:'Swarm Day',d:'+40% spawns',f:G=>G.diffDef={...G.diffDef,spawn:G.diffDef.spawn*1.4}},{n:'Heavy Robes',d:'-15% speed, +30% HP',f:G=>{G.player.speed*=.85;G.player.maxHp*=1.3;G.player.hp=G.player.maxHp}},{n:'Sharp Quill',d:'+30% damage, -30% HP',f:G=>{G.player.dmgMul*=1.3;G.player.maxHp*=.7;G.player.hp=G.player.maxHp}}];
+function dailyInfo(){const k=todayKey(),s=seedOf('eradraw'+k),r=mulberry(s);return {k,s,era:'stone',mod:DAILY_MODS[Math.floor(r()*DAILY_MODS.length)]}}
+if(!save.daily)save.daily={};
+runHooks.push(G=>{if(!G.daily)return;const d=dailyInfo();G.dailyKey=d.k;d.mod.f(G)});
+endHooks.push(g=>{if(g&&g.daily){const b=save.daily[g.dailyKey]||{t:0,kills:0};if(g.t>b.t)save.daily[g.dailyKey]={t:Math.floor(g.t),kills:g.kills};DAILY_ON=null;Math.random=_RND;persist()}});
+function startDaily(){const d=dailyInfo();DAILY_ON=d.k;Math.random=mulberry(d.s);const pe=save.era;save.era=d.era;startRun();save.era=pe;setRoute('play')}
+const _leave=leaveRun;leaveRun=function(){if(DAILY_ON&&mode!=='run'){DAILY_ON=null;Math.random=_RND}return _leave.apply(this,arguments)};
+function daily(){
+  leaveRun();setRoute('daily');const d=dailyInfo(),b=save.daily[d.k];
+  const hist=Object.entries(save.daily).sort((a,b)=>b[0]<a[0]?-1:1).slice(0,6);
+  show(sheet('Daily Challenge',`11 &mdash; ${d.k} &middot; seed ${d.s.toString(16)}`,`<div class="detail"><div class="d-l"><span class="sec">Today's rite</span><h3 class="dt">${d.mod.n}</h3><p class="sh">${d.mod.d}. Stone Age, Cursed difficulty, Ink Mage. Same spawns for everyone today.</p><p class="sh">Best today: ${b?fmt(b.t)+' &middot; '+b.kills+' kills':'not attempted'}</p><button class="btn pri" id="dgo">Begin daily</button></div><div class="d-r"><span class="sec">Recent</span>${hist.length?hist.map(([k,v])=>`<div class="li"><span class="nm">${k}</span><span class="sh">${fmt(v.t)} &middot; ${v.kills} kills</span></div>`).join(''):'<p class="sh">No dailies yet.</p>'}</div></div>`));
+  $('dgo').onclick=startDaily;$('back').onclick=home;
+}
+hub('daily','Daily',daily);
+
 boot();
