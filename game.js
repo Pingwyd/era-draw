@@ -626,7 +626,8 @@ function how(){
   leaveRun();setRoute('how-to-play');
   show(sheet('How to play','05 &mdash; Field notes',`<div class="cols">
    <div><div class="lab rule">Controls</div><ul class="stats"><li>Phone<em>left thumb moves, right thumb draws</em></li><li>Laptop<em>hold right-click to walk, left-drag to draw</em></li><li>Keys<em>WASD / arrows</em></li><li>Focus<em>time slows while drawing, up to ${BASE_FOCUS}s</em></li></ul>
-   <p class="note">Creations fight on their own and wear out. Up to ${BASE_CAPS.melee} melee or ${BASE_CAPS.ranged} ranged at once; one more replaces the oldest. Drawing a different weapon shatters the ones you have out.</p></div>
+   <p class="note">Creations fight on their own and wear out. Up to ${BASE_CAPS.melee} melee or ${BASE_CAPS.ranged} ranged at once; one more replaces the oldest. Drawing a different weapon shatters the ones you have out.</p>
+   <div class="lab rule" style="margin-top:10px">Combos &amp; evolutions</div><ul class="stats">${Object.entries(COMBOS).map(([k,c])=>`<li>${k.split('+').map(x=>CREATIONS[x].name).join(' + ')} quickly<em>${c.name}</em></li>`).join('')}<li>Draw a weapon ${MASTERY}x + its powerup<em>Evolution</em></li></ul></div>
    <div><div class="lab rule">Shapes</div><ul class="build">${save.owned.map(id=>`<li><img src="${ICON[id]}" alt=""><span>${CREATIONS[id].name}</span><em>${CREATIONS[id].shape}</em></li>`).join('')}</ul></div></div>`));
   $('back').onclick=home;
 }
