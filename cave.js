@@ -69,6 +69,10 @@ const _cvRP=renderPickups;renderPickups=function(){if(G.shrines)for(const s of G
 const _cvTop=drawLootTop;drawLootTop=function(){_cvTop();if(!G||!G.shrines)return;const pulse=.5+.5*Math.sin(G.t*4);for(const s of G.shrines){const sx=X(s.x),sy=Y(s.y)-10;
   bx.globalCompositeOperation='lighter';bx.globalAlpha=.16+.12*pulse;bx.fillStyle=SHRINES[s.k].col;bx.beginPath();bx.arc(sx,sy,10+s.prog*3,0,6.283);bx.fill();bx.globalCompositeOperation='source-over';bx.globalAlpha=1;
   const hs=hiSpr('shrine',SPR.shrine,'#fff6d8');bx.drawImage(hs,sx-(hs.width>>1),Y(s.y)-hs.height);
+  if(s.prog>0.02){const pc=Math.min(1,s.prog/2.5),inR=Math.hypot(s.x-G.player.x,s.y-G.player.y)<42,cy=Y(s.y)-hs.height-9;
+    bx.lineWidth=2;bx.strokeStyle='rgba(26,15,14,.85)';bx.beginPath();bx.arc(sx,cy,6,0,6.283);bx.stroke();
+    bx.strokeStyle=inR?SHRINES[s.k].col:'#8a8178';bx.beginPath();bx.arc(sx,cy,6,-1.5708,-1.5708+pc*6.283);bx.stroke();bx.lineWidth=1;
+    SCREEN_LABELS.push({x:sx+9,y:cy+2,txt:Math.floor(pc*100)+'%',col:inR?'#fff6d8':'#b9ab90'});if(!inR)SCREEN_LABELS.push({x:sx+9,y:cy+8,txt:'fading',col:'#b9ab90',size:3})}
   if(sx<6||sx>BW-6||sy<6||sy>BH-6){const ax=Math.max(8,Math.min(BW-8,sx)),ay=Math.max(14,Math.min(BH-16,sy));bx.fillStyle=SHRINES[s.k].col;bx.fillRect(ax-2,ay-2,4,4)}}};
 
 // ---- mini-quests: a timed objective every ~75s; reward = chest + coins ----
