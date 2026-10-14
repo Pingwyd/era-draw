@@ -133,4 +133,25 @@ function daily(){
 }
 hub('daily','Daily',daily);
 
+
+// ================= CHEST ROULETTE =================
+function openChest(c){
+  G.paused=true;stick.id=null;stick.active=false;G.drawing=null;
+  const r=Math.random(),n=c.boss?(r<.35?5:3):(r<.12?5:r<.35?3:1);
+  const pool=POWERUPS.filter(pu=>!pu.max||(G.picks[pu.id]||0)<pu.max);const rewards=[];
+  for(let i=0;i<n;i++){const pu=pool[Math.floor(Math.random()*pool.length)];rewards.push({pu,r:Math.random()<.06*n?2:Math.random()<.4?1:0})}
+  sfx('chest');haptic([20,40,20,40,60]);
+  show(`<div class="sheet lv chestr"><header class="row"><span class="lab">${c.boss?'Boss chest':'Chest'} &middot; +25 coins</span><span class="lab">${n} reward${n>1?'s':''}</span></header>
+   <h2 class="disp">${n===5?'Jackpot':n===3?'Treasure trove':'Treasure'}</h2>
+   <div class="reels">${rewards.map((_,i)=>`<div class="reel" id="reel${i}"><img alt=""></div>`).join('')}</div>
+   <div class="rlist" id="rlist"></div><button class="btn pri" id="rok" disabled>Collect</button></div>`);
+  const ids=POWERUPS.map(p=>p.id);let t=0;
+  const spin=setInterval(()=>{t++;rewards.forEach((k,i)=>{const el=$('reel'+i);if(!el)return;const stop=10+i*5;
+    if(t<stop){el.firstChild.src=ICON['pu_'+ids[(t+i*3)%ids.length]];if(t%2)sfx('tick')}
+    else if(t===stop){el.firstChild.src=ICON['pu_'+k.pu.id];el.className='reel done r-'+RAR[k.r];sfx('pick');
+      $('rlist').insertAdjacentHTML('beforeend',`<span class="rr r-${RAR[k.r]}">${k.pu.name} <i>${RAR[k.r]}</i></span>`)}});
+    if(t>=10+(n-1)*5){clearInterval(spin);$('rok').disabled=false}},90);
+  $('rok').onclick=()=>{for(const k of rewards){k.pu.apply(G.player,k.r);G.picks[k.pu.id]=(G.picks[k.pu.id]||0)+1}show('');G.paused=false;last=performance.now()};
+}
+
 boot();
