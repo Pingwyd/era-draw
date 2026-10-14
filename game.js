@@ -53,7 +53,7 @@ const SHOP = [
 const SAVE_KEY='eradraw.save.v1';
 let save=loadSave();
 function loadSave(){
-  const d={autoMove:false,coins:0,gems:0,owned:['club','spear','rock'],loadout:['club','spear','rock'],slots:3,best:0,runs:0};
+  const d={hudScale:1,zoom:1,uiScale:1,autoMove:false,coins:0,gems:0,owned:['club','spear','rock'],loadout:['club','spear','rock'],slots:3,best:0,runs:0};
   try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s)return Object.assign(d,s)}catch(e){}
   return d;
 }
@@ -363,7 +363,7 @@ const cam={x:0,y:0};
 // ---- low-res pixel buffer: 1 art pixel = Z world units = S screen px ----
 const Z=2;
 let S=2,BW=0,BH=0;const buf=document.createElement('canvas'),bx=buf.getContext('2d');
-function layoutBuf(){S=Math.max(2,Math.round(H/180));BW=Math.ceil(W/S);BH=Math.ceil(H/S);buf.width=BW;buf.height=BH;bx.imageSmoothingEnabled=false}
+function layoutBuf(){const zm=(typeof save!=='undefined'&&save.zoom)||1;S=Math.max(1,Math.round(H*zm/180));BW=Math.ceil(W/S);BH=Math.ceil(H/S);buf.width=BW;buf.height=BH;bx.imageSmoothingEnabled=false}
 addEventListener('resize',layoutBuf);layoutBuf();
 const viewW=()=>BW*Z,viewH=()=>BH*Z;
 let ox=0,oy=0;
@@ -421,9 +421,9 @@ function render(dt){
     if(ok){const im=SPR[id].r;ctx.drawImage(im,x0+4,y0+3,Math.round(im.width*16/im.height*.9),15)}
     ctx.fillStyle=ok?'#fff1d0':'#9c8a76';ctx.fillText(txt,x0+(ok?26:6),y0+15)}
   // focus meter (bottom right)
-  const fw=120,fx=W-fw-16,fy=H-20;
-  ctx.fillStyle='#1a0f0e';ctx.fillRect(fx-2,fy-2,fw+4,10);ctx.fillStyle='#3a2622';ctx.fillRect(fx,fy,fw,6);ctx.fillStyle='#ff9a3c';ctx.fillRect(fx,fy,Math.round(fw*clamp(G.focusLeft/G.player.focus,0,1)),6);
-  ctx.font='10px Silkscreen, monospace';ctx.textAlign='right';ctx.fillStyle=G.castCd>0?'#e0504e':'#e9dcc3';ctx.fillText(G.castCd>0?'RECHARGING':'FOCUS',W-16,fy-6);
+  const k=HUDK,fw=Math.round(120*k),fx=W-fw-16*k,fy=H-20*k;
+  ctx.fillStyle='#1a0f0e';ctx.fillRect(fx-2,fy-2,fw+4,6*k+4);ctx.fillStyle='#3a2622';ctx.fillRect(fx,fy,fw,6*k);ctx.fillStyle='#ff9a3c';ctx.fillRect(fx,fy,Math.round(fw*clamp(G.focusLeft/G.player.focus,0,1)),6*k);
+  ctx.font=Math.round(10*k)+'px Silkscreen, monospace';ctx.textAlign='right';ctx.fillStyle=G.castCd>0?'#e0504e':'#e9dcc3';ctx.fillText(G.castCd>0?'RECHARGING':'FOCUS',W-16*k,fy-6*k);
   if(stick.active){ctx.strokeStyle='#e9dcc355';ctx.lineWidth=2;ctx.beginPath();ctx.arc(stick.ox,stick.oy,55,0,6.283);ctx.stroke();const dx=stick.x-stick.ox,dy=stick.y-stick.oy,d=Math.min(55,Math.hypot(dx,dy)),a=Math.atan2(dy,dx);ctx.fillStyle='#e9dcc388';ctx.beginPath();ctx.arc(stick.ox+Math.cos(a)*d,stick.oy+Math.sin(a)*d,22,0,6.283);ctx.fill()}
   else if(G.t<8){ctx.fillStyle='#e9dcc377';ctx.font='12px Silkscreen, monospace';ctx.textAlign='center';if(isTouch){ctx.fillText('< MOVE',W*.25,H-56);ctx.fillText('DRAW >',W*.75,H-56);ctx.fillStyle='#e9dcc322';ctx.fillRect(W/2-1,H*.3,2,H*.5)}else ctx.fillText(controlsHint().toUpperCase(),W/2,H-56)}
 }
@@ -548,9 +548,12 @@ function togglePause(){
 $('pauseBtn').onclick=togglePause;
 
 // ================= SCREENS =================
+let HUDK=1;
 function applyScale(){
   const ui=clamp(Math.min(innerWidth/1050,innerHeight/590),1,2.6)*(save.uiScale||1);
   document.documentElement.style.setProperty('--ui',ui.toFixed(3));
+  const hud=clamp(Math.min(innerWidth/760,innerHeight/430),1,3.2)*(save.hudScale||1);
+  document.documentElement.style.setProperty('--hud',hud.toFixed(3));HUDK=hud;
 }
 addEventListener('resize',applyScale);
 function show(html){screenEl.innerHTML=html;if(html){$('toast').style.opacity=0;clearTimeout(toastT)}}
@@ -585,10 +588,16 @@ function startDiorama(){
 }
 function sheet(title,lab,body,back='Back'){return `<div class="sheet"><header class="row"><span class="lab">${lab}</span><button class="lab back" id="back">&larr; ${back}</button></header><h2 class="disp">${title}</h2>${body}</div>`}
 function settings(){
-  show(sheet('Settings','04 &mdash; Options',`<nav class="menu">
+  const sl=(id,label,key,min,max)=>`<label class="slider"><b>${label}</b><input type="range" id="${id}" min="${min}" max="${max}" step="10" value="${Math.round((save[key]||1)*100)}"><span id="${id}v">${Math.round((save[key]||1)*100)}%</span></label>`;
+  show(sheet('Settings','04 &mdash; Options',`<div class="cols"><div><div class="lab rule">Display</div>
+   ${sl('sHud','HUD size','hudScale',50,200)}${sl('sZoom','Game zoom','zoom',50,200)}${sl('sUi','Menu text size','uiScale',70,160)}
+   <button class="lab back" id="sReset">Reset to defaults</button></div>
+   <div><div class="lab rule">Play</div><nav class="menu">
    <button id="am"><b>01</b>Auto-move (kite)<span>${save.autoMove?'On':'Off'}</span><i>${save.autoMove?'&#9632;':'&#9633;'}</i></button>
    <button id="snd"><b>02</b>Sound<span>${save.mute?'Off':'On'}</span><i>${save.mute?'&#9633;':'&#9632;'}</i></button></nav>
-   <p class="note">Auto-move steers the mage away from nearby enemies and toward XP whenever you are not steering, so you can just draw.</p>`));
+   <p class="note">Auto-move steers the mage away from nearby enemies and toward XP whenever you are not steering.</p></div></div>`));
+  for(const [id,key] of [['sHud','hudScale'],['sZoom','zoom'],['sUi','uiScale']]){const el=$(id);el.oninput=()=>{save[key]=el.value/100;$(id+'v').textContent=el.value+'%';applyScale();layoutBuf();persist()}}
+  $('sReset').onclick=()=>{save.hudScale=save.zoom=save.uiScale=1;persist();applyScale();layoutBuf();settings()};
   $('am').onclick=()=>{save.autoMove=!save.autoMove;persist();settings()};$('snd').onclick=()=>{save.mute=!save.mute;persist();settings()};$('back').onclick=home;
 }
 function controlsHint(){return isTouch?'Left thumb: move · Right thumb: draw':'Hold right-click: walk · Left-drag: draw · WASD also works'}
