@@ -46,10 +46,10 @@ hub('upgrades','Upgrades',upgrades);
 // ================= MAGE SELECT =================
 if(!save.mages)save.mages=['ink'];if(!save.mage)save.mage='ink';
 const MAGES={
-  ink:   {name:'Ink Mage',   cost:0,   pal:{},                                              perk:'Balanced. No strengths, no weaknesses.', apply:G=>{}},
-  flint: {name:'Flint Witch',cost:300, pal:{h:'#2a1a1a',H:'#140c0c',r:'#8f2430',R:'#5a1620'}, perk:'+20% damage, -15% max HP.',             apply:G=>{G.player.dmgMul*=1.2;G.player.maxHp*=.85;G.player.hp=G.player.maxHp}},
-  wind:  {name:'Wind Sage',  cost:400, pal:{h:'#e9dcc3',H:'#b9ab90',r:'#4c7a4a',R:'#2e4f2e'}, perk:'+15% speed, +0.4s slow-mo, -10% damage.', apply:G=>{G.player.speed*=1.15;G.player.focus+=.4;G.focusLeft=G.player.focus;G.player.dmgMul*=.9}},
-  hermit:{name:'Bone Hermit',cost:600, pal:{h:'#6b5038',H:'#4a3626',r:'#7b5a44',R:'#4f3a2c',w:'#efe6d2'},perk:'+1 melee cap, +20% durability, -10% speed.',apply:G=>{G.player.caps.melee+=1;G.player.durMul*=1.2;G.player.speed*=.9}},
+  ink:   {name:'Ink Mage',   cost:0,   pal:{},                                              perk:'Balanced: 2 dash charges, no strengths, no weaknesses.', apply:G=>{}},
+  flint: {name:'Flint Witch',cost:300, pal:{h:'#2a1a1a',H:'#140c0c',r:'#8f2430',R:'#5a1620'}, perk:'Dash leaves a fire trail that burns enemies. +20% damage, -15% max HP.', apply:G=>{G.player.fireDash=true;G.player.dmgMul*=1.2;G.player.maxHp*=.85;G.player.hp=G.player.maxHp}},
+  wind:  {name:'Wind Sage',  cost:400, pal:{h:'#e9dcc3',H:'#b9ab90',r:'#4c7a4a',R:'#2e4f2e'}, perk:'3 dash charges, +15% speed, +0.4s slow-mo, -10% damage.', apply:G=>{G.player.dashMax=3;G.player.dashCharges=3;G.player.speed*=1.15;G.player.focus+=.4;G.focusLeft=G.player.focus;G.player.dmgMul*=.9}},
+  hermit:{name:'Bone Hermit',cost:600, pal:{h:'#6b5038',H:'#4a3626',r:'#7b5a44',R:'#4f3a2c',w:'#efe6d2'},perk:'Longer dash (+60%), +1 melee cap, +20% durability, -10% speed.',apply:G=>{G.player.dashTimeMul=1.6;G.player.caps.melee+=1;G.player.durMul*=1.2;G.player.speed*=.9}},
 };
 const MAGE_SPR={};
 function mageFrames(id){if(MAGE_SPR[id])return MAGE_SPR[id];const pal={...PAL,...MAGES[id].pal};return MAGE_SPR[id]=[0,1,0,2].map(i=>set(grid([...MAGE_TOP,...LEGS[i]],pal)))}
@@ -311,5 +311,15 @@ function drawLootTop(){if(!G)return;const t=G.t,pulse=.5+.5*Math.sin(t*5);
     bx.globalAlpha=1;const hs=hiSpr('prop_'+k.type,SPR.prop[k.type],k.type==='torch'?'#ffcf7a':'#e8dcb8');bx.drawImage(hs,sx-(hs.width>>1),sy-hs.height+(k.cd>0?-1:0))}
   bx.globalAlpha=1;
 }
+
+
+// ================= DASH FIRE TRAIL (Flint Witch) =================
+const _updF=updatePickups;updatePickups=function(dt){_updF(dt);if(mode!=='run'||!G)return;const p=G.player;if(!G.fire)G.fire=[];
+  if(p.fireDash&&p.dashT>0){const l=G.fire[G.fire.length-1];if(!l||Math.hypot(l.x-p.x,l.y-p.y)>10)G.fire.push({x:p.x,y:p.y,life:1.4,tick:0})}
+  for(let i=G.fire.length-1;i>=0;i--){const f=G.fire[i];f.life-=dt;f.tick-=dt;if(f.life<=0){G.fire.splice(i,1);continue}
+    if(f.tick<=0){f.tick=.25;for(const e of queryGrid(f.x,f.y,22))if(e.hp>0&&Math.hypot(e.x-f.x,e.y-f.y)<22)hurtEnemy(e,5*p.dmgMul)}
+    if(Math.random()<.15)G.fx.push({x:f.x+rnd(-6,6),y:f.y-rnd(0,8),vx:0,vy:-30,life:.35,max:.35,col:Math.random()<.5?'#ffb13a':'#ff6a2a',r:1.5})}};
+const _rndF=renderPickups;renderPickups=function(){if(G.fire)for(const f of G.fire){const sx=X(f.x),sy=Y(f.y),a=Math.min(1,f.life/.6);const fl=Math.floor(G.t*12+f.x)&1;
+  bx.globalAlpha=.55*a;bx.fillStyle='#ff6a2a';bx.fillRect(sx-4,sy-2,8,3);bx.fillStyle=fl?'#ffd34a':'#ffb13a';bx.fillRect(sx-2,sy-3-fl,4,2);bx.globalAlpha=1}_rndF()};
 
 boot();
