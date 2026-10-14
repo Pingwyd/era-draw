@@ -671,6 +671,7 @@ function how(){
 function wStats(d){return `DMG ${d.dmg} &middot; ${d.kind==='melee'?'MELEE':'RANGED'} &middot; ${d.life}s`}
 function shapeDemo(id){ // tiny svg of the stroke to draw
   const P={club:'M20 40 L60 40',spear:'M8 44 L92 36',rock:'M50 18 A22 22 0 1 1 49.9 18',sling:'M25 20 L50 62 L75 20',dagger:'M18 22 L40 60 L60 22 L82 60'};
+  if(!P[id]){const K={short:'club',long:'spear',circle:'rock',v:'sling',zig:'dagger'},d=CREATIONS[id];id=K[d&&d.shapeKey]||'club'}
   return `<svg viewBox="0 0 100 80" class="demo"><path d="${P[id]}" fill="none" stroke="#1a0f0e" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="${P[id]}" fill="none" stroke="#ff9a3c" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="${P[id]}" fill="none" stroke="#ffe08a" stroke-width="1.5" stroke-linecap="round"/></svg>`}
 function detailPane(id,extra=''){const d=CREATIONS[id];const dur=Math.round(d.life*ERAS[CURRENT_ERA].durability);
   return `<aside class="pane"><div class="pane-art"><img src="${iconURL(SPR[id].r,8)}" alt=""></div>
