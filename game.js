@@ -13,8 +13,8 @@ const CURRENT_ERA = 'stone';
 // shape: how to draw it. life = seconds before breaking, uses = hits before breaking
 const CREATIONS = {
   club:  { name:'Club', icon:'🪵', era:'stone', shape:'short line', kind:'melee', dmg:14, life:9,  uses:30, rate:0.55, range:70, knock:260, cost:0 },
-  spear: { name:'Spear', icon:'🗡️', era:'stone', shape:'long line', kind:'ranged', dmg:16, life:10, uses:14, rate:0.9, speed:620, pierce:4, cost:0 },
-  rock:  { name:'Rock', icon:'🪨', era:'stone', shape:'circle', kind:'ranged', dmg:20, life:10, uses:10, rate:1.4, speed:380, aoe:70, cost:0 },
+  spear: { name:'Spear', icon:'🗡️', era:'stone', shape:'long line', kind:'ranged', dmg:16, life:10, uses:16, rate:0.75, speed:620, pierce:4, cost:0 },
+  rock:  { name:'Rock', icon:'🪨', era:'stone', shape:'circle', kind:'ranged', dmg:20, life:10, uses:12, rate:1.15, speed:380, aoe:70, cost:0 },
   sling: { name:'Sling', icon:'🪃', era:'stone', shape:'V shape', kind:'ranged', dmg:7, life:11, uses:40, rate:0.28, speed:720, pierce:1, cost:150 },
   dagger:{ name:'Bone Dagger', icon:'🦴', era:'stone', shape:'zigzag', kind:'melee', dmg:8, life:10, uses:60, rate:0.22, range:46, knock:60, cost:250, orbitSpeed:5 },
 };
@@ -112,7 +112,7 @@ let mode='home';
 function newRun(){
   const era=ERAS[CURRENT_ERA];
   G={t:0,wave:1,kills:0,coins:0,spawnT:0,level:1,xp:0,xpNext:5,ink:[],trails:[],
-    player:{x:0,y:0,r:16,hp:100,maxHp:100,speed:190,dmgMul:1,cdMul:1,durMul:1,focus:BASE_FOCUS,homing:0,echo:0,magnet:90,secondWind:false,coinMul:1,caps:{...BASE_CAPS},usedWind:false,invul:0,face:0},
+    player:{x:0,y:0,r:16,hp:100,maxHp:100,speed:190,dmgMul:1,cdMul:1,durMul:1,focus:BASE_FOCUS,homing:0,echo:0,magnet:110,secondWind:false,coinMul:1,caps:{...BASE_CAPS},usedWind:false,invul:0,face:0},
     picks:{},dnums:[],chests:[],eshots:[],enemies:[],creations:[],shots:[],orbs:[],fx:[],texts:[],castCd:0,focusLeft:BASE_FOCUS,drawing:null,
     era, loadout:save.loadout.slice(),paused:false,shake:0,dbl:false};
 }
@@ -248,7 +248,9 @@ function updateShots(dt){
 function hurtEnemy(e,d){
   if(e.hp<=0)return;
   e.hp-=d;e.flash=0.1;sfx('hit');
-  G.dnums.push({x:e.x+rnd(-6,6),y:e.y-e.r*1.6,v:Math.max(1,Math.round(d)),big:d>=25,col:d>=25?'#ffe08a':'#fff6e0',life:.6,max:.6});if(G.dnums.length>120)G.dnums.shift();
+  const dv=Math.max(1,Math.round(d));const prev=e.dn&&e.dn.life>.3&&G.dnums.includes(e.dn)?e.dn:null;
+  if(prev){prev.v+=dv;prev.life=prev.max;prev.big=prev.v>=25;prev.col=prev.v>=25?'#ffe08a':'#fff6e0'}
+  else if(G.dnums.length<55||e.T.boss||dv>=25){e.dn={x:e.x+rnd(-6,6),y:e.y-e.r*1.6,v:dv,big:d>=25,col:d>=25?'#ffe08a':'#fff6e0',life:.6,max:.6};G.dnums.push(e.dn)}
   if(e.hp<=0)killEnemy(e);
 }
 function killEnemy(e){
@@ -272,7 +274,7 @@ function updateOrbs(dt){
   for(let i=G.orbs.length-1;i>=0;i--){const o=G.orbs[i];o.t+=dt;const d=Math.hypot(p.x-o.x,p.y-o.y);
     if(d<p.magnet||o.pull){o.pull=true;const a=Math.atan2(p.y-o.y,p.x-o.x),sp=300+o.t*200;o.x+=Math.cos(a)*sp*dt;o.y+=Math.sin(a)*sp*dt}
     if(d<p.r+6){G.orbs.splice(i,1);G.xp+=o.v;if(G.xp>=G.xpNext){G.xp-=G.xpNext;G.level++;G.xpNext=Math.round(5+G.level*3.2+Math.pow(G.level,1.5));levelUp()}}}
-  for(let i=G.chests.length-1;i>=0;i--){const c=G.chests[i];if(Math.hypot(c.x-p.x,c.y-p.y)<p.r+14){G.chests.splice(i,1);G.bonus=(G.bonus||0)+25;burst(c.x,c.y,'#d9c27a',24);toast('Chest! +25 coins');levelUp(true);return}}
+  for(let i=G.chests.length-1;i>=0;i--){const c=G.chests[i];if(Math.hypot(c.x-p.x,c.y-p.y)<p.r+14){G.chests.splice(i,1);G.bonus=(G.bonus||0)+25;floatText(p.x,p.y-40,'+25 COINS','#d9c27a',1.4);const rc=$('runcoins');rc.classList.remove('flash');void rc.offsetWidth;rc.classList.add('flash');burst(c.x,c.y,'#d9c27a',24);toast('Chest! +25 coins');levelUp(true);return}}
   if(G.orbs.length>250)G.orbs.splice(0,G.orbs.length-250);
 }
 function rollRarity(epicOk){
@@ -412,7 +414,12 @@ function render(dt){
   ctx.textAlign='center';
   for(const t of G.texts){ctx.globalAlpha=Math.min(1,t.life/t.max*2);ctx.font=`${S*5}px Silkscreen, monospace`;const sx=X(t.x)*S,sy=Y(t.y)*S;ctx.fillStyle='#1a0f0e';ctx.fillText(t.txt,sx+S,sy+S);ctx.fillStyle=t.col;ctx.fillText(t.txt,sx,sy)}
   ctx.globalAlpha=1;
-  if(G.drawing){const id=recognize(G.drawing.pts);if(id){const l=G.drawing.pts[G.drawing.pts.length-1];ctx.font=`${S*5}px Silkscreen, monospace`;ctx.textAlign='left';ctx.fillStyle='#1a0f0e';ctx.fillText(CREATIONS[id].name.toUpperCase(),l.x+16+S,l.y-14+S);ctx.fillStyle='#fff1d0';ctx.fillText(CREATIONS[id].name.toUpperCase(),l.x+16,l.y-14)}}
+  if(G.drawing){const id=recognize(G.drawing.pts);const l=G.drawing.pts[G.drawing.pts.length-1];
+    const ok=id&&G.loadout.includes(id),txt=id?(ok?CREATIONS[id].name:CREATIONS[id].name+' (not equipped)').toUpperCase():'...';
+    ctx.font='11px Silkscreen, monospace';ctx.textAlign='left';const w=ctx.measureText(txt).width+(ok?30:12),x0=Math.min(W-w-8,l.x+18),y0=Math.max(8,l.y-36);
+    ctx.fillStyle='#1a0f0ee6';ctx.fillRect(x0,y0,w,22);ctx.fillStyle=ok?'#ff9a3c':'#5a3a30';ctx.fillRect(x0,y0+21,w,1);
+    if(ok){const im=SPR[id].r;ctx.drawImage(im,x0+4,y0+3,Math.round(im.width*16/im.height*.9),15)}
+    ctx.fillStyle=ok?'#fff1d0':'#9c8a76';ctx.fillText(txt,x0+(ok?26:6),y0+15)}
   // focus meter (bottom right)
   const fw=120,fx=W-fw-16,fy=H-20;
   ctx.fillStyle='#1a0f0e';ctx.fillRect(fx-2,fy-2,fw+4,10);ctx.fillStyle='#3a2622';ctx.fillRect(fx,fy,fw,6);ctx.fillStyle='#ff9a3c';ctx.fillRect(fx,fy,Math.round(fw*clamp(G.focusLeft/G.player.focus,0,1)),6);
@@ -491,10 +498,19 @@ function drawShot(s){
   bx.save();bx.translate(X(s.x),Y(s.y));if(s.id!=='rock')bx.rotate(Math.round(s.rot/(Math.PI/8))*(Math.PI/8));bx.drawImage(im,-(im.width>>1),-(im.height>>1));bx.restore();
 }
 function drawStroke(pts,col,a,live){
-  if(pts.length<2)return;bx.save();bx.globalAlpha=a;bx.lineCap='square';bx.lineJoin='miter';
-  bx.strokeStyle='#1a0f0e';bx.lineWidth=live?4:3+(1-a)*3;bx.beginPath();bx.moveTo(pts[0].x/S,pts[0].y/S);for(const q of pts)bx.lineTo(q.x/S,q.y/S);bx.stroke();
-  bx.strokeStyle=col;bx.lineWidth=live?2:1+(1-a)*2;bx.stroke();bx.restore();
+  if(pts.length<2)return;bx.save();bx.globalAlpha=a;bx.lineCap='round';bx.lineJoin='round';
+  const path=()=>{bx.beginPath();bx.moveTo(pts[0].x/S,pts[0].y/S);for(const q of pts)bx.lineTo(q.x/S,q.y/S)};
+  path();bx.strokeStyle='#1a0f0e';bx.lineWidth=live?6:5+(1-a)*3;bx.stroke();
+  bx.strokeStyle=live?'#c2501e':col;bx.lineWidth=live?4:3+(1-a)*2;bx.stroke();
+  bx.strokeStyle=live?'#ffb35c':'#ffe08a';bx.lineWidth=live?2:1;bx.stroke();
+  // ink beads along the stroke + hot tip
+  bx.fillStyle='#fff1d0';for(let i=0;i<pts.length;i+=4){const q=pts[i];bx.fillRect(Math.round(q.x/S),Math.round(q.y/S),1,1)}
+  if(live){const l=pts[pts.length-1],tx=Math.round(l.x/S),ty=Math.round(l.y/S),f=Math.floor(performance.now()/80)%2;
+    bx.fillStyle='#1a0f0e';bx.fillRect(tx-3,ty-3,7,7);bx.fillStyle='#ff9a3c';bx.fillRect(tx-2,ty-2,5,5);bx.fillStyle='#fff6e0';bx.fillRect(tx-1+f,ty-1,2,2);
+    if(Math.random()<.6&&G)G.fx.push({x:cam.x+(l.x/S-BW/2)*Z+rnd(-4,4),y:cam.y+(l.y/S-BH/2)*Z+rnd(-4,4),vx:rnd(-30,30),vy:rnd(-60,-10),life:rnd(.2,.45),max:.45,col:Math.random()<.5?'#ff9a3c':'#ffe08a',r:2})}
+  bx.restore();
 }
+
 // menu background: slow drifting embers on dark wine
 const motes=Array.from({length:40},()=>({x:Math.random(),y:Math.random(),s:rnd(.01,.03),h:Math.random()}));
 function drawMenuBg(dt){for(const m of motes){m.y-=m.s*dt;if(m.y<0)m.y=1;ctx.fillStyle=m.h>.6?'#ff9a3c55':'#7a1f2b88';const s=m.h>.8?4:2;ctx.fillRect(Math.round(m.x*W),Math.round(m.y*H),s,s)}}
@@ -541,14 +557,26 @@ function home(){
     <h1 class="mast">Era<br>Draw</h1>
     <p class="tag">Draw weapons from the age you are trapped in. Hold the line until the ink runs dry.</p>
     <div class="wallet">${coinI()}<b>${save.coins}</b>${gemI()}<b>${save.gems}</b><span class="lab">Best ${save.best?fmt(save.best):'&mdash;'} &middot; Runs ${save.runs}</span></div></div>
-   <nav class="menu home-r">
+   <div class="home-r"><div class="plate"><canvas id="diorama" width="160" height="48"></canvas><div class="cap"><span class="lab">Fig. 1 &mdash; The mage</span><span class="lab">Era I</span></div></div><nav class="menu">
     <button id="play" class="prim"><b>01</b>Enter the ${E.name}<i>&rarr;</i></button>
     <button id="lo"><b>02</b>Loadout<span>${save.loadout.length} / ${save.slots}</span><i>&rarr;</i></button>
     <button id="shop"><b>03</b>Shop<i>&rarr;</i></button>
     <button id="set"><b>04</b>Settings<i>&rarr;</i></button>
     <button id="how"><b>05</b>How to play<i>&rarr;</i></button>
-   </nav></div>`);
+   </nav></div></div>`);startDiorama();
   $('play').onclick=()=>{goLandscape();startRun()};$('lo').onclick=loadout;$('shop').onclick=shop;$('how').onclick=how;$('set').onclick=settings;
+}
+function startDiorama(){
+  const cv2=$('diorama');if(!cv2)return;const x=cv2.getContext('2d');x.imageSmoothingEnabled=false;let t0=performance.now();
+  const loop=now=>{if(!document.body.contains(cv2))return;const t=Math.max(0,(now-t0)/1000);
+    for(let i=0;i<160;i+=64)x.drawImage(SPR.tile,i,0);x.drawImage(SPR.dirt,100,6);x.drawImage(SPR.deco.fern,20,30);x.drawImage(SPR.deco.bones,128,38);x.drawImage(SPR.deco.rock1,6,8);
+    const m=SPR.mage[0].r;x.drawImage(m,48,22-(Math.floor(t*2)%2));
+    const ph=(t%3)/3;// club orbits
+    const cl=SPR.club.r;x.drawImage(cl,48+8+Math.round(Math.cos(t*2.2)*16)-4,30+Math.round(Math.sin(t*2.2)*8)-8);
+    const b=SPR.en.bird.frames[Math.floor(t*6)%2],bx2=150-((t*28)%110);x.drawImage(b.l,Math.round(bx2),24);
+    const sb=SPR.en.saber.frames[Math.floor(t*6)%2];x.drawImage(sb.l,Math.round(170-((t*20+50)%140)),32);
+    x.fillStyle='rgba(20,11,12,.35)';x.fillRect(0,0,160,48);
+    requestAnimationFrame(loop)};requestAnimationFrame(loop);
 }
 function sheet(title,lab,body,back='Back'){return `<div class="sheet"><header class="row"><span class="lab">${lab}</span><button class="lab back" id="back">&larr; ${back}</button></header><h2 class="disp">${title}</h2>${body}</div>`}
 function settings(){
@@ -631,5 +659,5 @@ function endRun(){
 }
 
 // expose for tests
-window.EraDraw={mouse,kiteVector,recognize,get G(){return G},get mode(){return mode},startRun,save:()=>save,spawnCreation,ERAS,CREATIONS};
+window.EraDraw={step:(a,b)=>step(a,b),mouse,kiteVector,recognize,get G(){return G},get mode(){return mode},startRun,save:()=>save,spawnCreation,ERAS,CREATIONS};
 home();checkOrientation();requestAnimationFrame(frame);

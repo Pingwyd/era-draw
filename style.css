@@ -130,3 +130,17 @@ img{image-rendering:pixelated}
  .build li,.stats li{font-size:16px;padding:2px 0}
 }
 @media (max-width:700px){.home{grid-template-columns:1fr 1fr;gap:18px}.tbl{grid-template-columns:repeat(5,1fr)}.cell .st{display:none}}
+
+#runcoins.flash{animation:cflash .9s steps(4)}@keyframes cflash{0%,50%{color:#ffe08a;transform:scale(1.5)}100%{color:inherit;transform:none}}
+#runcoins{display:inline-block}
+
+.pick{animation:pk-in .28s steps(4) both}.pick:nth-child(2){animation-delay:.07s}.pick:nth-child(3){animation-delay:.14s}
+@keyframes pk-in{from{transform:translateY(14px);opacity:0}to{transform:none;opacity:1}}
+.pick:hover .ic,.pick:active .ic{border-color:var(--rc)}
+.pick .ic{border-color:var(--rc)}
+.pick:after{content:'';position:absolute;right:8px;bottom:8px;width:6px;height:6px;background:var(--rc)}
+.r-epic .pk-name{color:var(--gold)}
+.plate{border:1px solid var(--rule);margin-bottom:12px;position:relative}
+.plate canvas{position:static;display:block;width:100%;height:auto;image-rendering:pixelated}
+.plate .cap{display:flex;justify-content:space-between;padding:4px 6px;border-top:1px solid var(--rule)}
+@media (max-height:500px){.plate canvas{max-height:96px;object-fit:cover}}
