@@ -8,9 +8,9 @@ const INKS={
   violet:{name:'Violet Ink',col:'#c48cff',cost:450,desc:'Hits slow enemies by 40% for 2s.',hit:e=>{e.slow=2}},
 };
 if(!save.inks)save.inks=['soot'];if(!save.ink)save.ink='soot';
-function inkCol(){return (INKS[(G&&G.ink)||save.ink]||INKS.soot).col}
-runHooks.push(G=>{G.ink=save.inks.includes(save.ink)?save.ink:'soot'});
-DMG_MODS.push((e,d,src)=>{const k=G&&INKS[G.ink];if(k&&k.hit&&src!=='fire'&&src!=='dot')k.hit(e,d);return d});
+function inkCol(){return (INKS[(G&&G.inkId)||save.ink]||INKS.soot).col}
+runHooks.push(G=>{G.inkId=save.inks.includes(save.ink)?save.ink:'soot'});
+DMG_MODS.push((e,d,src)=>{const k=G&&INKS[G.inkId];if(k&&k.hit&&src!=='fire'&&src!=='dot')k.hit(e,d);return d});
 const _inkUpd=updatePickups;updatePickups=function(dt){_inkUpd(dt);if(mode!=='run'||!G)return;
   for(const e of G.enemies.slice()){if(e.baseSpeed==null)e.baseSpeed=e.speed;
     if(e.burn){e.burn.t-=dt;e.burnTick=(e.burnTick||0)-dt;if(e.burnTick<=0){e.burnTick=.4;hurtEnemy(e,e.burn.dps*.4,'dot');if(Math.random()<.6)G.fx.push({x:e.x+rnd(-5,5),y:e.y-rnd(4,14),vx:0,vy:-30,life:.35,max:.35,col:'#ff6a2a',r:1.5})}if(e.burn&&e.burn.t<=0)e.burn=null}
