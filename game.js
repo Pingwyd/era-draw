@@ -266,7 +266,7 @@ function killEnemy(e){
   G.kills++;sfx('kill');burst(e.x,e.y,e.T.col,e.T.boss?50:7);burst(e.x,e.y,'#1a0f0e',e.T.boss?20:3);if(e.T.boss||e.T.elite)ring(e.x,e.y,e.T.boss?120:50,'#ffe08a');
   G.ink.push({x:e.x,y:e.y,r:e.r*rnd(.8,1.4),a:.35});if(G.ink.length>120)G.ink.shift();
   G.orbs.push({x:e.x,y:e.y,v:e.T.xp,t:0});
-  if(e.T.boss||(e.T.elite&&Math.random()<.25)){G.chests.push({x:e.x,y:e.y});if(e.T.boss){toast(e.T.name+' falls!');G.shake=14}}
+  if(e.T.boss||(e.T.elite&&Math.random()<.25)){G.chests.push({x:e.x,y:e.y,boss:!!e.T.boss});if(e.T.boss){toast(e.T.name+' falls!');G.shake=14}}
 }
 function damagePlayer(d){
   const p=G.player;p.hp-=d;p.invul=0.5;sfx('hurt');haptic(35);G.shake=8;burst(p.x,p.y,'#ff6b6b',10);
@@ -282,7 +282,7 @@ function updateOrbs(dt){
   for(let i=G.orbs.length-1;i>=0;i--){const o=G.orbs[i];o.t+=dt;const d=Math.hypot(p.x-o.x,p.y-o.y);
     if(d<p.magnet||o.pull){o.pull=true;const a=Math.atan2(p.y-o.y,p.x-o.x),sp=300+o.t*200;o.x+=Math.cos(a)*sp*dt;o.y+=Math.sin(a)*sp*dt}
     if(d<p.r+6){G.orbs.splice(i,1);G.xp+=o.v;if(G.xp>=G.xpNext){G.xp-=G.xpNext;G.level++;G.xpNext=Math.round(5+G.level*3.2+Math.pow(G.level,1.5));levelUp()}}}
-  for(let i=G.chests.length-1;i>=0;i--){const c=G.chests[i];if(Math.hypot(c.x-p.x,c.y-p.y)<p.r+14){G.chests.splice(i,1);G.bonus=(G.bonus||0)+25;floatText(p.x,p.y-40,'+25 COINS','#d9c27a',1.4);const rc=$('runcoins');rc.classList.remove('flash');void rc.offsetWidth;rc.classList.add('flash');burst(c.x,c.y,'#d9c27a',24);toast('Chest! +25 coins');levelUp(true);return}}
+  for(let i=G.chests.length-1;i>=0;i--){const c=G.chests[i];if(Math.hypot(c.x-p.x,c.y-p.y)<p.r+14){G.chests.splice(i,1);G.bonus=(G.bonus||0)+25;floatText(p.x,p.y-40,'+25 COINS','#d9c27a',1.4);const rc=$('runcoins');rc.classList.remove('flash');void rc.offsetWidth;rc.classList.add('flash');burst(c.x,c.y,'#d9c27a',24);toast('Chest! +25 coins');(window.openChest?openChest(c):levelUp(true));return}}
   if(G.orbs.length>250)G.orbs.splice(0,G.orbs.length-250);
 }
 function rollRarity(epicOk){
