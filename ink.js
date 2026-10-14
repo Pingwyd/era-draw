@@ -41,3 +41,18 @@ function masteryLv(key){const n=save.mastery[key]||0;let l=0;for(const s of MAST
 function masteryAdd(key){const before=masteryLv(key);save.mastery[key]=(save.mastery[key]||0)+1;const l=masteryLv(key);if(l>before){toast('Mastery '+l+': '+SHAPE_NAMES[key]+' (+'+l*5+'% dmg)');sfx('lvl')}}
 const SHAPE_NAMES={short:'Short line',long:'Long line',circle:'Circle',v:'V shape',zig:'Zigzag'};
 DMG_MODS.push((e,d,src,from)=>{const def=from&&from.def;if(!def)return d;const l=masteryLv(def.shapeKey||from.id);return l?d*(1+.05*l):d});
+
+// ---- sketchbook: gallery of every creation discovered, with lore + mastery ----
+const SKETCH_LORE={club:'The first thing anyone ever drew in anger.',spear:'A line that wants to keep going.',rock:'Round things roll downhill, and into skulls.',sling:'Two strokes and a grudge.',dagger:'Bone, sharpened by a zigzag of intent.',
+  sword:'Bronze remembers the shape of a short line.',javelin:'Thrown by soldiers who never learned to draw.',discus:'An athlete\'s toy, sketched for war.'};
+if(!save.sketched)save.sketched={};
+const _skSpawn=spawnCreation;spawnCreation=function(id){if(CREATIONS[id]&&!save.sketched[id]){save.sketched[id]=1;persist()}return _skSpawn.apply(this,arguments)};
+function sketchbook(){
+  leaveRun();setRoute('sketchbook');
+  const ids=Object.keys(CREATIONS).filter(id=>!(CREATIONS[id].kind==='spell'&&!save.sketched[id]));const got=ids.filter(id=>save.sketched[id]).length;
+  const mast=Object.keys(SHAPE_NAMES).map(k=>`<div class="li"><span class="nm">${SHAPE_NAMES[k]}</span><span class="pips">${MASTERY_STEPS.map((s,i)=>`<i class="${masteryLv(k)>i?'on':''}"></i>`).join('')}</span><span class="sh">${save.mastery[k]||0} drawn &middot; +${masteryLv(k)*5}%</span></div>`).join('');
+  show(sheet('Sketchbook',`13 &mdash; ${got} / ${ids.length} sketched`,`<div class="sec">Shape mastery</div><div class="list achl">${mast}</div><div class="sec">Gallery</div><div class="tbl">${ids.map(id=>{const c=CREATIONS[id],s=save.sketched[id];const ic=ICON[id]||(SPR[id]&&iconURL(SPR[id].r||SPR[id],3));
+    return `<div class="cell ${s?'':'dim'}"><span class="cell-h"><b>${(c.era||'').toUpperCase()}</b><i>${c.evolved?'evolved':c.combo?'combo':c.kind}</i></span>${ic?`<img class="bimg ${s?'':'sil'}" src="${ic}" alt="">`:''}<span class="nm">${s?c.name:'???'}</span><span class="sh">${s?(SKETCH_LORE[id]||c.lore||('Drawn as a '+(c.shape||'combination')+'.')):'Not yet sketched.'}</span></div>`}).join('')}</div>`));
+  $('back').onclick=home;
+}
+hub('sketchbook','Sketchbook',sketchbook);
