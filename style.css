@@ -227,3 +227,8 @@ body.hc #hud{text-shadow:0 0 2px #000,0 0 2px #000}
 html.small #quest{font-size:12px;top:calc(46px * var(--hud,1));max-width:52vw}
 #minimap{position:absolute;left:calc(12px + env(safe-area-inset-left));top:calc(36px * var(--hud,1));width:min(calc(96px * var(--hud,1)),150px);height:min(calc(96px * var(--hud,1)),150px);pointer-events:none;image-rendering:auto}
 html.small #minimap{width:calc(64px * var(--hud,1));height:calc(64px * var(--hud,1));top:calc(30px * var(--hud,1))}
+.binds{display:grid;grid-template-columns:1fr;gap:2px}
+.bind{display:grid;grid-template-columns:1fr 110px 110px;align-items:center;gap:8px;border-bottom:1px solid var(--rule);padding:2px 0}
+.bind button{min-height:calc(36px / var(--ui,1));background:transparent;border:1px solid var(--rule);color:#ffd34a;font:inherit;cursor:pointer}
+.bind i{font-style:normal;opacity:.5;text-align:center}
+html.small .bind{grid-template-columns:1fr 84px 84px}
