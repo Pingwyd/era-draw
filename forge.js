@@ -30,7 +30,7 @@ function evolvedFor(id){
 // Draw two different shapes within COMBO_WINDOW seconds => fused creation (consumes the first).
 const COMBO_WINDOW=0.9;
 const COMBOS={
-  'spear+rock':{id:'spear_flame',name:'Flaming Spear',from:'spear',glow:'#ff4a2a',mods:{dmg:1.4},extra:{pierce:6,aoe:38,fire:true,kind:'ranged'}},
+  'rock+spear':{id:'spear_flame',name:'Flaming Spear',from:'spear',glow:'#ff4a2a',mods:{dmg:1.4},extra:{pierce:6,aoe:38,fire:true,kind:'ranged'}},
   'club+rock': {id:'club_quake', name:'Quake Club',   from:'club', glow:'#d9c27a',mods:{dmg:1.3,range:1.5,knock:1.8,rate:1.2},extra:{quake:true}},
   'club+spear':{id:'spear_halberd',name:'Halberd',    from:'club', glow:'#9fd2f2',mods:{dmg:1.5,range:1.6},extra:{kind:'melee',orbitSpeed:1.8}},
   'rock+sling':{id:'sling_scatter',name:'Scatter Sling',from:'sling',glow:'#ff9a3c',mods:{dmg:1.2},extra:{multishot:3}},
