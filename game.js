@@ -511,7 +511,7 @@ function home(){
   <button class="btn" id="how">How to play</button>
   <button class="btn" id="set">⚙ Settings</button></div>`);
   $('set').onclick=settings;
-  $('play').onclick=startRun;$('lo').onclick=loadout;$('shop').onclick=shop;$('how').onclick=how;
+  $('play').onclick=()=>{goLandscape();startRun()};$('lo').onclick=loadout;$('shop').onclick=shop;$('how').onclick=how;
 }
 function settings(){
   show(`<div class="panel"><h2>Settings</h2>
@@ -558,9 +558,26 @@ function buy(it){
   if(it.type==='slot'){save.slots=4;toast('4th slot unlocked!')}
   persist();shop();
 }
+function goLandscape(){
+  if(!isTouch)return;
+  try{const el=document.documentElement,rf=el.requestFullscreen||el.webkitRequestFullscreen;
+    const p=rf&&!document.fullscreenElement?rf.call(el,{navigationUI:'hide'}):null;
+    const lock=()=>{try{const o=screen.orientation;if(o&&o.lock)o.lock('landscape').catch(()=>{})}catch(e){}};
+    if(p&&p.then)p.then(lock,lock);else lock();
+  }catch(e){}
+}
+// Rotate overlay: touch devices in portrait pause the run
+let rotPaused=false;
+function checkOrientation(){
+  const portrait=isTouch&&innerHeight>innerWidth;
+  $('rotate').classList.toggle('hidden',!portrait);
+  if(portrait&&mode==='run'&&G&&!G.paused){G.paused=true;rotPaused=true;stick.id=null;stick.active=false;G.drawing=null}
+  else if(!portrait&&rotPaused){rotPaused=false;if(G&&mode==='run'&&!screenEl.innerHTML)G.paused=false;last=performance.now()}
+}
+addEventListener('resize',checkOrientation);addEventListener('orientationchange',()=>setTimeout(checkOrientation,200));
 function startRun(){
   newRun();mode='run';show('');$('hud').classList.remove('hidden');updateHud.sig=null;cam.x=0;cam.y=0;last=performance.now();
-  toast(ERAS[CURRENT_ERA].name+' — survive!');setTimeout(()=>mode==='run'&&toast(controlsHint()),1700);mouse.walk=false;
+  toast(ERAS[CURRENT_ERA].name+' — survive!');setTimeout(()=>mode==='run'&&toast(controlsHint()),1700);mouse.walk=false;checkOrientation();
 }
 function endRun(){
   if(mode!=='run')return;mode='dead';
@@ -569,8 +586,8 @@ function endRun(){
   show(`<div class="panel"><h2>The ink fades…</h2><div class="sub">${ERAS[CURRENT_ERA].name}${newBest?' · 🏆 New best!':''}</div>
   <div class="help" style="text-align:center;font-size:16px">⏱ ${fmt(G.t)} &nbsp; 🌊 Wave ${G.wave} &nbsp; ☠ ${G.kills} &nbsp; ⭐ Lv ${G.level}<br><br><b style="font-size:24px;color:#ffd98a">+${coins} 🪙</b><br>Total: ${save.coins} 🪙</div>
   <button class="btn gold" id="retry">Retry</button><button class="btn" id="hm">Home</button></div>`);
-  $('retry').onclick=startRun;$('hm').onclick=home;
+  $('retry').onclick=()=>{goLandscape();startRun()};$('hm').onclick=home;
 }
 // expose for tests
 window.EraDraw={mouse,kiteVector,recognize,get G(){return G},get mode(){return mode},startRun,save:()=>save,spawnCreation,ERAS,CREATIONS};
-home();requestAnimationFrame(frame);
+home();checkOrientation();requestAnimationFrame(frame);

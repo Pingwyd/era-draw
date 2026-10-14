@@ -6,6 +6,7 @@ Endless survivor game for phone browsers. You play a mage who hops through time 
 
 ## Controls
 - **Laptop:** hold the right mouse button to walk toward the cursor, left-drag to draw. WASD works too. Settings has an optional **Auto-move (kite)** that steers away from enemies and toward XP.
+- **Phone:** landscape only. Tapping Play goes fullscreen and locks the screen to landscape where the browser allows it. Holding the phone upright pauses the game and shows a "Rotate your phone" screen. The web app manifest also sets landscape + fullscreen.
 - **Move (phone):** drag on the left half of the screen (or use WASD / arrow keys)
 - **Draw:** drag on the right half (with a mouse, click and drag anywhere). Time slows down while you draw, for up to 2s.
   - Short straight line: 🪵 Club (orbits you and smashes nearby enemies with knockback)
