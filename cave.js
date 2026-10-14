@@ -94,7 +94,7 @@ const _cvDP2=damagePlayer;damagePlayer=function(d){if(G&&G.quest&&G.quest.def.hu
 const _cvSp2=spawnCreation;spawnCreation=function(id,dir,echo){const r=_cvSp2.apply(this,arguments);if(!echo&&G&&G.quest&&G.quest.def.draw)G.quest.def.draw(G.quest);return r};
 function questHud(){let el=$('quest');const q=G&&G.quest;if(!q||mode!=='run'){if(el)el.remove();return}
   if(!el){el=document.createElement('div');el.id='quest';$('hud').appendChild(el)}
-  const txt=`<b>QUEST</b> ${q.txt} <i>${Math.floor(q.c)}/${q.n} &middot; ${Math.ceil(q.time)}s</i>`;if(el.innerHTML!==txt)el.innerHTML=txt}
+  const txt=`<b>QUEST</b> <i>${Math.floor(q.c)}/${q.n} &middot; ${Math.ceil(q.time)}s</i> ${q.txt}`;if(el.innerHTML!==txt)el.innerHTML=txt}
 
 // ---- new enemy variants: poison gnats, armored bears (melee resistant), tar blob splitters ----
 function tintCanvas(src,col,a){const [c,x]=mk(src.width,src.height);x.drawImage(src,0,0);x.globalCompositeOperation='source-atop';x.globalAlpha=a;x.fillStyle=col;x.fillRect(0,0,c.width,c.height);return c}
