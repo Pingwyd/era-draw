@@ -32,6 +32,13 @@ No build step. Run `python3 -m http.server` in this folder, then open http://loc
 - Wipe the save: https://pingwyd.github.io/era-draw/#/dev/reset-save (confirms, then reloads).
 - Regression tests: `node tests/stale-run.test.js`, `node tests/ios-webkit.test.js` (need `python3 -m http.server 8080` and Playwright).
 
+- LAN test (2-3 headless browsers over WebRTC): `node tests/lan-webrtc.test.js`; offline/service-worker test: `node tests/offline-sw.test.js`.
+
+## Multiplayer
+- **Same screen** (`#/coop`): P2 on keyboard (IJKL + O), P3/P4 on gamepads.
+- **LAN, separate devices, no internet** (`#/lan`): the host taps *Invite a player* and the joiner scans the QR code (or pastes the code). The joiner then shows an answer code back to the host. Repeat for up to 3 joiners, then the host taps *Start run*. Everyone must be on the same Wi-Fi or hotspot. Open the game once while online so the service worker caches it.
+- Online play and chat are planned only: see `docs/ONLINE.md`.
+
 ## Branches
 - `main`: stable, served by GitHub Pages
 - `mvp`: the MVP release candidate
