@@ -109,6 +109,7 @@ function resample(pts,n){
 const ICON={};
 for(const id of ['club','spear','rock','sling','dagger'])ICON[id]=iconURL(SPR[id].r,3);
 for(const k in SPR.pu)ICON['pu_'+k]=iconURL(SPR.pu[k],4);ICON.gemHard=iconURL(SPR.gemHard,3);ICON.slot4=iconURL(SPR.chest,3);
+initForge();
 ICON.skull=iconURL(SPR.deco.skull,3);ICON.coin=iconURL(SPR.coin,3);ICON.chest=iconURL(SPR.chest,3);ICON.gem=iconURL(SPR.gem1,3);
 // ================= GAME STATE =================
 let G=null; // current run
@@ -117,7 +118,7 @@ function newRun(){
   const era=ERAS[CURRENT_ERA];
   G={t:0,wave:1,kills:0,coins:0,spawnT:0,level:1,xp:0,xpNext:5,ink:[],trails:[],
     player:{x:0,y:0,r:16,hp:100,maxHp:100,speed:190,dmgMul:1,cdMul:1,durMul:1,focus:BASE_FOCUS,homing:0,echo:0,magnet:110,secondWind:false,coinMul:1,caps:{...BASE_CAPS},usedWind:false,invul:0,face:0},
-    picks:{},dnums:[],chests:[],eshots:[],enemies:[],creations:[],shots:[],orbs:[],fx:[],texts:[],castCd:0,focusLeft:BASE_FOCUS,drawing:null,
+    picks:{},drawCount:{},evolved:{},combosSeen:{},lastDraw:null,dnums:[],chests:[],eshots:[],enemies:[],creations:[],shots:[],orbs:[],fx:[],texts:[],castCd:0,focusLeft:BASE_FOCUS,drawing:null,
     era, loadout:save.loadout.slice(),paused:false,shake:0,dbl:false};
 }
 
@@ -166,9 +167,9 @@ function finishDraw(){
   const a=pts[0],b=pts[pts.length-1];
   const dir=Math.atan2(b.y-a.y,b.x-a.x);
   const kindQ=(id==='club'||id==='spear')?'line':id==='rock'?'circle':'poly';const q=lastQuality[kindQ];
-  const power=0.85+0.45*q;spawnCreation(id,dir,false,power);
+  const power=0.85+0.45*q;const fid=resolveDraw(id);spawnCreation(fid,dir,false,power);
   if(q>=.85){floatText(G.player.x,G.player.y-64,'PERFECT DRAW','#ffe08a',1.2);sfx('lvl');haptic(30)}else if(q>=.6)floatText(G.player.x,G.player.y-64,'CLEAN','#e9dcc3',.8);
-  if(Math.random()<G.player.echo){setTimeout(()=>G&&spawnCreation(id,dir+0.4,true),150)}
+  if(Math.random()<G.player.echo){setTimeout(()=>G&&spawnCreation(fid,dir+0.4,true),150)}
   G.castCd=BASE_CAST_CD*G.player.cdMul;
   G.trails.push({pts,life:0.7,max:0.7,ok:true});
   G.focusLeft=Math.min(G.player.focus,G.focusLeft+0.6);
@@ -179,14 +180,14 @@ function fizzle(pts,msg){sfx('fizzle');G.trails.push({pts,life:0.5,max:0.5,ok:fa
 function creationDmgMul(def){const ei=ERA_ORDER.indexOf(def.era),ci=ERA_ORDER.indexOf(CURRENT_ERA);return ei<ci?OLD_ERA_DMG:1}
 function spawnCreation(id,dir,echo,power=1){
   const def=CREATIONS[id],p=G.player;
-  if(SWITCH_SHATTERS&&!echo){const others=G.creations.filter(c=>c.id!==id);if(others.length){for(const c of others)shatterCreation(c);G.shake=Math.max(G.shake,6);floatText(p.x,p.y-52,'Shatter!','#cfe3ff');sfx('shatter');haptic(25)}}
+  if(SWITCH_SHATTERS&&!echo){const myBase=def.base||id;const others=G.creations.filter(c=>(c.def.base||c.id)!==myBase);if(others.length){for(const c of others)shatterCreation(c);G.shake=Math.max(G.shake,6);floatText(p.x,p.y-52,'Shatter!','#cfe3ff');sfx('shatter');haptic(25)}}
   const same=G.creations.filter(c=>c.def.kind===def.kind);
   while(same.length>=(p.caps[def.kind]||1)){const old=same.shift();breakCreation(old,true)} // replace oldest
   const dur=G.era.durability*p.durMul;
   const c={id,def,life:def.life*dur,max:def.life*dur,uses:Math.round(def.uses*dur),maxUses:Math.round(def.uses*dur),cd:0.15,
     ang:Math.random()*6.28,x:p.x,y:p.y,swing:0,dir,power};if(power>=1.23){c.life*=1.2;c.max*=1.2;c.perfect=true}
   G.creations.push(c);
-  if(id==='spear')fireShot(c,dir); // first throw goes where you drew
+  if(def.proj==='spear'||id==='spear')fireShot(c,dir); // first throw goes where you drew
   burst(p.x,p.y,G.era.ink,14);sfx('spawn');haptic(15);
   floatText(p.x,p.y-34,(echo?'Echo ':'')+def.name+'!',G.era.ink);
 }
@@ -196,7 +197,7 @@ function shatterCreation(c){const i=G.creations.indexOf(c);if(i>=0)G.creations.s
   ring(c.x,c.y,34,'#cfe3ff')}
 function nearestEnemy(x,y,maxD=9e9,skip){let best=null,bd=maxD;for(const e of G.enemies){if(skip&&skip.has(e))continue;const d=Math.hypot(e.x-x,e.y-y);if(d<bd){bd=d;best=e}}return best}
 function fireShot(c,ang){
-  const def=c.def;
+  const def=c.def;if(def.multishot&&!c._ms){c._ms=1;for(let i=-1;i<=1;i++)if(i)fireShot(c,ang+i*.25);c._ms=0}
   G.shots.push({x:c.x,y:c.y,vx:Math.cos(ang)*def.speed,vy:Math.sin(ang)*def.speed,id:c.id,def,pierce:def.pierce||1,hit:new Set(),life:1.4,
     dmg:def.dmg*(c.power||1)*G.player.dmgMul*creationDmgMul(def),aoe:def.aoe||0,rot:ang});
   c.uses--;
@@ -241,7 +242,7 @@ function updateShots(dt){
       if(s.hit.has(e)||e.hp<=0)continue;
       if(Math.hypot(e.x-s.x,e.y-s.y)<e.r+(s.id==='rock'?12:7)){
         s.hit.add(e);
-        if(s.aoe){for(const o of queryGrid(s.x,s.y,s.aoe))if(Math.hypot(o.x-s.x,o.y-s.y)<s.aoe)hurtEnemy(o,s.dmg);ring(s.x,s.y,s.aoe,'#d8c7a0');G.shake=Math.max(G.shake,3);dead=true;break}
+        if(s.aoe){for(const o of queryGrid(s.x,s.y,s.aoe))if(Math.hypot(o.x-s.x,o.y-s.y)<s.aoe)hurtEnemy(o,s.dmg);ring(s.x,s.y,s.aoe,s.def.fire?'#ff4a2a':'#d8c7a0');G.shake=Math.max(G.shake,3);if(!s.def.fire||--s.pierce<=0){dead=true;break}continue}
         hurtEnemy(e,s.dmg);e.kx+=s.vx*0.12;e.ky+=s.vy*0.12;
         if(--s.pierce<=0){dead=true;break}
       }
@@ -510,8 +511,9 @@ function drawCreation(c){
   const w=10;bx.fillStyle='#1a0f0e';bx.fillRect(sx-5,sy+(c.def.kind==='melee'?4:st.h/2+1|0),w+1,3);bx.fillStyle=frac<.25?'#e0504e':'#ff9a3c';bx.fillRect(sx-4,sy+(c.def.kind==='melee'?5:st.h/2+2|0),Math.round((w-1)*frac),1);
 }
 function drawShot(s){
-  const im=s.id==='spear'?SPR.p_spear:s.id==='rock'?SPR.p_rock:SPR.p_pebble;
-  bx.save();bx.translate(X(s.x),Y(s.y));if(s.id!=='rock')bx.rotate(Math.round(s.rot/(Math.PI/8))*(Math.PI/8));bx.drawImage(im,-(im.width>>1),-(im.height>>1));bx.restore();
+  const sid=s.def.proj||s.id;if(s.def.fire&&Math.random()<.7)G.fx.push({x:s.x,y:s.y,vx:rnd(-20,20),vy:rnd(-40,0),life:.3,max:.3,col:Math.random()<.5?'#ff4a2a':'#ffe08a',r:2});
+  const im=sid==='spear'?SPR.p_spear:sid==='rock'?SPR.p_rock:SPR.p_pebble;
+  bx.save();bx.translate(X(s.x),Y(s.y));if(sid!=='rock')bx.rotate(Math.round(s.rot/(Math.PI/8))*(Math.PI/8));bx.drawImage(im,-(im.width>>1),-(im.height>>1));bx.restore();
 }
 function drawStroke(pts,col,a,live){
   if(pts.length<2)return;bx.save();bx.globalAlpha=a;bx.lineCap='round';bx.lineJoin='round';
@@ -543,7 +545,7 @@ function updateHud(){
   if(updateHud.sig!==G.loadout.join()){updateHud.sig=G.loadout.join();
     $('icSkull').src=ICON.skull;$('icCoin').src=ICON.coin;
     $('slots').innerHTML=G.loadout.map(id=>`<div class="slot" id="sl-${id}"><img src="${ICON[id]}" alt=""><span class="sh">${CREATIONS[id].shape.toUpperCase()}</span><span class="n"></span><span class="du"><i></i></span></div>`).join('')}
-  for(const id of G.loadout){const el=$('sl-'+id);if(!el)continue;const act=G.creations.filter(c=>c.id===id);
+  for(const id of G.loadout){const el=$('sl-'+id);if(!el)continue;const act=G.creations.filter(c=>c.id===id||c.def.base===id);
     el.classList.toggle('on',act.length>0);el.querySelector('.n').textContent=act.length?'x'+act.length:'';
     const f=act.length?Math.max(...act.map(c=>Math.min(c.life/c.max,c.uses/c.maxUses))):0;el.querySelector('.du i').style.width=(f*100)+'%'}
 }
@@ -640,7 +642,7 @@ function detailPane(id,extra=''){const d=CREATIONS[id];const dur=Math.round(d.li
 function loadout(){
   leaveRun();setRoute('loadout');
   const sel=save.loadout.slice();let focus=sel[0]||'club';
-  const render=()=>{show(sheet('Loadout',`02 &mdash; Choose up to ${save.slots} &middot; ${sel.length} selected`,`<div class="split"><div><div class="tbl">${Object.keys(CREATIONS).map((id,i)=>{const d=CREATIONS[id],own=save.owned.includes(id),on=sel.includes(id);
+  const render=()=>{show(sheet('Loadout',`02 &mdash; Choose up to ${save.slots} &middot; ${sel.length} selected`,`<div class="split"><div><div class="tbl">${Object.keys(CREATIONS).filter(k=>!CREATIONS[k].hidden).map((id,i)=>{const d=CREATIONS[id],own=save.owned.includes(id),on=sel.includes(id);
       return `<button class="cell ${on?'on':''} ${own?'':'lock'} ${focus===id?'foc':''}" data-id="${id}"><span class="cell-h"><b>0${i+1}</b>${on?'<i class="chk">&#9632; Equipped</i>':''}</span><img src="${ICON[id]}" alt=""><span class="nm">${d.name}</span><span class="sh">Draw a ${d.shape}</span><span class="st">${own?wStats(d):'Locked &middot; '+d.cost+' coins'}</span></button>`}).join('')}</div>
       <nav class="menu"><button id="ok" class="prim" ${sel.length?'':'disabled'}><b>&mdash;</b>Save loadout<i>&rarr;</i></button></nav></div>${detailPane(focus,save.owned.includes(focus)?'':`<p class="note">Unlock in the shop for ${CREATIONS[focus].cost} coins.</p>`)}</div>`));
   screenEl.querySelectorAll('.cell').forEach(el=>{el.onmouseenter=()=>{if(focus!==el.dataset.id){focus=el.dataset.id;render()}};el.onclick=()=>{const id=el.dataset.id;focus=id;if(!save.owned.includes(id)){toast('Unlock it in the shop');render();return}const i=sel.indexOf(id);if(i>=0)sel.splice(i,1);else if(sel.length<save.slots)sel.push(id);else toast('Slots full');render()}});
