@@ -18,6 +18,7 @@ const SFX={
   pick:()=>tone(660,880,.08,'triangle',.2),
   chest:()=>[392,523,659,784,1046].forEach((f,i)=>tone(f,f*1.01,.16,'triangle',.18,i*.06)),
   boss:()=>{tone(80,40,.9,'sawtooth',.3);noise(.6,.15,100)},
+  dash:()=>{noise(.12,.18,1800);tone(300,900,.1,'triangle',.08)},
   die:()=>[392,330,262,196].forEach((f,i)=>tone(f,f*.98,.25,'triangle',.2,i*.15)),
 };
 const SFX_GAP={hit:.045,kill:.03,draw:.1};
