@@ -49,7 +49,7 @@ const SHOP = [
 const SAVE_KEY='eradraw.save.v1';
 let save=loadSave();
 function loadSave(){
-  const d={coins:0,gems:0,owned:['club','spear','rock'],loadout:['club','spear','rock'],slots:3,best:0,runs:0};
+  const d={autoMove:false,coins:0,gems:0,owned:['club','spear','rock'],loadout:['club','spear','rock'],slots:3,best:0,runs:0};
   try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s)return Object.assign(d,s)}catch(e){}
   return d;
 }
@@ -112,27 +112,37 @@ function newRun(){
 // ================= INPUT =================
 const stick={id:null,ox:0,oy:0,x:0,y:0,active:false};
 const keys={};
+const mouse={x:0,y:0,walk:false,id:null};
+const isTouch=matchMedia('(pointer:coarse)').matches||('ontouchstart' in window&&navigator.maxTouchPoints>0);
 addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key==='Escape'&&mode==='run')togglePause()});
 addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
 cv.addEventListener('pointerdown',e=>{
   if(mode!=='run'||G.paused)return;
   cv.setPointerCapture(e.pointerId);
   const isMouse=e.pointerType==='mouse';
+  if(isMouse&&e.button===2){mouse.walk=true;mouse.x=e.clientX;mouse.y=e.clientY;e.preventDefault();return}
+  if(isMouse&&e.button!==0)return;
   if(!isMouse&&e.clientX<W*0.5&&stick.id===null){Object.assign(stick,{id:e.pointerId,ox:e.clientX,oy:e.clientY,x:e.clientX,y:e.clientY,active:true});return}
   if(!G.drawing&&(isMouse||e.clientX>=W*0.5)){G.drawing={id:e.pointerId,pts:[{x:e.clientX,y:e.clientY}]};}
 });
 cv.addEventListener('pointermove',e=>{
   if(mode!=='run')return;
+  if(e.pointerType==='mouse'){mouse.x=e.clientX;mouse.y=e.clientY}
   if(e.pointerId===stick.id){stick.x=e.clientX;stick.y=e.clientY}
   else if(G.drawing&&G.drawing.id===e.pointerId){const pts=G.drawing.pts,l=pts[pts.length-1];if(Math.hypot(e.clientX-l.x,e.clientY-l.y)>3)pts.push({x:e.clientX,y:e.clientY})}
 });
 const endPtr=e=>{
+  if(e.pointerType==='mouse'&&(e.button===2||e.type==='pointercancel'))mouse.walk=false;
   if(mode!=='run')return;
+  if(e.pointerType==='mouse'&&e.button===2)return;
   if(e.pointerId===stick.id){stick.id=null;stick.active=false}
   else if(G.drawing&&G.drawing.id===e.pointerId){finishDraw();}
 };
 cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endPtr);
-cv.addEventListener('contextmenu',e=>e.preventDefault());
+addEventListener('contextmenu',e=>e.preventDefault());
+addEventListener('blur',()=>{mouse.walk=false;for(const k in keys)keys[k]=false});
+// chorded buttons (right held while left pressed) don't fire pointerdown; track via buttons bitmask
+cv.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'&&mode==='run')mouse.walk=(e.buttons&2)!==0});
 
 function finishDraw(){
   const d=G.drawing;G.drawing=null;
@@ -345,10 +355,20 @@ function step(dt,realDt){
   let mx=0,my=0;
   if(keys.w||keys.arrowup)my--;if(keys.s||keys.arrowdown)my++;if(keys.a||keys.arrowleft)mx--;if(keys.d||keys.arrowright)mx++;
   if(stick.active){const dx=stick.x-stick.ox,dy=stick.y-stick.oy,d=Math.hypot(dx,dy);if(d>6){const k=Math.min(1,d/55);mx=dx/d*k;my=dy/d*k}}
+  if(mouse.walk&&!mx&&!my){const dx=mouse.x-W/2-(p.x-cam.x),dy=mouse.y-H/2-(p.y-cam.y),d=Math.hypot(dx,dy);if(d>12){const k=Math.min(1,d/80);mx=dx/d*k;my=dy/d*k}}
+  if(save.autoMove&&!mx&&!my&&!stick.active){const v=kiteVector(p);mx=v.x;my=v.y}
   const m=Math.hypot(mx,my);if(m>1){mx/=m;my/=m}
   p.x+=mx*p.speed*dt;p.y+=my*p.speed*dt;if(m>0.1)p.face=Math.atan2(my,mx);p.moving=m>0.1;
   updateSpawns(dt);updateEnemies(dt);if(mode!=='run')return;updateCreations(dt);updateShots(dt);updateOrbs(dt);updateFx(dt);
   G.coins=calcCoins();updateHud();
+}
+// Auto-move (kite): steer away from nearby enemies, drift toward nearby XP
+function kiteVector(p){
+  let x=0,y=0;
+  for(const e of G.enemies){const dx=p.x-e.x,dy=p.y-e.y,d=Math.hypot(dx,dy)||1,R=200+e.r;if(d<R){const w=(R-d)/R*(e.T.boss?3:1);x+=dx/d*w*2;y+=dy/d*w*2}}
+  let best=null,bd=320;for(const o of G.orbs){const d=Math.hypot(o.x-p.x,o.y-p.y);if(d<bd){bd=d;best=o}}
+  if(best){const dx=best.x-p.x,dy=best.y-p.y,d=Math.hypot(dx,dy)||1;x+=dx/d*.6;y+=dy/d*.6}
+  const m=Math.hypot(x,y);if(m<0.15)return{x:0,y:0};return m>1?{x:x/m,y:y/m}:{x,y};
 }
 function calcCoins(){let c=10+G.t*0.25+G.kills*0.1;if(G.picks.coin)c*=1.25;if(G.dbl)c*=2;return Math.floor(c)}
 
@@ -383,7 +403,7 @@ function render(dt){
   ctx.fillStyle=G.castCd>0?'#ff8a8a':'#f3e9d2';ctx.font='11px Georgia';ctx.textAlign='right';ctx.fillText(G.castCd>0?'recharging':'FOCUS · draw here',W-14,fy-5);
   // stick
   if(stick.active){ctx.strokeStyle='#f3e9d255';ctx.lineWidth=2;ctx.beginPath();ctx.arc(stick.ox,stick.oy,55,0,6.283);ctx.stroke();const dx=stick.x-stick.ox,dy=stick.y-stick.oy,d=Math.min(55,Math.hypot(dx,dy)),a=Math.atan2(dy,dx);ctx.fillStyle='#f3e9d288';ctx.beginPath();ctx.arc(stick.ox+Math.cos(a)*d,stick.oy+Math.sin(a)*d,22,0,6.283);ctx.fill()}
-  else if(G.t<8){ctx.fillStyle='#f3e9d255';ctx.font='14px Georgia';ctx.textAlign='center';ctx.fillText('← move here',W*.25,H-60);ctx.fillText('draw here →',W*.75,H-60);ctx.fillStyle='#f3e9d222';ctx.fillRect(W/2-1,H*.3,2,H*.5)}
+  else if(G.t<8){ctx.fillStyle='#f3e9d255';ctx.font='14px Georgia';ctx.textAlign='center';if(isTouch){ctx.fillText('← move here',W*.25,H-60);ctx.fillText('draw here →',W*.75,H-60);ctx.fillStyle='#f3e9d222';ctx.fillRect(W/2-1,H*.3,2,H*.5)}else ctx.fillText(controlsHint(),W/2,H-60)}
 }
 function drawGround(){
   const g=40*4,x0=Math.floor((cam.x-W/2)/g)*g,y0=Math.floor((cam.y-H/2)/g)*g;
@@ -480,14 +500,25 @@ function home(){
   <button class="btn gold" id="play">▶ Play — ${ERAS[CURRENT_ERA].name}</button>
   <button class="btn" id="lo">Loadout (${save.loadout.length}/${save.slots})</button>
   <button class="btn" id="shop">Shop</button>
-  <button class="btn" id="how">How to play</button></div>`);
+  <button class="btn" id="how">How to play</button>
+  <button class="btn" id="set">⚙ Settings</button></div>`);
+  $('set').onclick=settings;
   $('play').onclick=startRun;$('lo').onclick=loadout;$('shop').onclick=shop;$('how').onclick=how;
 }
+function settings(){
+  show(`<div class="panel"><h2>Settings</h2>
+  <button class="btn ${save.autoMove?'gold':''}" id="am">Auto-move (kite): ${save.autoMove?'ON':'OFF'}</button>
+  <div class="help">When ON and you're not steering, the mage moves away from nearby enemies and toward XP on its own, so you can just draw. Your own input always takes over.</div>
+  <button class="btn" id="back">Back</button></div>`);
+  $('am').onclick=()=>{save.autoMove=!save.autoMove;persist();settings()};$('back').onclick=home;
+}
+function controlsHint(){return isTouch?'Left thumb: move · Right thumb: draw':'Hold right-click: walk · Left-drag: draw · WASD also works'}
 function fmt(s){s=Math.floor(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
 function how(){
   show(`<div class="panel"><h2>How to play</h2><div class="help">
-  <b>Move:</b> touch &amp; drag on the <b>left half</b> (or WASD / arrows).<br>
-  <b>Draw:</b> drag on the <b>right half</b> (or click-drag with the mouse anywhere). Time slows while you draw (up to 2s).<br><br>
+  <b>Phone:</b> drag the <b>left half</b> to move, drag the <b>right half</b> to draw.<br>
+  <b>Laptop:</b> <b>hold right mouse button</b> to walk toward the cursor, <b>left-drag</b> to draw (anywhere). WASD / arrows also move.<br>
+  Optional <b>Auto-move (kite)</b> in Settings. Time slows while you draw (up to 2s).<br><br>
   ${save.owned.map(id=>`${CREATIONS[id].icon} <b>${CREATIONS[id].name}</b> — draw a <i>${CREATIONS[id].shape}</i>`).join('<br>')}<br><br>
   Creations fight <b>on their own</b>: melee ones orbit &amp; smash, ranged ones fire at the nearest enemy. Each has <b>durability</b> (the ring around it) and breaks — redraw it! Max ${MAX_ACTIVE} at once.<br><br>
   Collect XP orbs, pick upgrades on level-up, earn coins when you fall.</div>
@@ -521,7 +552,7 @@ function buy(it){
 }
 function startRun(){
   newRun();mode='run';show('');$('hud').classList.remove('hidden');updateHud.sig=null;cam.x=0;cam.y=0;last=performance.now();
-  toast(ERAS[CURRENT_ERA].name+' — survive!');
+  toast(ERAS[CURRENT_ERA].name+' — survive!');setTimeout(()=>mode==='run'&&toast(controlsHint()),1700);mouse.walk=false;
 }
 function endRun(){
   if(mode!=='run')return;mode='dead';
@@ -533,5 +564,5 @@ function endRun(){
   $('retry').onclick=startRun;$('hm').onclick=home;
 }
 // expose for tests
-window.EraDraw={recognize,get G(){return G},get mode(){return mode},startRun,save:()=>save,spawnCreation,ERAS,CREATIONS};
+window.EraDraw={mouse,kiteVector,recognize,get G(){return G},get mode(){return mode},startRun,save:()=>save,spawnCreation,ERAS,CREATIONS};
 home();requestAnimationFrame(frame);
