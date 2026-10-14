@@ -258,4 +258,28 @@ setInterval(tutRender,120);
 function tutorial(){save.tutDone=false;persist();startRun()}
 hub('tutorial','Tutorial',tutorial);
 
+
+// ================= KEYBOARD =================
+function navButtons(){return [...screenEl.querySelectorAll('button:not([disabled]),[data-m],input[type=range]')].filter(b=>b.offsetParent!==null)}
+addEventListener('keydown',e=>{
+  if(e.repeat&&(e.key==='Escape'||e.key==='p'||e.key==='P'))return;
+  const k=e.key,inRun=mode==='run'&&G,modal=screenEl.querySelector('.pick')||$('rok');
+  if(k==='Escape'||((k==='p'||k==='P')&&inRun)){
+    if(inRun){
+      if(modal)return; // never skip a level-up or chest choice
+      if(screenEl.classList.contains('live')&&$('back')){e.preventDefault();$('back').click();return}
+      if(!G.paused||$('resume')){e.preventDefault();togglePause();return}
+      return}
+    if(k==='Escape'&&screenEl.innerHTML){const b=$('back')||$('hm');if(b){e.preventDefault();b.click()}else if(location.hash!=='#/home')home()}
+    return}
+  // number keys pick level-up cards
+  if(/^[1-9]$/.test(k)&&inRun){const c=screenEl.querySelector(`.pick[data-i="${+k-1}"]`);if(c){e.preventDefault();c.click();return}}
+  if(!screenEl.innerHTML)return;
+  const act=document.activeElement,btns=navButtons();if(!btns.length)return;
+  if(k==='Enter'&&(!act||!screenEl.contains(act))){const pri=$('rok')&&!$('rok').disabled?$('rok'):screenEl.querySelector('.btn.pri,#resume,#play,#retry,.menu button');if(pri){e.preventDefault();pri.click()}return}
+  const isRange=act&&act.type==='range';
+  const dir={ArrowDown:1,ArrowRight:1,ArrowUp:-1,ArrowLeft:-1}[k];
+  if(dir&&!(isRange&&(k==='ArrowLeft'||k==='ArrowRight'))){e.preventDefault();let i=btns.indexOf(act);i=i<0?(dir>0?0:btns.length-1):(i+dir+btns.length)%btns.length;btns[i].focus()}
+});
+
 boot();

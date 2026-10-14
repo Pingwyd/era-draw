@@ -127,7 +127,7 @@ const stick={id:null,ox:0,oy:0,x:0,y:0,active:false};
 const keys={};
 const mouse={x:0,y:0,walk:false,id:null};
 const isTouch=matchMedia('(pointer:coarse)').matches||('ontouchstart' in window&&navigator.maxTouchPoints>0);
-addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.code==='Space'&&mode==='run'){e.preventDefault();tryDash()}if(e.key==='Escape'&&mode==='run')togglePause()});
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.code==='Space'&&mode==='run'){e.preventDefault();tryDash()}});
 addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
 cv.addEventListener('pointerdown',e=>{
   if(mode!=='run'||G.paused)return;
