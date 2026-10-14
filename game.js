@@ -266,7 +266,7 @@ function killEnemy(e){
   G.kills++;sfx('kill');burst(e.x,e.y,e.T.col,e.T.boss?50:7);burst(e.x,e.y,'#1a0f0e',e.T.boss?20:3);if(e.T.boss||e.T.elite)ring(e.x,e.y,e.T.boss?120:50,'#ffe08a');
   G.ink.push({x:e.x,y:e.y,r:e.r*rnd(.8,1.4),a:.35});if(G.ink.length>120)G.ink.shift();
   G.orbs.push({x:e.x,y:e.y,v:e.T.xp,t:0});
-  if(e.T.boss||(e.T.elite&&Math.random()<.25)){G.chests.push({x:e.x,y:e.y,boss:!!e.T.boss});if(e.T.boss){toast(e.T.name+' falls!');G.shake=14}}
+  if(e.T.boss||(e.T.elite&&Math.random()<.6)||(e.champ)){G.chests.push({x:e.x,y:e.y,boss:!!e.T.boss});if(e.T.boss){toast(e.T.name+' falls!');G.shake=14}}
 }
 function damagePlayer(d){
   const p=G.player;p.hp-=d;p.invul=0.5;sfx('hurt');haptic(35);G.shake=8;burst(p.x,p.y,'#ff6b6b',10);
@@ -428,6 +428,7 @@ function render(dt){
   drawLight(p);
   for(const tr of G.trails)drawStroke(tr.pts,tr.ok?'#ff9a3c':'#e0504e',tr.life/tr.max);
   if(G.drawing)drawStroke(G.drawing.pts,'#fff1d0',1,true);
+  if(window.drawLootTop)drawLootTop();
   ctx.drawImage(buf,0,0,BW*S,BH*S);
   // screen-space labels (pixel font)
   ctx.textAlign='center';
