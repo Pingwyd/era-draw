@@ -200,7 +200,7 @@ function updateCreations(dt){
       const rad=def.id==='dagger'?44:58;
       c.x=p.x+Math.cos(c.ang)*rad;c.y=p.y+Math.sin(c.ang)*rad;
       if(c.cd<=0){
-        const targets=G.enemies.filter(e=>Math.hypot(e.x-c.x,e.y-c.y)<def.range+e.r);
+        const targets=queryGrid(c.x,c.y,def.range+40).filter(e=>Math.hypot(e.x-c.x,e.y-c.y)<def.range+e.r);
         if(targets.length){
           c.cd=def.rate;c.swing=1;
           for(const e of targets.slice(0,c.id==='club'?6:2)){
@@ -226,11 +226,11 @@ function updateShots(dt){
     if(G.player.homing>0){const e=nearestEnemy(s.x,s.y,260,s.hit);if(e){const want=Math.atan2(e.y-s.y,e.x-s.x),sp=Math.hypot(s.vx,s.vy);let cur=Math.atan2(s.vy,s.vx),d=want-cur;while(d>Math.PI)d-=6.283;while(d<-Math.PI)d+=6.283;cur+=clamp(d,-1,1)*G.player.homing*dt;s.vx=Math.cos(cur)*sp;s.vy=Math.sin(cur)*sp}}
     s.x+=s.vx*dt;s.y+=s.vy*dt;s.rot=Math.atan2(s.vy,s.vx);
     let dead=s.life<=0;
-    for(const e of G.enemies){
-      if(s.hit.has(e))continue;
+    for(const e of queryGrid(s.x,s.y,40)){
+      if(s.hit.has(e)||e.hp<=0)continue;
       if(Math.hypot(e.x-s.x,e.y-s.y)<e.r+(s.id==='rock'?12:7)){
         s.hit.add(e);
-        if(s.aoe){for(const o of G.enemies)if(Math.hypot(o.x-s.x,o.y-s.y)<s.aoe)hurtEnemy(o,s.dmg);ring(s.x,s.y,s.aoe,'#d8c7a0');G.shake=Math.max(G.shake,3);dead=true;break}
+        if(s.aoe){for(const o of queryGrid(s.x,s.y,s.aoe))if(Math.hypot(o.x-s.x,o.y-s.y)<s.aoe)hurtEnemy(o,s.dmg);ring(s.x,s.y,s.aoe,'#d8c7a0');G.shake=Math.max(G.shake,3);dead=true;break}
         hurtEnemy(e,s.dmg);e.kx+=s.vx*0.12;e.ky+=s.vy*0.12;
         if(--s.pierce<=0){dead=true;break}
       }
@@ -240,34 +240,10 @@ function updateShots(dt){
 }
 
 // ================= ENEMIES =================
-const ENEMY_TYPES={
-  grub:  {name:'Mud Grub',r:13,hp:14,speed:62,dmg:8,xp:1,col:'#7d9a4a'},
-  raptor:{name:'Raptorling',r:12,hp:10,speed:118,dmg:7,xp:1,col:'#c46a3a',min:40},
-  brute: {name:'Cave Brute',r:24,hp:70,speed:46,dmg:18,xp:4,col:'#8a6d5a',min:75},
-  mammoth:{name:'Woolly Elder',r:40,hp:600,speed:40,dmg:30,xp:25,col:'#a07850',boss:true},
-};
-function spawnEnemy(type,scale){
-  const T=ENEMY_TYPES[type],p=G.player,a=Math.random()*6.283,R=Math.hypot(viewW(),viewH())/2+60;
-  G.enemies.push({type,T,x:p.x+Math.cos(a)*R,y:p.y+Math.sin(a)*R,r:T.r,hp:T.hp*scale*G.era.enemyHp,maxHp:T.hp*scale*G.era.enemyHp,
-    speed:T.speed*(1+Math.min(.5,G.t/600)),dmg:T.dmg*G.era.enemyDmg*(1+G.t/300),kx:0,ky:0,flash:0,wob:Math.random()*6});
-}
-function updateSpawns(dt){
-  G.wave=1+Math.floor(G.t/30);
-  const scale=1+G.t/90;
-  const rate=0.9+G.t/14; // enemies per second
-  G.spawnT+=dt*rate;
-  const cap=40+G.wave*12;
-  while(G.spawnT>=1){G.spawnT-=1;if(G.enemies.length>=cap)continue;
-    const r=Math.random();let type='grub';
-    if(G.t>ENEMY_TYPES.brute.min&&r<0.12)type='brute';else if(G.t>ENEMY_TYPES.raptor.min&&r<0.45)type='raptor';
-    spawnEnemy(type,scale);}
-  if(!G.bossAt)G.bossAt=180;
-  if(G.t>=G.bossAt){G.bossAt+=180;spawnEnemy('mammoth',scale);toast('A Woolly Elder approaches!')}
-}
 function hurtEnemy(e,d){
   if(e.hp<=0)return;
   e.hp-=d;e.flash=0.1;
-  G.dnums.push({x:e.x+rnd(-6,6),y:e.y-e.r*1.6,v:Math.max(1,Math.round(d)),col:d>=25?'#ffe08a':'#fff6e0',life:.6,max:.6});if(G.dnums.length>120)G.dnums.shift();
+  G.dnums.push({x:e.x+rnd(-6,6),y:e.y-e.r*1.6,v:Math.max(1,Math.round(d)),big:d>=25,col:d>=25?'#ffe08a':'#fff6e0',life:.6,max:.6});if(G.dnums.length>120)G.dnums.shift();
   if(e.hp<=0)killEnemy(e);
 }
 function killEnemy(e){
@@ -275,20 +251,7 @@ function killEnemy(e){
   G.kills++;burst(e.x,e.y,e.T.col,e.T.boss?40:8);
   G.ink.push({x:e.x,y:e.y,r:e.r*rnd(.8,1.4),a:.35});if(G.ink.length>120)G.ink.shift();
   G.orbs.push({x:e.x,y:e.y,v:e.T.xp,t:0});
-}
-function updateEnemies(dt){
-  const p=G.player;
-  for(const e of G.enemies){
-    const a=Math.atan2(p.y-e.y,p.x-e.x);
-    e.x+=(Math.cos(a)*e.speed+e.kx)*dt;e.y+=(Math.sin(a)*e.speed+e.ky)*dt;
-    e.kx*=Math.pow(0.02,dt);e.ky*=Math.pow(0.02,dt);e.flash-=dt;e.wob+=dt*8;
-    const d=Math.hypot(p.x-e.x,p.y-e.y);
-    if(d<p.r+e.r&&p.invul<=0){damagePlayer(e.dmg);}
-    // despawn very far
-    if(d>Math.hypot(viewW(),viewH())*1.3&&!e.T.boss){const R=Math.hypot(viewW(),viewH())/2+40,b=Math.random()*6.283;e.x=p.x+Math.cos(b)*R;e.y=p.y+Math.sin(b)*R}
-  }
-  // light separation
-  const es=G.enemies;for(let i=0;i<es.length;i++)for(let j=i+1;j<Math.min(es.length,i+12);j++){const A=es[i],B=es[j],dx=B.x-A.x,dy=B.y-A.y,d=Math.hypot(dx,dy)||1,m=A.r+B.r;if(d<m){const push=(m-d)/2/d;A.x-=dx*push;A.y-=dy*push;B.x+=dx*push;B.y+=dy*push}}
+  if(e.T.boss||(e.T.elite&&Math.random()<.25)){G.chests.push({x:e.x,y:e.y});if(e.T.boss){toast(e.T.name+' falls!');G.shake=14}}
 }
 function damagePlayer(d){
   const p=G.player;p.hp-=d;p.invul=0.5;G.shake=8;burst(p.x,p.y,'#ff6b6b',10);
@@ -304,6 +267,7 @@ function updateOrbs(dt){
   for(let i=G.orbs.length-1;i>=0;i--){const o=G.orbs[i];o.t+=dt;const d=Math.hypot(p.x-o.x,p.y-o.y);
     if(d<p.magnet||o.pull){o.pull=true;const a=Math.atan2(p.y-o.y,p.x-o.x),sp=300+o.t*200;o.x+=Math.cos(a)*sp*dt;o.y+=Math.sin(a)*sp*dt}
     if(d<p.r+6){G.orbs.splice(i,1);G.xp+=o.v;if(G.xp>=G.xpNext){G.xp-=G.xpNext;G.level++;G.xpNext=Math.round(5+G.level*3.2+Math.pow(G.level,1.5));levelUp()}}}
+  for(let i=G.chests.length-1;i>=0;i--){const c=G.chests[i];if(Math.hypot(c.x-p.x,c.y-p.y)<p.r+14){G.chests.splice(i,1);G.bonus=(G.bonus||0)+25;burst(c.x,c.y,'#d9c27a',24);toast('Chest! +25 coins');levelUp(true);return}}
   if(G.orbs.length>250)G.orbs.splice(0,G.orbs.length-250);
 }
 function rollRarity(epicOk){
@@ -379,7 +343,7 @@ function kiteVector(p){
   if(best){const dx=best.x-p.x,dy=best.y-p.y,d=Math.hypot(dx,dy)||1;x+=dx/d*.6;y+=dy/d*.6}
   const m=Math.hypot(x,y);if(m<0.15)return{x:0,y:0};return m>1?{x:x/m,y:y/m}:{x,y};
 }
-function calcCoins(){let c=10+G.t*0.25+G.kills*0.1;if(G.picks.coin)c*=1.25;if(G.dbl)c*=2;return Math.floor(c)}
+function calcCoins(){let c=10+G.t*0.25+G.kills*0.08+(G.bonus||0);if(G.picks.coin)c*=1.25;if(G.dbl)c*=2;return Math.floor(c)}
 
 // ================= RENDER =================
 const cam={x:0,y:0};
@@ -425,7 +389,7 @@ function render(dt){
     else{bx.globalAlpha=Math.min(1,a*1.5);bx.fillStyle=f.col;const s=f.shard?2:f.r>2.5?2:1;bx.fillRect(X(f.x),Y(f.y),s,s)}}
   bx.globalAlpha=1;
   // damage numbers (bitmap digits, pop then float)
-  for(const d of G.dnums){const age=d.max-d.life,sc=age<0.08?2:1,str=String(d.v);bx.globalAlpha=Math.min(1,d.life/d.max*3);drawDigits(bx,str,X(d.x)-(digitsWidth(str,sc)>>1),Y(d.y)-sc*3,d.col,sc)}
+  for(const d of G.dnums){const age=d.max-d.life,sc=d.big&&age<0.1?2:1,str=String(d.v);bx.globalAlpha=Math.min(1,d.life/d.max*3);drawDigits(bx,str,X(d.x)-(digitsWidth(str,sc)>>1),Y(d.y)-sc*3,d.col,sc)}
   bx.globalAlpha=1;
   // slow-mo: warm ink tint + dithered edges
   if(G.slow){bx.fillStyle='rgba(60,25,10,.28)';bx.fillRect(0,0,BW,BH);bx.fillStyle='rgba(20,8,6,.6)';for(let i=0;i<BW;i+=2){bx.fillRect(i,0,1,3);bx.fillRect(i+1,BH-3,1,3)}for(let j=0;j<BH;j+=2){bx.fillRect(0,j,3,1);bx.fillRect(BW-3,j+1,3,1)}}
@@ -520,6 +484,8 @@ function updateHud(){
   $('xpb').style.width=(G.xp/G.xpNext*100)+'%';$('lvt').textContent='Lv '+G.level;
   const s=Math.floor(G.t);$('timer').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
   $('wave').textContent=G.wave;$('kills').textContent=G.kills;$('runcoins').textContent=G.coins;
+  const boss=G.enemies.find(e=>e.T.boss);const bb=$('bossbar');
+  if(boss){bb.classList.remove('hidden');$('bbName').textContent=boss.T.name;$('bbTitle').textContent=boss.T.title;$('bbFill').style.width='calc('+clamp(boss.hp/boss.maxHp*100,0,100)+'% - 2px)';$('bbHp').textContent=Math.ceil(Math.max(0,boss.hp))+' / '+Math.round(boss.maxHp)}else bb.classList.add('hidden');
   const sig=G.loadout.join()+G.creations.length;
   if(updateHud.sig!==sig){updateHud.sig=sig;$('slots').innerHTML=G.loadout.map(id=>{const d=CREATIONS[id];const n=G.creations.filter(c=>c.id===id).length;return `<span class="slot">${d.icon} ${d.name}: <i>${d.shape}</i>${n?' ×'+n:''}</span>`}).join('')}
 }
@@ -614,7 +580,7 @@ function startRun(){
   toast(ERAS[CURRENT_ERA].name+' — survive!');setTimeout(()=>mode==='run'&&toast(controlsHint()),1700);mouse.walk=false;checkOrientation();
 }
 function endRun(){
-  if(mode!=='run')return;mode='dead';
+  if(mode!=='run')return;mode='dead';$('bossbar').classList.add('hidden');
   const coins=calcCoins();save.coins+=coins;save.runs++;const newBest=G.t>save.best;if(newBest)save.best=G.t;persist();
   $('hud').classList.add('hidden');
   show(`<div class="panel"><h2>The ink fades…</h2><div class="sub">${ERAS[CURRENT_ERA].name}${newBest?' · 🏆 New best!':''}</div>
