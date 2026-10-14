@@ -69,6 +69,10 @@ const _cvRP=renderPickups;renderPickups=function(){if(G.shrines)for(const s of G
 const _cvTop=drawLootTop;drawLootTop=function(){_cvTop();if(!G||!G.shrines)return;const pulse=.5+.5*Math.sin(G.t*4);for(const s of G.shrines){const sx=X(s.x),sy=Y(s.y)-10;
   bx.globalCompositeOperation='lighter';bx.globalAlpha=.16+.12*pulse;bx.fillStyle=SHRINES[s.k].col;bx.beginPath();bx.arc(sx,sy,10+s.prog*3,0,6.283);bx.fill();bx.globalCompositeOperation='source-over';bx.globalAlpha=1;
   const hs=hiSpr('shrine',SPR.shrine,'#fff6d8');bx.drawImage(hs,sx-(hs.width>>1),Y(s.y)-hs.height);
+  if(s.prog>0.02){const pc=Math.min(1,s.prog/2.5),inR=Math.hypot(s.x-G.player.x,s.y-G.player.y)<42,cy=Y(s.y)-hs.height-9;
+    bx.lineWidth=2;bx.strokeStyle='rgba(26,15,14,.85)';bx.beginPath();bx.arc(sx,cy,6,0,6.283);bx.stroke();
+    bx.strokeStyle=inR?SHRINES[s.k].col:'#8a8178';bx.beginPath();bx.arc(sx,cy,6,-1.5708,-1.5708+pc*6.283);bx.stroke();bx.lineWidth=1;
+    SCREEN_LABELS.push({x:sx+9,y:cy+2,txt:Math.floor(pc*100)+'%',col:inR?'#fff6d8':'#b9ab90'});if(!inR)SCREEN_LABELS.push({x:sx+9,y:cy+8,txt:'fading',col:'#b9ab90',size:3})}
   if(sx<6||sx>BW-6||sy<6||sy>BH-6){const ax=Math.max(8,Math.min(BW-8,sx)),ay=Math.max(14,Math.min(BH-16,sy));bx.fillStyle=SHRINES[s.k].col;bx.fillRect(ax-2,ay-2,4,4)}}};
 
 // ---- mini-quests: a timed objective every ~75s; reward = chest + coins ----
@@ -90,7 +94,7 @@ const _cvDP2=damagePlayer;damagePlayer=function(d){if(G&&G.quest&&G.quest.def.hu
 const _cvSp2=spawnCreation;spawnCreation=function(id,dir,echo){const r=_cvSp2.apply(this,arguments);if(!echo&&G&&G.quest&&G.quest.def.draw)G.quest.def.draw(G.quest);return r};
 function questHud(){let el=$('quest');const q=G&&G.quest;if(!q||mode!=='run'){if(el)el.remove();return}
   if(!el){el=document.createElement('div');el.id='quest';$('hud').appendChild(el)}
-  const txt=`<b>QUEST</b> ${q.txt} <i>${Math.floor(q.c)}/${q.n} &middot; ${Math.ceil(q.time)}s</i>`;if(el.innerHTML!==txt)el.innerHTML=txt}
+  const txt=`<b>QUEST</b> <i>${Math.floor(q.c)}/${q.n} &middot; ${Math.ceil(q.time)}s</i> ${q.txt}`;if(el.innerHTML!==txt)el.innerHTML=txt}
 
 // ---- new enemy variants: poison gnats, armored bears (melee resistant), tar blob splitters ----
 function tintCanvas(src,col,a){const [c,x]=mk(src.width,src.height);x.drawImage(src,0,0);x.globalCompositeOperation='source-atop';x.globalAlpha=a;x.fillStyle=col;x.fillRect(0,0,c.width,c.height);return c}

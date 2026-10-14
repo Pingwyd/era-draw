@@ -273,6 +273,7 @@ function killEnemy(e){
 // balance: at most CHEST_CAP non-boss chests on the map at once; boss chests always drop
 const CHEST_CAP=2;function chestOk(){return !G||G.chests.filter(c=>!c.boss).length<CHEST_CAP}
 // balance: XP needed grows ~level^1.45, plus a +25% step every 10 levels
+const SCREEN_LABELS=[];
 function finalBoss(){const b=(G.era.bosses||[]).find(x=>x.t===ERA_CLEAR_T);return b&&b.type}
 function xpFor(l){return Math.round((5+3.2*Math.pow(l,1.45))*(1+.25*Math.floor(l/10)))}
 function damagePlayer(d){
@@ -452,6 +453,8 @@ function renderInner(dt){
   // screen-space labels (pixel font)
   ctx.textAlign='center';
   for(const t of G.texts){ctx.globalAlpha=Math.min(1,t.life/t.max*2);ctx.font=`${S*5}px Silkscreen, monospace`;const sx=X(t.x)*S,sy=Y(t.y)*S;ctx.fillStyle='#1a0f0e';ctx.fillText(t.txt,sx+S,sy+S);ctx.fillStyle=t.col;ctx.fillText(t.txt,sx,sy)}
+  // per-frame screen-space labels queued by world systems (crisp text at native resolution)
+  for(const l of SCREEN_LABELS){ctx.globalAlpha=1;ctx.font=`${Math.round(S*(l.size||4))}px Silkscreen, monospace`;const sx=l.x*S,sy=l.y*S;ctx.fillStyle='#1a0f0e';ctx.fillText(l.txt,sx+S*.6,sy+S*.6);ctx.fillStyle=l.col;ctx.fillText(l.txt,sx,sy)}SCREEN_LABELS.length=0;ctx.globalAlpha=1;
   ctx.globalAlpha=1;
   if(G.drawing){const id=recognize(G.drawing.pts);const l=G.drawing.pts[G.drawing.pts.length-1];
     const cid=id&&creationForShape(id),ok=!!cid,txt=id?(ok?CREATIONS[cid].name:CREATIONS[id].shape+' (not equipped)').toUpperCase():'...';
@@ -648,6 +651,7 @@ function settings(inRun){
    <button id="hap"><b>03</b>Haptics<span>${save.haptics===false?'Off':'On'}</span><i>${save.haptics===false?'&#9633;':'&#9632;'}</i></button>
    <button id="mus"><b>04</b>Music<span>${save.music===false?'Off':'On'}</span><i>${save.music===false?'&#9633;':'&#9632;'}</i></button>
    <button id="perf"><b>05</b>Performance mode<span>${save.perf?'On':'Off'}</span><i>${save.perf?'&#9632;':'&#9633;'}</i></button></nav>
+   <p class="note" id="perfNote">Performance mode: draws the world at a lower internal resolution (150 instead of 180 lines tall, so about 30% fewer pixels), cuts hit and death particles to 40% and caps them at 160 on screen, and limits enemies on screen to 140 (normally 320). Gameplay rules and damage are unchanged. It turns on by itself on small or low-end devices until you change it.</p>
    <p class="note">Auto-move steers the mage away from nearby enemies and toward XP whenever you are not steering.</p></div></div>`));
   for(const [id,key] of [['sHud','hudScale'],['sZoom','zoom'],['sUi','uiScale']]){const el=$(id);el.oninput=()=>{save[key]=el.value/100;save.scaleSet=true;$(id+'v').textContent=el.value+'%';applyScale();layoutBuf();persist()}}
   $('sReset').onclick=()=>{save.hudScale=save.zoom=save.uiScale=1;persist();applyScale();layoutBuf();again()};
