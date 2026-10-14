@@ -188,3 +188,5 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;background:var(--embe
 .pips{display:flex;gap:2px}.pips i{width:7px;height:7px;border:1px solid var(--mute);display:block}.pips i.on{background:var(--ember);border-color:var(--ember)}
 @media (max-width:1000px){.tree{grid-template-columns:repeat(2,1fr)}}
 .cell .mimg{width:48px;height:54px}
+.achl{display:grid;grid-template-columns:1fr 1fr;column-gap:28px}.li.dim .nm{color:var(--mute)}.seal{width:18px;height:18px;border:1px solid var(--rule);transform:rotate(45deg);margin:0 6px}.seal.on{background:var(--gold);border-color:var(--gold)}
+@media (max-height:500px){.achl .li .nm{font-size:18px}.achl .li .sh{font-size:13px}}
