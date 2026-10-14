@@ -178,4 +178,29 @@ function updatePickups(dt){const p=G.player;if(!G.pickups)G.pickups=[];
     if(Math.hypot(k.x-p.x,k.y-p.y)<p.r+14){G.pickups.splice(i,1);sfx('pick');haptic(15);PICKUPS[k.type].fn(G);if(mode!=='run')return}}}
 function renderPickups(){if(!G.pickups)return;for(const k of G.pickups){if(k.t>54&&(Math.floor(k.t*8)&1))continue;shadow(k.x,k.y,5);blit(SPR.pick[k.type],k.x,k.y-((Math.floor(G.t*3)&1)))}}
 
+
+// ================= BREAKABLES =================
+const PROP_ART={
+ torch:['..y...','.yOy..','.OYO..','..O...','.BBB..','..b...','..b...','..b...','.bbb..'],
+ bush:['..GG.G..','.GgGGgG.','GgGgGGgG','GGgGgGGG','.GGGGgG.','..G..G..'],
+ urn:['.CCCC.','..cc..','.CccC.','CcCCcC','CcccCC','.CccC.','..CC..'],
+};
+const PROP_PAL={y:'#ffd34a',O:'#ff8a2a',Y:'#fff0a0',B:'#4a3a30',b:'#6b5038',G:'#3f6b2e',g:'#5f8f3c',C:'#a8643a',c:'#d08a52'};
+SPR.prop={};for(const k in PROP_ART)SPR.prop[k]=outline(grid(PROP_ART[k],{...PAL,...PROP_PAL}));
+const ERA_PROPS={stone:['torch','bush','bush'],bronze:['torch','urn','urn']};
+runHooks.push(G=>{G.props=[];G.propT=2});
+function hitProp(k){k.hp--;burst(k.x,k.y-8,k.type==='bush'?'#5f8f3c':k.type==='urn'?'#d08a52':'#ff8a2a',10);sfx('hit');
+  if(k.hp<=0){k.dead=true;burst(k.x,k.y-8,'#d9c27a',14);if(Math.random()<.3)dropPickup(k.x,k.y);else{G.orbs.push({x:k.x,y:k.y,v:3,t:0});G.bonus=(G.bonus||0)+2;floatText(k.x,k.y-24,'+2','#d9c27a',.8)}}}
+const _updP=updatePickups;updatePickups=function(dt){_updP(dt);if(mode!=='run'||!G.props)return;const p=G.player;
+  G.propT-=dt;if(G.propT<=0&&G.props.length<14){G.propT=6+Math.random()*6;const a=Math.random()*6.283,d=300+Math.random()*300,ts=ERA_PROPS[CURRENT_ERA]||ERA_PROPS.stone;
+    G.props.push({x:p.x+Math.cos(a)*d,y:p.y+Math.sin(a)*d,type:ts[Math.floor(Math.random()*ts.length)],hp:2,cd:0})}
+  for(const k of G.props){k.cd-=dt;if(k.cd>0)continue;let hit=false;
+    for(const s of G.shots)if(Math.abs(s.x-k.x)<14&&Math.abs(s.y-(k.y-8))<16){hit=true;break}
+    if(!hit)for(const c of G.creations)if(c.def.kind==='melee'&&Math.hypot(c.x-k.x,c.y-k.y)<20){hit=true;break}
+    if(!hit&&p.dashT>0&&Math.hypot(p.x-k.x,p.y-k.y)<24)hit=true;
+    if(hit){k.cd=.25;hitProp(k)}}
+  G.props=G.props.filter(k=>!k.dead&&Math.hypot(k.x-p.x,k.y-p.y)<1400)};
+const _rndP=renderPickups;renderPickups=function(){if(G.props)for(const k of G.props){shadow(k.x,k.y,6);blit(SPR.prop[k.type],k.x,k.y+(k.cd>0?-1:0));
+  if(k.type==='torch'){const sx=X(k.x),sy=Y(k.y)-14;const al=.05+.025*Math.sin(G.t*9+k.x);bx.fillStyle='rgba(255,170,60,'+al+')';for(const r of [4,7,10])bx.fillRect(sx-r,sy-r+2,r*2,r*2-4)}}_rndP()};
+
 boot();
