@@ -160,3 +160,4 @@ img{image-rendering:pixelated}
 .home .plate canvas{min-height:180px}
 @media (max-height:500px){.split{grid-template-columns:minmax(0,1fr) 220px;gap:14px}.pane{padding:10px}.pane-art{height:70px;margin:-10px -10px 8px}.pane-art img{height:56px}.pane-nm{font-size:28px}.demo{width:60px;height:46px}.pane .stats li{font-size:14px}.home .plate canvas{min-height:0}}
 @media (max-width:760px){.split{grid-template-columns:1fr}.pane{display:none}}
+#screen{z-index:20}
