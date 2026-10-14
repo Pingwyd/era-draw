@@ -208,3 +208,4 @@ html.small #install{font-size:15px;padding:4px 6px 4px 10px}html.small #install 
 .swatch{display:block;width:44px;height:14px;margin:8px 0 6px;box-shadow:0 0 0 1px #1a0f0e,0 0 12px currentColor}
 .slider select,.slider input:not([type=range]){background:#1e1213;color:#e9dcc3;border:1px solid var(--rule);font:inherit;font-family:VT323,monospace;font-size:18px;padding:4px 6px;min-height:34px;width:100%}
 .code{font-family:Silkscreen,monospace;font-size:20px;letter-spacing:.08em;color:#ffd34a;margin:6px 0 10px;user-select:all;-webkit-user-select:all}
+#party{position:absolute;top:calc(36px * var(--hud,1));left:calc(14px + env(safe-area-inset-left));font-family:Silkscreen,monospace;font-size:calc(9px * var(--hud,1))}#party span{margin-right:10px}
