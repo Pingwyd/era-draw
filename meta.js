@@ -1,3 +1,4 @@
+let DAILY_ON=null;const _RND=Math.random;
 'use strict';
 // ================= META: eras, difficulty, home hub =================
 if(!save.eras)save.eras=['stone'];if(!save.era)save.era='stone';if(!save.diff)save.diff='normal';
@@ -13,7 +14,7 @@ updateSpawns=function(dt){_updateSpawns(dt);const d=G.diffDef||DIFFS.normal;if(d
 const _calcCoins=calcCoins;
 calcCoins=function(){return Math.floor(_calcCoins()*((G&&G.diffDef)||DIFFS.normal).coins)};
 const _newRun=newRun;
-newRun=function(){_newRun();G.diffDef=DIFFS[G.daily?'cursed':save.diff]||DIFFS.normal;G.diff=G.daily?'cursed':save.diff;G.mats={};G.bossKills={};G.perfects=0;runHooks.forEach(f=>f(G))};
+newRun=function(){_newRun();G.daily=!!DAILY_ON;G.diffDef=DIFFS[G.daily?'cursed':save.diff]||DIFFS.normal;G.diff=G.daily?'cursed':save.diff;G.mats={};G.bossKills={};G.perfects=0;runHooks.forEach(f=>f(G))};
 const runHooks=[]; // later systems push(G=>...) to modify a new run
 function eraCleared(){
   const i=ERA_ORDER.indexOf(CURRENT_ERA),next=ERA_ORDER[i+1];
