@@ -12,6 +12,7 @@ const SFX={
   fizzle:()=>tone(220,90,.15,'sawtooth',.12),
   shatter:()=>{noise(.25,.35,1200);tone(900,200,.2,'square',.08)},
   hit:()=>tone(180,70,.06,'square',.08),
+  tick:()=>tone(900,900,.025,'square',.04),
   kill:()=>noise(.06,.1,400),
   hurt:()=>{tone(140,60,.18,'sawtooth',.25);noise(.08,.15,300)},
   lvl:()=>[523,659,784,1046].forEach((f,i)=>tone(f,f,.12,'square',.12,i*.07)),
