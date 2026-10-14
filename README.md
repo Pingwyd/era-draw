@@ -27,6 +27,11 @@ Progress is saved in `localStorage` under the key `eradraw.save.v1`.
 ## Run locally
 No build step. Run `python3 -m http.server` in this folder, then open http://localhost:8000.
 
+## Testing
+- Full test save: https://pingwyd.github.io/era-draw/#/dev/unlock-all (locally: http://localhost:8080/#/dev/unlock-all). It asks you to confirm first. You get max coins and gems, every era unlocked and cleared (including Mythic), and every weapon, mage, ink, upgrade, skill node, achievement and bestiary entry. Materials are stacked high and mastery is maxed. Your settings are kept.
+- Wipe the save: https://pingwyd.github.io/era-draw/#/dev/reset-save (confirms, then reloads).
+- Regression tests: `node tests/stale-run.test.js`, `node tests/ios-webkit.test.js` (need `python3 -m http.server 8080` and Playwright).
+
 ## Branches
 - `main`: stable, served by GitHub Pages
 - `mvp`: the MVP release candidate
