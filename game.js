@@ -72,6 +72,7 @@ const clamp=(v,a,b)=>v<a?a:v>b?b:v;
 
 // ================= SHAPE RECOGNITION =================
 // Returns creation id or null. Works in screen pixels, normalized by screen size.
+let lastQuality={line:.5,circle:.5,poly:.5};
 function recognize(pts){
   if(pts.length<4)return null;
   let L=0,minx=1e9,miny=1e9,maxx=-1e9,maxy=-1e9;
@@ -87,6 +88,9 @@ function recognize(pts){
   // corners: compare direction over windows of 3
   for(let i=3;i<angs.length-3;i++){let d=Math.abs(angs[i+2]-angs[i-2]);if(d>Math.PI)d=2*Math.PI-d;if(d>1.7){turns++;i+=4}}
   const closed=chord<L*0.3, round=Math.min(bw,bh)>Math.max(bw,bh)*0.45;
+  // stroke quality 0..1 (perfect-draw bonus)
+  {const cx=(minx+maxx)/2,cy=(miny+maxy)/2,rad=rs.map(q=>Math.hypot(q.x-cx,q.y-cy)),mr=rad.reduce((a,b)=>a+b,0)/rad.length,dev=Math.sqrt(rad.reduce((a,b)=>a+(b-mr)**2,0)/rad.length)/(mr||1);
+   lastQuality={line:clamp((straight-.85)/.14,0,1),circle:clamp(1-dev*4,0,1)*clamp(1-chord/(L*.3),0,1)*.5+clamp(1-dev*4,0,1)*.5,poly:clamp(1-Math.abs(straight-.5),0,1)*.8}}
   if(straight>0.85){ return L<unit*0.28?'club':'spear'; }
   if(closed&&round&&Math.abs(totalTurn)>4.2)return 'rock';
   if(turns===1&&!closed)return 'sling';
@@ -161,7 +165,9 @@ function finishDraw(){
   if(G.castCd>0){fizzle(pts,'recharging…');return}
   const a=pts[0],b=pts[pts.length-1];
   const dir=Math.atan2(b.y-a.y,b.x-a.x);
-  spawnCreation(id,dir);
+  const kindQ=(id==='club'||id==='spear')?'line':id==='rock'?'circle':'poly';const q=lastQuality[kindQ];
+  const power=0.85+0.45*q;spawnCreation(id,dir,false,power);
+  if(q>=.85){floatText(G.player.x,G.player.y-64,'PERFECT DRAW','#ffe08a',1.2);sfx('lvl');haptic(30)}else if(q>=.6)floatText(G.player.x,G.player.y-64,'CLEAN','#e9dcc3',.8);
   if(Math.random()<G.player.echo){setTimeout(()=>G&&spawnCreation(id,dir+0.4,true),150)}
   G.castCd=BASE_CAST_CD*G.player.cdMul;
   G.trails.push({pts,life:0.7,max:0.7,ok:true});
@@ -171,14 +177,14 @@ function fizzle(pts,msg){sfx('fizzle');G.trails.push({pts,life:0.5,max:0.5,ok:fa
 
 // ================= CREATIONS =================
 function creationDmgMul(def){const ei=ERA_ORDER.indexOf(def.era),ci=ERA_ORDER.indexOf(CURRENT_ERA);return ei<ci?OLD_ERA_DMG:1}
-function spawnCreation(id,dir,echo){
+function spawnCreation(id,dir,echo,power=1){
   const def=CREATIONS[id],p=G.player;
   if(SWITCH_SHATTERS&&!echo){const others=G.creations.filter(c=>c.id!==id);if(others.length){for(const c of others)shatterCreation(c);G.shake=Math.max(G.shake,6);floatText(p.x,p.y-52,'Shatter!','#cfe3ff');sfx('shatter');haptic(25)}}
   const same=G.creations.filter(c=>c.def.kind===def.kind);
   while(same.length>=(p.caps[def.kind]||1)){const old=same.shift();breakCreation(old,true)} // replace oldest
   const dur=G.era.durability*p.durMul;
   const c={id,def,life:def.life*dur,max:def.life*dur,uses:Math.round(def.uses*dur),maxUses:Math.round(def.uses*dur),cd:0.15,
-    ang:Math.random()*6.28,x:p.x,y:p.y,swing:0,dir};
+    ang:Math.random()*6.28,x:p.x,y:p.y,swing:0,dir,power};if(power>=1.23){c.life*=1.2;c.max*=1.2;c.perfect=true}
   G.creations.push(c);
   if(id==='spear')fireShot(c,dir); // first throw goes where you drew
   burst(p.x,p.y,G.era.ink,14);sfx('spawn');haptic(15);
@@ -192,7 +198,7 @@ function nearestEnemy(x,y,maxD=9e9,skip){let best=null,bd=maxD;for(const e of G.
 function fireShot(c,ang){
   const def=c.def;
   G.shots.push({x:c.x,y:c.y,vx:Math.cos(ang)*def.speed,vy:Math.sin(ang)*def.speed,id:c.id,def,pierce:def.pierce||1,hit:new Set(),life:1.4,
-    dmg:def.dmg*G.player.dmgMul*creationDmgMul(def),aoe:def.aoe||0,rot:ang});
+    dmg:def.dmg*(c.power||1)*G.player.dmgMul*creationDmgMul(def),aoe:def.aoe||0,rot:ang});
   c.uses--;
 }
 function updateCreations(dt){
@@ -209,7 +215,7 @@ function updateCreations(dt){
         if(targets.length){
           c.cd=def.rate;c.swing=1;
           for(const e of targets.slice(0,c.id==='club'?6:2)){
-            hurtEnemy(e,def.dmg*p.dmgMul*creationDmgMul(def));
+            hurtEnemy(e,def.dmg*(c.power||1)*p.dmgMul*creationDmgMul(def));
             const a=Math.atan2(e.y-p.y,e.x-p.x);e.kx+=Math.cos(a)*def.knock;e.ky+=Math.sin(a)*def.knock;
           }
           c.uses--; if(c.id==='club'){G.shake=Math.max(G.shake,4);ring(c.x,c.y,def.range,'#ffb35c')}
