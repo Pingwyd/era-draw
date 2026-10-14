@@ -70,4 +70,3 @@ removeEventListener('popstate',_route);addEventListener('popstate',()=>route());
 SPR.mat={bone:outline(grid(['w....w','WwwwwW','.wwww.','WwwwwW','w....w'])),flint:outline(grid(['..T...','.tTT..','ttwtT.','tttTTT','.tTTT.'])),hide:outline(grid(['f.ff.f','ffffff','fFffFf','ffffff','.f..f.'])),bronze:outline(grid(['.aaa.','ayaaA','aaaAA','.AAA.']))};
 for(const k in SPR.mat)ICON['mat_'+k]=iconURL(SPR.mat[k],3);
 window.addEventListener('load',()=>{});
-boot();
