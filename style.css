@@ -187,3 +187,4 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;background:var(--embe
 .node .buy{margin-left:0;align-self:flex-start;font-size:10px;padding:5px 8px}
 .pips{display:flex;gap:2px}.pips i{width:7px;height:7px;border:1px solid var(--mute);display:block}.pips i.on{background:var(--ember);border-color:var(--ember)}
 @media (max-width:1000px){.tree{grid-template-columns:repeat(2,1fr)}}
+.cell .mimg{width:48px;height:54px}
