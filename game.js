@@ -18,7 +18,10 @@ const CREATIONS = {
   sling: { name:'Sling', icon:'🪃', era:'stone', shape:'V shape', kind:'ranged', dmg:7, life:11, uses:40, rate:0.28, speed:720, pierce:1, cost:150 },
   dagger:{ name:'Bone Dagger', icon:'🦴', era:'stone', shape:'zigzag', kind:'melee', dmg:8, life:10, uses:60, rate:0.22, range:46, knock:60, cost:250, orbitSpeed:5 },
 };
-const MAX_ACTIVE = 5;
+// Max active creations of the SAME type. A future upgrade can raise this (G.player.typeCap).
+const BASE_TYPE_CAP = 3;
+// Drawing a different type shatters all active creations.
+const SWITCH_SHATTERS = true;
 const BASE_CAST_CD = 0.6;
 const BASE_FOCUS = 2.0, MAX_FOCUS = 2.8;
 const SLOWMO = 0.22;
@@ -104,7 +107,7 @@ let mode='home';
 function newRun(){
   const era=ERAS[CURRENT_ERA];
   G={t:0,wave:1,kills:0,coins:0,spawnT:0,level:1,xp:0,xpNext:5,ink:[],trails:[],
-    player:{x:0,y:0,r:16,hp:100,maxHp:100,speed:190,dmgMul:1,cdMul:1,durMul:1,focus:BASE_FOCUS,homing:0,echo:0,magnet:90,secondWind:false,usedWind:false,invul:0,face:0},
+    player:{x:0,y:0,r:16,hp:100,maxHp:100,speed:190,dmgMul:1,cdMul:1,durMul:1,focus:BASE_FOCUS,homing:0,echo:0,magnet:90,secondWind:false,typeCap:BASE_TYPE_CAP,usedWind:false,invul:0,face:0},
     picks:{},enemies:[],creations:[],shots:[],orbs:[],fx:[],texts:[],castCd:0,focusLeft:BASE_FOCUS,drawing:null,
     era, loadout:save.loadout.slice(),paused:false,shake:0,dbl:false};
 }
@@ -155,7 +158,9 @@ function fizzle(pts,msg){G.trails.push({pts,life:0.5,max:0.5,ok:false});floatTex
 function creationDmgMul(def){const ei=ERA_ORDER.indexOf(def.era),ci=ERA_ORDER.indexOf(CURRENT_ERA);return ei<ci?OLD_ERA_DMG:1}
 function spawnCreation(id,dir,echo){
   const def=CREATIONS[id],p=G.player;
-  if(G.creations.length>=MAX_ACTIVE){G.creations.sort((a,b)=>a.life/a.max-b.life/b.max);breakCreation(G.creations[0])}
+  if(SWITCH_SHATTERS&&!echo){const others=G.creations.filter(c=>c.id!==id);if(others.length){for(const c of others)shatterCreation(c);G.shake=Math.max(G.shake,6);floatText(p.x,p.y-52,'Shatter!','#cfe3ff')}}
+  const same=G.creations.filter(c=>c.id===id);
+  while(same.length>=p.typeCap){const old=same.shift();breakCreation(old,true)} // replace oldest
   const dur=G.era.durability*p.durMul;
   const c={id,def,life:def.life*dur,max:def.life*dur,uses:Math.round(def.uses*dur),maxUses:Math.round(def.uses*dur),cd:0.15,
     ang:Math.random()*6.28,x:p.x,y:p.y,swing:0,dir};
@@ -164,7 +169,10 @@ function spawnCreation(id,dir,echo){
   burst(p.x,p.y,G.era.ink,14);
   floatText(p.x,p.y-34,(echo?'Echo ':'')+def.name+'!',G.era.ink);
 }
-function breakCreation(c){const i=G.creations.indexOf(c);if(i>=0)G.creations.splice(i,1);burst(c.x,c.y,'#cfc3a8',10);floatText(c.x,c.y-10,'broke','#cfc3a8')}
+function breakCreation(c,quiet){const i=G.creations.indexOf(c);if(i>=0)G.creations.splice(i,1);burst(c.x,c.y,'#cfc3a8',10);if(!quiet)floatText(c.x,c.y-10,'broke','#cfc3a8')}
+function shatterCreation(c){const i=G.creations.indexOf(c);if(i>=0)G.creations.splice(i,1);
+  for(let k=0;k<9;k++){const a=Math.random()*6.283,sp=rnd(120,320);G.fx.push({shard:true,x:c.x,y:c.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,rot:a,vr:rnd(-12,12),life:rnd(.4,.8),max:.8,col:k%2?'#cfe3ff':G.era.ink,r:rnd(4,8)})}
+  ring(c.x,c.y,34,'#cfe3ff')}
 function nearestEnemy(x,y,maxD=9e9,skip){let best=null,bd=maxD;for(const e of G.enemies){if(skip&&skip.has(e))continue;const d=Math.hypot(e.x-x,e.y-y);if(d<bd){bd=d;best=e}}return best}
 function fireShot(c,ang){
   const def=c.def;
@@ -321,7 +329,7 @@ function ring(x,y,r,col){G.fx.push({ring:true,x,y,r,life:.35,max:.35,col})}
 function floatText(x,y,txt,col,life=0.9,size=15){G.texts.push({x,y,txt,col,life,max:life,size});if(G.texts.length>80)G.texts.shift()}
 let toastT=0;function toast(m){const t=$('toast');t.textContent=m;t.style.opacity=1;clearTimeout(toastT);toastT=setTimeout(()=>t.style.opacity=0,1600)}
 function updateFx(dt){
-  for(let i=G.fx.length-1;i>=0;i--){const f=G.fx[i];f.life-=dt;if(!f.ring){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=.92;f.vy*=.92}if(f.life<=0)G.fx.splice(i,1)}
+  for(let i=G.fx.length-1;i>=0;i--){const f=G.fx[i];f.life-=dt;if(f.shard)f.rot+=f.vr*dt;if(!f.ring){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=.92;f.vy*=.92}if(f.life<=0)G.fx.splice(i,1)}
   for(let i=G.texts.length-1;i>=0;i--){const t=G.texts[i];t.life-=dt;t.y-=30*dt;if(t.life<=0)G.texts.splice(i,1)}
   for(let i=G.trails.length-1;i>=0;i--){G.trails[i].life-=dt;if(G.trails[i].life<=0)G.trails.splice(i,1)}
 }
@@ -368,7 +376,7 @@ function render(dt){
   drawPlayer(p);
   for(const c of G.creations)drawCreation(c);
   for(const s of G.shots)drawShot(s);
-  for(const f of G.fx){const a=f.life/f.max;if(f.ring){ctx.strokeStyle=f.col;ctx.globalAlpha=a;ctx.lineWidth=3;ctx.beginPath();ctx.arc(f.x,f.y,f.r*(1.2-a*.5),0,6.283);ctx.stroke()}else{ctx.globalAlpha=a;ctx.fillStyle=f.col;ctx.beginPath();ctx.arc(f.x,f.y,f.r,0,6.283);ctx.fill()}}
+  for(const f of G.fx){const a=f.life/f.max;if(f.shard){ctx.globalAlpha=a;ctx.fillStyle=f.col;ctx.save();ctx.translate(f.x,f.y);ctx.rotate(f.rot);ctx.beginPath();ctx.moveTo(f.r,0);ctx.lineTo(-f.r*.6,f.r*.5);ctx.lineTo(-f.r*.4,-f.r*.6);ctx.closePath();ctx.fill();ctx.restore()}else if(f.ring){ctx.strokeStyle=f.col;ctx.globalAlpha=a;ctx.lineWidth=3;ctx.beginPath();ctx.arc(f.x,f.y,f.r*(1.2-a*.5),0,6.283);ctx.stroke()}else{ctx.globalAlpha=a;ctx.fillStyle=f.col;ctx.beginPath();ctx.arc(f.x,f.y,f.r,0,6.283);ctx.fill()}}
   ctx.globalAlpha=1;
   for(const t of G.texts){ctx.globalAlpha=Math.min(1,t.life/t.max*2);ctx.fillStyle=t.col;ctx.font=`bold ${t.size}px Georgia`;ctx.textAlign='center';ctx.strokeStyle='#0009';ctx.lineWidth=3;ctx.strokeText(t.txt,t.x,t.y);ctx.fillText(t.txt,t.x,t.y)}
   ctx.globalAlpha=1;ctx.restore();
@@ -489,7 +497,7 @@ function how(){
   <b>Move:</b> touch &amp; drag on the <b>left half</b> (or WASD / arrows).<br>
   <b>Draw:</b> drag on the <b>right half</b> (or click-drag with the mouse anywhere). Time slows while you draw (up to 2s).<br><br>
   ${save.owned.map(id=>`${CREATIONS[id].icon} <b>${CREATIONS[id].name}</b> — draw a <i>${CREATIONS[id].shape}</i>`).join('<br>')}<br><br>
-  Creations fight <b>on their own</b>: melee ones orbit &amp; smash, ranged ones fire at the nearest enemy. Each has <b>durability</b> (the ring around it) and breaks — redraw it! Max ${MAX_ACTIVE} at once.<br><br>
+  Creations fight <b>on their own</b>: melee ones orbit &amp; smash, ranged ones fire at the nearest enemy. Each has <b>durability</b> (the ring around it) and breaks — redraw it! Up to ${BASE_TYPE_CAP} of one type at once (a 4th replaces the oldest); drawing a <b>different</b> type shatters all active ones.<br><br>
   Collect XP orbs, pick upgrades on level-up, earn coins when you fall.</div>
   <button class="btn" id="back">Back</button></div>`);$('back').onclick=home;
 }
