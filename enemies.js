@@ -2,26 +2,30 @@
 // ================= STONE AGE BESTIARY =================
 // Sprites face right; outline() adds the ink border. Two frames = legs swap.
 SPR.en={};
-function enSet(frames){const fs=frames.map(f=>set(outline(grid(f))));const s=fs[0];return {...s,frames:fs}}
+// nearest-neighbour downscale of a char grid (keeps crisp pixels, outline added after)
+function scaleGrid(rows,k){if(k===1)return rows;const h=rows.length,w=Math.max(...rows.map(r=>r.length)),H2=Math.max(3,Math.round(h*k)),W2=Math.max(3,Math.round(w*k));const out=[];
+  for(let j=0;j<H2;j++){let s='';for(let i=0;i<W2;i++){const r=rows[Math.min(h-1,Math.floor((j+.5)/k))]||'';s+=r[Math.min(w-1,Math.floor((i+.5)/k))]||'.'}out.push(s)}return out}
+const EN_SCALE={insect:1,bird:.8,saber:.72,caveman:.85,bear:.72,rhino:.8,mammoth:1,shaman:1};
+function enSet(frames,k=1){const fs=frames.map(f=>set(outline(grid(scaleGrid(f,k)))));const s=fs[0];return {...s,frames:fs}}
 const LEG=(rows,a,b)=>[[...rows,...a],[...rows,...b]];
 SPR.en.insect=enSet([
 ['WW.WW.','.GGGGi','GGGGG.','.G.G..'],
 ['......','WGGGGi','GGGGG.','G...G.']].map(f=>f.map(r=>r.replace(/W/g,'w'))));
 SPR.en.bird=enSet(LEG([
 '.......mm..','......mjjm.','......jjiaa','......jjjaaa','.......jj...','..j...jj....','.jjjjjjjj...','jJjjjjjjJ...','.JJjjjjJ....','..JJJJJ.....'],
-['....a..a....','....a..a....','...aa.aa....'],['.....aa.....','....a..a....','...aa..aa...']));
+['....a..a....','....a..a....','...aa.aa....'],['.....aa.....','....a..a....','...aa..aa...']),EN_SCALE.bird);
 SPR.en.saber=enSet(LEG([
 '.............ff..','...FF.......fffi.','..FFfFfFfFfFfffff','.FffFffFffFffffwf','..ffffffffffffw.w','..FfFFFFFFFFfF...'],
-['..F.f......F.f...','..F.f......F.f...'],['...fF.....fF.....','...fF.....fF.....']));
+['..F.f......F.f...','..F.f......F.f...'],['...fF.....fF.....','...fF.....fF.....']),EN_SCALE.saber);
 SPR.en.caveman=enSet(LEG([
 '...cccc...','..cssssc..','..csisic..','..cssss...','...ss..tt.','.FFFFFFstt','sFFFFFF...','s.FFFF....','..FFFF....'],
-['..s..s....','..s..s....','.ss..ss...'],['...ss.....','..s..s....','.ss...ss..']));
+['..s..s....','..s..s....','.ss..ss...'],['...ss.....','..s..s....','.ss...ss..']),EN_SCALE.caveman);
 SPR.en.bear=enSet(LEG([
 '..........cc.c..','.........ccccc..','..cccccccccicc..','.ccccccccccccCi.','cccccccccccccC..','cccccccccccccc..','cCcccccccccccC..','.CCcCCCCCcCCC...'],
-['.CC.CC...CC.CC..','.CC.CC...CC.CC..'],['..CCCC....CCCC..','..CC.CC..CC.CC..']));
+['.CC.CC...CC.CC..','.CC.CC...CC.CC..'],['..CCCC....CCCC..','..CC.CC..CC.CC..']),EN_SCALE.bear);
 SPR.en.rhino=enSet(LEG([
 '...............w..','..qqqqqqqqqq..ww..','.qqqqqqqqqqqqqqqw.','qqqqqqqqqqqqqqiqq.','qqqqqqqqqqqqqqqqq.','QqqqqqqqqqqqqqqQ..','.QQQQQQQQQQQQQQ...'],
-['.QQ.QQ....QQ.QQ...','.QQ.QQ....QQ.QQ...'],['..QQQQ.....QQQQ...','..QQ.QQ...QQ.QQ...']));
+['.QQ.QQ....QQ.QQ...','.QQ.QQ....QQ.QQ...'],['..QQQQ.....QQQQ...','..QQ.QQ...QQ.QQ...']),EN_SCALE.rhino);
 SPR.en.mammoth=enSet(LEG([
 '.......cccccccccc.........','.....cccccccccccccc.......','....cccccccccccccccccc....','...cccccccccccccccccccc...',
 '..cccccccccccccccccccccc..','..ccccccccccccccccciccccc.','.ccccccccccccccccccccccccc','.cccccccccccccccccccccCcc.',
@@ -53,9 +57,9 @@ function queryGrid(x,y,r,out=[]){const x0=Math.floor((x-r)/GRID_CELL),x1=Math.fl
   for(let i=x0;i<=x1;i++)for(let j=y0;j<=y1;j++){const a=egrid.get((i|0)*73856093^(j|0)*19349663);if(a)for(const e of a)out.push(e)}return out}
 
 function spawnEnemy(type,scale,at){
-  const T=ENEMY_TYPES[type],p=G.player,a=Math.random()*6.283,R=Math.hypot(viewW(),viewH())/2+40;
+  const T=ENEMY_TYPES[type],k=EN_SCALE[T.spr]||1,p=G.player,a=Math.random()*6.283,R=Math.hypot(viewW(),viewH())/2+40;
   const hpMul=T.boss?(1+G.t/400):scale;
-  const e={type,T,x:at?at.x:p.x+Math.cos(a)*R,y:at?at.y:p.y+Math.sin(a)*R,r:T.r,hp:T.hp*hpMul*G.era.enemyHp,maxHp:T.hp*hpMul*G.era.enemyHp,
+  const e={type,T,x:at?at.x:p.x+Math.cos(a)*R,y:at?at.y:p.y+Math.sin(a)*R,r:T.r*k,hp:T.hp*hpMul*G.era.enemyHp,maxHp:T.hp*hpMul*G.era.enemyHp,
     speed:T.speed*(1+Math.min(.45,G.t/700)),dmg:T.dmg*G.era.enemyDmg*(1+G.t/360),kx:0,ky:0,flash:0,wob:Math.random()*6,st:'move',timer:rnd(1,3),vx:0,vy:0,sw:Math.random()*6};
   G.enemies.push(e);return e;
 }
