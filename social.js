@@ -46,3 +46,28 @@ function custom(code){
 hub('custom','Custom Run',()=>custom());
 // #/run/<code> deep link
 route=(function(orig){return function(){const h=location.hash.replace(/^#\/?/,'');if(h.startsWith('run/')){const o=decodeRun(h.slice(4));if(o){if(mode==='run'&&G&&G.customCode===encodeRun(o))return;if(!save.eras.includes(o.era))o.era='stone';custom(encodeRun(o));return}}return orig.apply(this,arguments)}})(route);
+
+// ---- ghost replay: your best run per era is recorded (10 samples/s) and replayed as a ghost ----
+if(!save.ghosts)save.ghosts={};
+runHooks.push(G=>{G.rec=[];G.recT=0;const g=save.ghost!==false&&save.ghosts[CURRENT_ERA];G.ghost=g&&!G.daily?g:null});
+CAVE_TICK.push(dt=>{G.recT+=dt;if(G.recT>=.1){G.recT-=.1;const p=G.player;G.rec.push(Math.round(p.x),Math.round(p.y))}});
+endHooks.push(g=>{if(!g||!g.rec||g.daily)return;const era=CURRENT_ERA,b=save.ghosts[era];if(!b||g.t>b.t){save.ghosts[era]={t:Math.floor(g.t),kills:g.kills,pts:g.rec.slice(0,2*10*1800),date:todayKey()};persist();toast('New best: ghost saved')}});
+const _ghTop=drawLootTop;drawLootTop=function(){_ghTop();const gh=G&&G.ghost;if(!gh)return;const i=Math.floor(G.t*10)*2;if(i+1>=gh.pts.length)return;
+  const j=Math.min(gh.pts.length-2,i+2),f=(G.t*10)%1,x=gh.pts[i]+(gh.pts[j]-gh.pts[i])*f,y=gh.pts[i+1]+(gh.pts[j+1]-gh.pts[i+1])*f;
+  const fr=SPR.mage[Math.floor(G.t*6)%SPR.mage.length]||SPR.mage[0];const im=fr.wr||fr.r||fr;bx.globalAlpha=.32;bx.drawImage(im,X(x)-(im.width>>1),Y(y)-im.height);bx.globalAlpha=1;
+  const sx=X(x),sy=Y(y);if(sx<4||sx>BW-4||sy<4||sy>BH-4){bx.globalAlpha=.6;bx.fillStyle='#fff6e0';bx.fillRect(Math.max(2,Math.min(BW-4,sx)),Math.max(10,Math.min(BH-14,sy)),2,2);bx.globalAlpha=1}};
+// ---- leaderboard (local only: a global board needs a server) ----
+if(!save.history)save.history=[];
+endHooks.push(g=>{if(!g)return;save.history.push({t:Math.floor(g.t),kills:g.kills,era:CURRENT_ERA,diff:g.diff||'normal',mage:g.mage||'ink',code:g.customCode||null,daily:!!g.daily,date:todayKey()});
+  save.history.sort((a,b)=>b.t-a.t||b.kills-a.kills);save.history=save.history.slice(0,25);persist()});
+function leaderboard(){
+  leaveRun();setRoute('leaderboard');
+  const rows=save.history.map((r,i)=>`<div class="li"><b>${String(i+1).padStart(2,'0')}</b><div class="li-t"><span class="nm">${fmt(r.t)} &middot; ${r.kills} kills</span><span class="sh">${ERAS[r.era]?ERAS[r.era].name:r.era} &middot; ${r.diff} &middot; ${MAGES[r.mage]?MAGES[r.mage].name:r.mage}${r.daily?' &middot; daily':''} &middot; ${r.date}</span></div>${r.code?`<button class="buy" data-code="${r.code}">Replay seed</button>`:''}</div>`).join('')||'<p class="sh">No runs yet.</p>';
+  const gh=Object.entries(save.ghosts).map(([e,g])=>`<div class="li"><span class="nm">${ERAS[e]?ERAS[e].name:e}</span><span class="sh">best ${fmt(g.t)} &middot; ${g.kills} kills &middot; ghost recorded ${g.date}</span></div>`).join('')||'<p class="sh">Finish a run to record a ghost.</p>';
+  show(sheet('Leaderboard','15 &mdash; Local records',`<div class="cols"><div><div class="lab rule">Your top runs</div><div class="list">${rows}</div></div><div><div class="lab rule">Ghosts</div><div class="list">${gh}</div>
+    <div class="lab rule" style="margin-top:14px">Global</div><p class="note">Global and friends leaderboards need an online service, which Era Draw doesn't have yet. Share codes from Custom Run let friends race the same seed today.</p>
+    <nav class="menu"><button id="ghT"><b>01</b>Ghost replay<span>${save.ghost===false?'Off':'On'}</span><i>${save.ghost===false?'&#9633;':'&#9632;'}</i></button></nav></div></div>`));
+  screenEl.querySelectorAll('[data-code]').forEach(el=>el.onclick=()=>custom(el.dataset.code));
+  $('ghT').onclick=()=>{save.ghost=save.ghost===false;persist();leaderboard()};$('back').onclick=home;
+}
+hub('leaderboard','Leaderboard',leaderboard);
