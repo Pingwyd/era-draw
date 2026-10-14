@@ -18,7 +18,10 @@ const CREATIONS = {
   sling: { name:'Sling', icon:'🪃', era:'stone', shape:'V shape', kind:'ranged', dmg:7, life:11, uses:40, rate:0.28, speed:720, pierce:1, cost:150 },
   dagger:{ name:'Bone Dagger', icon:'🦴', era:'stone', shape:'zigzag', kind:'melee', dmg:8, life:10, uses:60, rate:0.22, range:46, knock:60, cost:250, orbitSpeed:5 },
 };
-const MAX_ACTIVE = 5;
+// Max active creations of the SAME type. A future upgrade can raise this (G.player.typeCap).
+const BASE_TYPE_CAP = 3;
+// Drawing a different type shatters all active creations.
+const SWITCH_SHATTERS = true;
 const BASE_CAST_CD = 0.6;
 const BASE_FOCUS = 2.0, MAX_FOCUS = 2.8;
 const SLOWMO = 0.22;
@@ -49,7 +52,7 @@ const SHOP = [
 const SAVE_KEY='eradraw.save.v1';
 let save=loadSave();
 function loadSave(){
-  const d={coins:0,gems:0,owned:['club','spear','rock'],loadout:['club','spear','rock'],slots:3,best:0,runs:0};
+  const d={autoMove:false,coins:0,gems:0,owned:['club','spear','rock'],loadout:['club','spear','rock'],slots:3,best:0,runs:0};
   try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s)return Object.assign(d,s)}catch(e){}
   return d;
 }
@@ -104,7 +107,7 @@ let mode='home';
 function newRun(){
   const era=ERAS[CURRENT_ERA];
   G={t:0,wave:1,kills:0,coins:0,spawnT:0,level:1,xp:0,xpNext:5,ink:[],trails:[],
-    player:{x:0,y:0,r:16,hp:100,maxHp:100,speed:190,dmgMul:1,cdMul:1,durMul:1,focus:BASE_FOCUS,homing:0,echo:0,magnet:90,secondWind:false,usedWind:false,invul:0,face:0},
+    player:{x:0,y:0,r:16,hp:100,maxHp:100,speed:190,dmgMul:1,cdMul:1,durMul:1,focus:BASE_FOCUS,homing:0,echo:0,magnet:90,secondWind:false,typeCap:BASE_TYPE_CAP,usedWind:false,invul:0,face:0},
     picks:{},enemies:[],creations:[],shots:[],orbs:[],fx:[],texts:[],castCd:0,focusLeft:BASE_FOCUS,drawing:null,
     era, loadout:save.loadout.slice(),paused:false,shake:0,dbl:false};
 }
@@ -112,27 +115,37 @@ function newRun(){
 // ================= INPUT =================
 const stick={id:null,ox:0,oy:0,x:0,y:0,active:false};
 const keys={};
+const mouse={x:0,y:0,walk:false,id:null};
+const isTouch=matchMedia('(pointer:coarse)').matches||('ontouchstart' in window&&navigator.maxTouchPoints>0);
 addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key==='Escape'&&mode==='run')togglePause()});
 addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
 cv.addEventListener('pointerdown',e=>{
   if(mode!=='run'||G.paused)return;
   cv.setPointerCapture(e.pointerId);
   const isMouse=e.pointerType==='mouse';
+  if(isMouse&&e.button===2){mouse.walk=true;mouse.x=e.clientX;mouse.y=e.clientY;e.preventDefault();return}
+  if(isMouse&&e.button!==0)return;
   if(!isMouse&&e.clientX<W*0.5&&stick.id===null){Object.assign(stick,{id:e.pointerId,ox:e.clientX,oy:e.clientY,x:e.clientX,y:e.clientY,active:true});return}
   if(!G.drawing&&(isMouse||e.clientX>=W*0.5)){G.drawing={id:e.pointerId,pts:[{x:e.clientX,y:e.clientY}]};}
 });
 cv.addEventListener('pointermove',e=>{
   if(mode!=='run')return;
+  if(e.pointerType==='mouse'){mouse.x=e.clientX;mouse.y=e.clientY}
   if(e.pointerId===stick.id){stick.x=e.clientX;stick.y=e.clientY}
   else if(G.drawing&&G.drawing.id===e.pointerId){const pts=G.drawing.pts,l=pts[pts.length-1];if(Math.hypot(e.clientX-l.x,e.clientY-l.y)>3)pts.push({x:e.clientX,y:e.clientY})}
 });
 const endPtr=e=>{
+  if(e.pointerType==='mouse'&&(e.button===2||e.type==='pointercancel'))mouse.walk=false;
   if(mode!=='run')return;
+  if(e.pointerType==='mouse'&&e.button===2)return;
   if(e.pointerId===stick.id){stick.id=null;stick.active=false}
   else if(G.drawing&&G.drawing.id===e.pointerId){finishDraw();}
 };
 cv.addEventListener('pointerup',endPtr);cv.addEventListener('pointercancel',endPtr);
-cv.addEventListener('contextmenu',e=>e.preventDefault());
+addEventListener('contextmenu',e=>e.preventDefault());
+addEventListener('blur',()=>{mouse.walk=false;for(const k in keys)keys[k]=false});
+// chorded buttons (right held while left pressed) don't fire pointerdown; track via buttons bitmask
+cv.addEventListener('pointermove',e=>{if(e.pointerType==='mouse'&&mode==='run')mouse.walk=(e.buttons&2)!==0});
 
 function finishDraw(){
   const d=G.drawing;G.drawing=null;
@@ -155,7 +168,9 @@ function fizzle(pts,msg){G.trails.push({pts,life:0.5,max:0.5,ok:false});floatTex
 function creationDmgMul(def){const ei=ERA_ORDER.indexOf(def.era),ci=ERA_ORDER.indexOf(CURRENT_ERA);return ei<ci?OLD_ERA_DMG:1}
 function spawnCreation(id,dir,echo){
   const def=CREATIONS[id],p=G.player;
-  if(G.creations.length>=MAX_ACTIVE){G.creations.sort((a,b)=>a.life/a.max-b.life/b.max);breakCreation(G.creations[0])}
+  if(SWITCH_SHATTERS&&!echo){const others=G.creations.filter(c=>c.id!==id);if(others.length){for(const c of others)shatterCreation(c);G.shake=Math.max(G.shake,6);floatText(p.x,p.y-52,'Shatter!','#cfe3ff')}}
+  const same=G.creations.filter(c=>c.id===id);
+  while(same.length>=p.typeCap){const old=same.shift();breakCreation(old,true)} // replace oldest
   const dur=G.era.durability*p.durMul;
   const c={id,def,life:def.life*dur,max:def.life*dur,uses:Math.round(def.uses*dur),maxUses:Math.round(def.uses*dur),cd:0.15,
     ang:Math.random()*6.28,x:p.x,y:p.y,swing:0,dir};
@@ -164,7 +179,10 @@ function spawnCreation(id,dir,echo){
   burst(p.x,p.y,G.era.ink,14);
   floatText(p.x,p.y-34,(echo?'Echo ':'')+def.name+'!',G.era.ink);
 }
-function breakCreation(c){const i=G.creations.indexOf(c);if(i>=0)G.creations.splice(i,1);burst(c.x,c.y,'#cfc3a8',10);floatText(c.x,c.y-10,'broke','#cfc3a8')}
+function breakCreation(c,quiet){const i=G.creations.indexOf(c);if(i>=0)G.creations.splice(i,1);burst(c.x,c.y,'#cfc3a8',10);if(!quiet)floatText(c.x,c.y-10,'broke','#cfc3a8')}
+function shatterCreation(c){const i=G.creations.indexOf(c);if(i>=0)G.creations.splice(i,1);
+  for(let k=0;k<9;k++){const a=Math.random()*6.283,sp=rnd(120,320);G.fx.push({shard:true,x:c.x,y:c.y,vx:Math.cos(a)*sp,vy:Math.sin(a)*sp,rot:a,vr:rnd(-12,12),life:rnd(.4,.8),max:.8,col:k%2?'#cfe3ff':G.era.ink,r:rnd(4,8)})}
+  ring(c.x,c.y,34,'#cfe3ff')}
 function nearestEnemy(x,y,maxD=9e9,skip){let best=null,bd=maxD;for(const e of G.enemies){if(skip&&skip.has(e))continue;const d=Math.hypot(e.x-x,e.y-y);if(d<bd){bd=d;best=e}}return best}
 function fireShot(c,ang){
   const def=c.def;
@@ -321,7 +339,7 @@ function ring(x,y,r,col){G.fx.push({ring:true,x,y,r,life:.35,max:.35,col})}
 function floatText(x,y,txt,col,life=0.9,size=15){G.texts.push({x,y,txt,col,life,max:life,size});if(G.texts.length>80)G.texts.shift()}
 let toastT=0;function toast(m){const t=$('toast');t.textContent=m;t.style.opacity=1;clearTimeout(toastT);toastT=setTimeout(()=>t.style.opacity=0,1600)}
 function updateFx(dt){
-  for(let i=G.fx.length-1;i>=0;i--){const f=G.fx[i];f.life-=dt;if(!f.ring){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=.92;f.vy*=.92}if(f.life<=0)G.fx.splice(i,1)}
+  for(let i=G.fx.length-1;i>=0;i--){const f=G.fx[i];f.life-=dt;if(f.shard)f.rot+=f.vr*dt;if(!f.ring){f.x+=f.vx*dt;f.y+=f.vy*dt;f.vx*=.92;f.vy*=.92}if(f.life<=0)G.fx.splice(i,1)}
   for(let i=G.texts.length-1;i>=0;i--){const t=G.texts[i];t.life-=dt;t.y-=30*dt;if(t.life<=0)G.texts.splice(i,1)}
   for(let i=G.trails.length-1;i>=0;i--){G.trails[i].life-=dt;if(G.trails[i].life<=0)G.trails.splice(i,1)}
 }
@@ -345,10 +363,20 @@ function step(dt,realDt){
   let mx=0,my=0;
   if(keys.w||keys.arrowup)my--;if(keys.s||keys.arrowdown)my++;if(keys.a||keys.arrowleft)mx--;if(keys.d||keys.arrowright)mx++;
   if(stick.active){const dx=stick.x-stick.ox,dy=stick.y-stick.oy,d=Math.hypot(dx,dy);if(d>6){const k=Math.min(1,d/55);mx=dx/d*k;my=dy/d*k}}
+  if(mouse.walk&&!mx&&!my){const dx=mouse.x-W/2-(p.x-cam.x),dy=mouse.y-H/2-(p.y-cam.y),d=Math.hypot(dx,dy);if(d>12){const k=Math.min(1,d/80);mx=dx/d*k;my=dy/d*k}}
+  if(save.autoMove&&!mx&&!my&&!stick.active){const v=kiteVector(p);mx=v.x;my=v.y}
   const m=Math.hypot(mx,my);if(m>1){mx/=m;my/=m}
   p.x+=mx*p.speed*dt;p.y+=my*p.speed*dt;if(m>0.1)p.face=Math.atan2(my,mx);p.moving=m>0.1;
   updateSpawns(dt);updateEnemies(dt);if(mode!=='run')return;updateCreations(dt);updateShots(dt);updateOrbs(dt);updateFx(dt);
   G.coins=calcCoins();updateHud();
+}
+// Auto-move (kite): steer away from nearby enemies, drift toward nearby XP
+function kiteVector(p){
+  let x=0,y=0;
+  for(const e of G.enemies){const dx=p.x-e.x,dy=p.y-e.y,d=Math.hypot(dx,dy)||1,R=200+e.r;if(d<R){const w=(R-d)/R*(e.T.boss?3:1);x+=dx/d*w*2;y+=dy/d*w*2}}
+  let best=null,bd=320;for(const o of G.orbs){const d=Math.hypot(o.x-p.x,o.y-p.y);if(d<bd){bd=d;best=o}}
+  if(best){const dx=best.x-p.x,dy=best.y-p.y,d=Math.hypot(dx,dy)||1;x+=dx/d*.6;y+=dy/d*.6}
+  const m=Math.hypot(x,y);if(m<0.15)return{x:0,y:0};return m>1?{x:x/m,y:y/m}:{x,y};
 }
 function calcCoins(){let c=10+G.t*0.25+G.kills*0.1;if(G.picks.coin)c*=1.25;if(G.dbl)c*=2;return Math.floor(c)}
 
@@ -368,7 +396,7 @@ function render(dt){
   drawPlayer(p);
   for(const c of G.creations)drawCreation(c);
   for(const s of G.shots)drawShot(s);
-  for(const f of G.fx){const a=f.life/f.max;if(f.ring){ctx.strokeStyle=f.col;ctx.globalAlpha=a;ctx.lineWidth=3;ctx.beginPath();ctx.arc(f.x,f.y,f.r*(1.2-a*.5),0,6.283);ctx.stroke()}else{ctx.globalAlpha=a;ctx.fillStyle=f.col;ctx.beginPath();ctx.arc(f.x,f.y,f.r,0,6.283);ctx.fill()}}
+  for(const f of G.fx){const a=f.life/f.max;if(f.shard){ctx.globalAlpha=a;ctx.fillStyle=f.col;ctx.save();ctx.translate(f.x,f.y);ctx.rotate(f.rot);ctx.beginPath();ctx.moveTo(f.r,0);ctx.lineTo(-f.r*.6,f.r*.5);ctx.lineTo(-f.r*.4,-f.r*.6);ctx.closePath();ctx.fill();ctx.restore()}else if(f.ring){ctx.strokeStyle=f.col;ctx.globalAlpha=a;ctx.lineWidth=3;ctx.beginPath();ctx.arc(f.x,f.y,f.r*(1.2-a*.5),0,6.283);ctx.stroke()}else{ctx.globalAlpha=a;ctx.fillStyle=f.col;ctx.beginPath();ctx.arc(f.x,f.y,f.r,0,6.283);ctx.fill()}}
   ctx.globalAlpha=1;
   for(const t of G.texts){ctx.globalAlpha=Math.min(1,t.life/t.max*2);ctx.fillStyle=t.col;ctx.font=`bold ${t.size}px Georgia`;ctx.textAlign='center';ctx.strokeStyle='#0009';ctx.lineWidth=3;ctx.strokeText(t.txt,t.x,t.y);ctx.fillText(t.txt,t.x,t.y)}
   ctx.globalAlpha=1;ctx.restore();
@@ -383,7 +411,7 @@ function render(dt){
   ctx.fillStyle=G.castCd>0?'#ff8a8a':'#f3e9d2';ctx.font='11px Georgia';ctx.textAlign='right';ctx.fillText(G.castCd>0?'recharging':'FOCUS · draw here',W-14,fy-5);
   // stick
   if(stick.active){ctx.strokeStyle='#f3e9d255';ctx.lineWidth=2;ctx.beginPath();ctx.arc(stick.ox,stick.oy,55,0,6.283);ctx.stroke();const dx=stick.x-stick.ox,dy=stick.y-stick.oy,d=Math.min(55,Math.hypot(dx,dy)),a=Math.atan2(dy,dx);ctx.fillStyle='#f3e9d288';ctx.beginPath();ctx.arc(stick.ox+Math.cos(a)*d,stick.oy+Math.sin(a)*d,22,0,6.283);ctx.fill()}
-  else if(G.t<8){ctx.fillStyle='#f3e9d255';ctx.font='14px Georgia';ctx.textAlign='center';ctx.fillText('← move here',W*.25,H-60);ctx.fillText('draw here →',W*.75,H-60);ctx.fillStyle='#f3e9d222';ctx.fillRect(W/2-1,H*.3,2,H*.5)}
+  else if(G.t<8){ctx.fillStyle='#f3e9d255';ctx.font='14px Georgia';ctx.textAlign='center';if(isTouch){ctx.fillText('← move here',W*.25,H-60);ctx.fillText('draw here →',W*.75,H-60);ctx.fillStyle='#f3e9d222';ctx.fillRect(W/2-1,H*.3,2,H*.5)}else ctx.fillText(controlsHint(),W/2,H-60)}
 }
 function drawGround(){
   const g=40*4,x0=Math.floor((cam.x-W/2)/g)*g,y0=Math.floor((cam.y-H/2)/g)*g;
@@ -480,16 +508,27 @@ function home(){
   <button class="btn gold" id="play">▶ Play — ${ERAS[CURRENT_ERA].name}</button>
   <button class="btn" id="lo">Loadout (${save.loadout.length}/${save.slots})</button>
   <button class="btn" id="shop">Shop</button>
-  <button class="btn" id="how">How to play</button></div>`);
+  <button class="btn" id="how">How to play</button>
+  <button class="btn" id="set">⚙ Settings</button></div>`);
+  $('set').onclick=settings;
   $('play').onclick=startRun;$('lo').onclick=loadout;$('shop').onclick=shop;$('how').onclick=how;
 }
+function settings(){
+  show(`<div class="panel"><h2>Settings</h2>
+  <button class="btn ${save.autoMove?'gold':''}" id="am">Auto-move (kite): ${save.autoMove?'ON':'OFF'}</button>
+  <div class="help">When ON and you're not steering, the mage moves away from nearby enemies and toward XP on its own, so you can just draw. Your own input always takes over.</div>
+  <button class="btn" id="back">Back</button></div>`);
+  $('am').onclick=()=>{save.autoMove=!save.autoMove;persist();settings()};$('back').onclick=home;
+}
+function controlsHint(){return isTouch?'Left thumb: move · Right thumb: draw':'Hold right-click: walk · Left-drag: draw · WASD also works'}
 function fmt(s){s=Math.floor(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
 function how(){
   show(`<div class="panel"><h2>How to play</h2><div class="help">
-  <b>Move:</b> touch &amp; drag on the <b>left half</b> (or WASD / arrows).<br>
-  <b>Draw:</b> drag on the <b>right half</b> (or click-drag with the mouse anywhere). Time slows while you draw (up to 2s).<br><br>
+  <b>Phone:</b> drag the <b>left half</b> to move, drag the <b>right half</b> to draw.<br>
+  <b>Laptop:</b> <b>hold right mouse button</b> to walk toward the cursor, <b>left-drag</b> to draw (anywhere). WASD / arrows also move.<br>
+  Optional <b>Auto-move (kite)</b> in Settings. Time slows while you draw (up to 2s).<br><br>
   ${save.owned.map(id=>`${CREATIONS[id].icon} <b>${CREATIONS[id].name}</b> — draw a <i>${CREATIONS[id].shape}</i>`).join('<br>')}<br><br>
-  Creations fight <b>on their own</b>: melee ones orbit &amp; smash, ranged ones fire at the nearest enemy. Each has <b>durability</b> (the ring around it) and breaks — redraw it! Max ${MAX_ACTIVE} at once.<br><br>
+  Creations fight <b>on their own</b>: melee ones orbit &amp; smash, ranged ones fire at the nearest enemy. Each has <b>durability</b> (the ring around it) and breaks — redraw it! Up to ${BASE_TYPE_CAP} of one type at once (a 4th replaces the oldest); drawing a <b>different</b> type shatters all active ones.<br><br>
   Collect XP orbs, pick upgrades on level-up, earn coins when you fall.</div>
   <button class="btn" id="back">Back</button></div>`);$('back').onclick=home;
 }
@@ -521,7 +560,7 @@ function buy(it){
 }
 function startRun(){
   newRun();mode='run';show('');$('hud').classList.remove('hidden');updateHud.sig=null;cam.x=0;cam.y=0;last=performance.now();
-  toast(ERAS[CURRENT_ERA].name+' — survive!');
+  toast(ERAS[CURRENT_ERA].name+' — survive!');setTimeout(()=>mode==='run'&&toast(controlsHint()),1700);mouse.walk=false;
 }
 function endRun(){
   if(mode!=='run')return;mode='dead';
@@ -533,5 +572,5 @@ function endRun(){
   $('retry').onclick=startRun;$('hm').onclick=home;
 }
 // expose for tests
-window.EraDraw={recognize,get G(){return G},get mode(){return mode},startRun,save:()=>save,spawnCreation,ERAS,CREATIONS};
+window.EraDraw={mouse,kiteVector,recognize,get G(){return G},get mode(){return mode},startRun,save:()=>save,spawnCreation,ERAS,CREATIONS};
 home();requestAnimationFrame(frame);
