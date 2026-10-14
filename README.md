@@ -14,7 +14,7 @@ Endless survivor game for phone browsers. You play a mage who hops through time 
   - Circle: 🪨 Rock (lobs rocks that hit an area)
   - V shape: 🪃 Sling (unlock in the shop, 150 coins)
   - Zigzag: 🦴 Bone Dagger (unlock in the shop, 250 coins)
-- A shape that isn't recognized, or a weapon that's not in your loadout, spawns nothing. You can have up to 3 of the same weapon out at once (`BASE_TYPE_CAP`); drawing a 4th replaces the oldest. Drawing a different weapon shatters all the ones that are out.
+- A shape that isn't recognized, or a weapon that's not in your loadout, spawns nothing. You can have up to 3 melee weapons (Club, Bone Dagger) or 2 ranged weapons (Spear, Rock, Sling) out at once (`BASE_CAPS` in `game.js`; upgrades can raise each category through `player.caps`). Drawing one more replaces the oldest. Drawing a different weapon shatters all the ones that are out.
 
 ## Tuning
 All tuning lives at the top of `game.js`:
