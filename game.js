@@ -106,7 +106,6 @@ const ICON={};
 for(const id of ['club','spear','rock','sling','dagger'])ICON[id]=iconURL(SPR[id].r,3);
 for(const k in SPR.pu)ICON['pu_'+k]=iconURL(SPR.pu[k],4);ICON.gemHard=iconURL(SPR.gemHard,3);ICON.slot4=iconURL(SPR.chest,3);
 ICON.skull=iconURL(SPR.deco.skull,3);ICON.coin=iconURL(SPR.coin,3);ICON.chest=iconURL(SPR.chest,3);ICON.gem=iconURL(SPR.gem1,3);
-function sfx(){}
 // ================= GAME STATE =================
 let G=null; // current run
 let mode='home';
@@ -132,7 +131,7 @@ cv.addEventListener('pointerdown',e=>{
   if(isMouse&&e.button===2){mouse.walk=true;mouse.x=e.clientX;mouse.y=e.clientY;e.preventDefault();return}
   if(isMouse&&e.button!==0)return;
   if(!isMouse&&e.clientX<W*0.5&&stick.id===null){Object.assign(stick,{id:e.pointerId,ox:e.clientX,oy:e.clientY,x:e.clientX,y:e.clientY,active:true});return}
-  if(!G.drawing&&(isMouse||e.clientX>=W*0.5)){G.drawing={id:e.pointerId,pts:[{x:e.clientX,y:e.clientY}]};}
+  if(!G.drawing&&(isMouse||e.clientX>=W*0.5)){G.drawing={id:e.pointerId,pts:[{x:e.clientX,y:e.clientY}]};sfx('draw');}
 });
 cv.addEventListener('pointermove',e=>{
   if(mode!=='run')return;
@@ -168,13 +167,13 @@ function finishDraw(){
   G.trails.push({pts,life:0.7,max:0.7,ok:true});
   G.focusLeft=Math.min(G.player.focus,G.focusLeft+0.6);
 }
-function fizzle(pts,msg){G.trails.push({pts,life:0.5,max:0.5,ok:false});floatText(G.player.x,G.player.y-30,msg,'#ff8a8a')}
+function fizzle(pts,msg){sfx('fizzle');G.trails.push({pts,life:0.5,max:0.5,ok:false});floatText(G.player.x,G.player.y-30,msg,'#ff8a8a')}
 
 // ================= CREATIONS =================
 function creationDmgMul(def){const ei=ERA_ORDER.indexOf(def.era),ci=ERA_ORDER.indexOf(CURRENT_ERA);return ei<ci?OLD_ERA_DMG:1}
 function spawnCreation(id,dir,echo){
   const def=CREATIONS[id],p=G.player;
-  if(SWITCH_SHATTERS&&!echo){const others=G.creations.filter(c=>c.id!==id);if(others.length){for(const c of others)shatterCreation(c);G.shake=Math.max(G.shake,6);floatText(p.x,p.y-52,'Shatter!','#cfe3ff')}}
+  if(SWITCH_SHATTERS&&!echo){const others=G.creations.filter(c=>c.id!==id);if(others.length){for(const c of others)shatterCreation(c);G.shake=Math.max(G.shake,6);floatText(p.x,p.y-52,'Shatter!','#cfe3ff');sfx('shatter')}}
   const same=G.creations.filter(c=>c.def.kind===def.kind);
   while(same.length>=(p.caps[def.kind]||1)){const old=same.shift();breakCreation(old,true)} // replace oldest
   const dur=G.era.durability*p.durMul;
@@ -182,7 +181,7 @@ function spawnCreation(id,dir,echo){
     ang:Math.random()*6.28,x:p.x,y:p.y,swing:0,dir};
   G.creations.push(c);
   if(id==='spear')fireShot(c,dir); // first throw goes where you drew
-  burst(p.x,p.y,G.era.ink,14);
+  burst(p.x,p.y,G.era.ink,14);sfx('spawn');
   floatText(p.x,p.y-34,(echo?'Echo ':'')+def.name+'!',G.era.ink);
 }
 function breakCreation(c,quiet){const i=G.creations.indexOf(c);if(i>=0)G.creations.splice(i,1);burst(c.x,c.y,'#cfc3a8',10);if(!quiet)floatText(c.x,c.y-10,'broke','#cfc3a8')}
@@ -248,19 +247,19 @@ function updateShots(dt){
 // ================= ENEMIES =================
 function hurtEnemy(e,d){
   if(e.hp<=0)return;
-  e.hp-=d;e.flash=0.1;
+  e.hp-=d;e.flash=0.1;sfx('hit');
   G.dnums.push({x:e.x+rnd(-6,6),y:e.y-e.r*1.6,v:Math.max(1,Math.round(d)),big:d>=25,col:d>=25?'#ffe08a':'#fff6e0',life:.6,max:.6});if(G.dnums.length>120)G.dnums.shift();
   if(e.hp<=0)killEnemy(e);
 }
 function killEnemy(e){
   const i=G.enemies.indexOf(e);if(i>=0)G.enemies.splice(i,1);
-  G.kills++;burst(e.x,e.y,e.T.col,e.T.boss?50:7);burst(e.x,e.y,'#1a0f0e',e.T.boss?20:3);if(e.T.boss||e.T.elite)ring(e.x,e.y,e.T.boss?120:50,'#ffe08a');
+  G.kills++;sfx('kill');burst(e.x,e.y,e.T.col,e.T.boss?50:7);burst(e.x,e.y,'#1a0f0e',e.T.boss?20:3);if(e.T.boss||e.T.elite)ring(e.x,e.y,e.T.boss?120:50,'#ffe08a');
   G.ink.push({x:e.x,y:e.y,r:e.r*rnd(.8,1.4),a:.35});if(G.ink.length>120)G.ink.shift();
   G.orbs.push({x:e.x,y:e.y,v:e.T.xp,t:0});
   if(e.T.boss||(e.T.elite&&Math.random()<.25)){G.chests.push({x:e.x,y:e.y});if(e.T.boss){toast(e.T.name+' falls!');G.shake=14}}
 }
 function damagePlayer(d){
-  const p=G.player;p.hp-=d;p.invul=0.5;G.shake=8;burst(p.x,p.y,'#ff6b6b',10);
+  const p=G.player;p.hp-=d;p.invul=0.5;sfx('hurt');G.shake=8;burst(p.x,p.y,'#ff6b6b',10);
   if(p.hp<=0){
     if(p.secondWind&&!p.usedWind){p.usedWind=true;p.hp=1;p.invul=2;toast('Second Wind!');ring(p.x,p.y,200,'#fff');for(const e of G.enemies){const a=Math.atan2(e.y-p.y,e.x-p.x);e.kx+=Math.cos(a)*500;e.ky+=Math.sin(a)*500}}
     else endRun();
@@ -298,7 +297,7 @@ function rollPicks(){
 }
 function levelUp(fromChest){
   G.paused=true;stick.id=null;stick.active=false;G.drawing=null;
-  const picks=rollPicks();
+  const picks=rollPicks();sfx(fromChest?'chest':'lvl');
   show(`<div class="sheet lv">
    <header class="row"><span class="lab">${fromChest?'Chest opened · +25 coins':'Level up'}</span><span class="lab">Choose one · ${fmt(G.t)}</span></header>
    <h2 class="disp">${fromChest?'Treasure':'Level '+G.level}</h2>

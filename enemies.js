@@ -75,7 +75,7 @@ function updateSpawns(dt){
     else{const a=Math.random()*6.283,cx=p.x+Math.cos(a)*R,cy=p.y+Math.sin(a)*R;for(let i=0;i<n*.6;i++)spawnEnemy(G.t>30?'bird':'insect',scale,{x:cx+rnd(-50,50),y:cy+rnd(-50,50)});toast('A flock stampedes!')}}
   for(const b of BOSS_SCHEDULE){if(b.next===undefined)b.next=b.t;}
   if(!G.bossNext)G.bossNext=BOSS_SCHEDULE.map(b=>b.t);
-  BOSS_SCHEDULE.forEach((b,i)=>{if(G.t>=G.bossNext[i]){G.bossNext[i]+=b.every;spawnEnemy(b.type,scale);toast(ENEMY_TYPES[b.type].name+', '+ENEMY_TYPES[b.type].title+'!');G.shake=10}});
+  BOSS_SCHEDULE.forEach((b,i)=>{if(G.t>=G.bossNext[i]){G.bossNext[i]+=b.every;spawnEnemy(b.type,scale);toast(ENEMY_TYPES[b.type].name+', '+ENEMY_TYPES[b.type].title+'!');G.shake=10;sfx('boss')}});
 }
 function updateEnemies(dt){
   const p=G.player;buildGrid();
