@@ -548,6 +548,11 @@ function togglePause(){
 $('pauseBtn').onclick=togglePause;
 
 // ================= SCREENS =================
+function applyScale(){
+  const ui=clamp(Math.min(innerWidth/1050,innerHeight/590),1,2.6)*(save.uiScale||1);
+  document.documentElement.style.setProperty('--ui',ui.toFixed(3));
+}
+addEventListener('resize',applyScale);
 function show(html){screenEl.innerHTML=html;if(html){$('toast').style.opacity=0;clearTimeout(toastT)}}
 const coinI=()=>`<img class="pi" src="${ICON.coin}" alt="coins">`,gemI=()=>`<img class="pi" src="${ICON.gemHard}" alt="gems">`;
 function home(){
@@ -596,23 +601,34 @@ function how(){
   $('back').onclick=home;
 }
 function wStats(d){return `DMG ${d.dmg} &middot; ${d.kind==='melee'?'MELEE':'RANGED'} &middot; ${d.life}s`}
+function shapeDemo(id){ // tiny svg of the stroke to draw
+  const P={club:'M20 40 L60 40',spear:'M8 44 L92 36',rock:'M50 18 A22 22 0 1 1 49.9 18',sling:'M25 20 L50 62 L75 20',dagger:'M18 22 L40 60 L60 22 L82 60'};
+  return `<svg viewBox="0 0 100 80" class="demo"><path d="${P[id]}" fill="none" stroke="#1a0f0e" stroke-width="9" stroke-linecap="round" stroke-linejoin="round"/><path d="${P[id]}" fill="none" stroke="#ff9a3c" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/><path d="${P[id]}" fill="none" stroke="#ffe08a" stroke-width="1.5" stroke-linecap="round"/></svg>`}
+function detailPane(id,extra=''){const d=CREATIONS[id];const dur=Math.round(d.life*ERAS[CURRENT_ERA].durability);
+  return `<aside class="pane"><div class="pane-art"><img src="${iconURL(SPR[id].r,8)}" alt=""></div>
+   <div class="lab">${d.kind==='melee'?'Melee &middot; orbits &amp; smashes':'Ranged &middot; auto-fires'}</div><h3 class="pane-nm">${d.name}</h3>
+   <div class="pane-shape">${shapeDemo(id)}<span class="lab">Draw a ${d.shape}</span></div>
+   <ul class="stats"><li>Damage<em>${d.dmg}</em></li><li>Lasts<em>${dur}s / ${d.uses} uses</em></li><li>Max active<em>${BASE_CAPS[d.kind]}</em></li>${d.pierce?`<li>Pierce<em>${d.pierce}</em></li>`:''}${d.aoe?`<li>Blast radius<em>${d.aoe}</em></li>`:''}</ul>${extra}</aside>`}
 function loadout(){
-  const sel=save.loadout.slice();
-  const render=()=>{show(sheet('Loadout',`02 &mdash; Choose up to ${save.slots} &middot; ${sel.length} selected`,`<div class="tbl">${Object.keys(CREATIONS).map((id,i)=>{const d=CREATIONS[id],own=save.owned.includes(id),on=sel.includes(id);
-      return `<button class="cell ${on?'on':''} ${own?'':'lock'}" data-id="${id}"><b>0${i+1}</b><img src="${ICON[id]}" alt=""><span class="nm">${d.name}</span><span class="sh">Draw a ${d.shape}</span><span class="st">${own?wStats(d):'Locked &middot; '+d.cost+' coins in shop'}</span>${on?'<i class="chk">&#9632; In loadout</i>':''}</button>`}).join('')}</div>
-      <nav class="menu"><button id="ok" class="prim" ${sel.length?'':'disabled'}><b>&mdash;</b>Save loadout<i>&rarr;</i></button></nav>`));
-  screenEl.querySelectorAll('.cell').forEach(el=>el.onclick=()=>{const id=el.dataset.id;if(!save.owned.includes(id)){toast('Unlock it in the shop');return}const i=sel.indexOf(id);if(i>=0)sel.splice(i,1);else if(sel.length<save.slots)sel.push(id);else toast('Slots full');render()});
+  const sel=save.loadout.slice();let focus=sel[0]||'club';
+  const render=()=>{show(sheet('Loadout',`02 &mdash; Choose up to ${save.slots} &middot; ${sel.length} selected`,`<div class="split"><div><div class="tbl">${Object.keys(CREATIONS).map((id,i)=>{const d=CREATIONS[id],own=save.owned.includes(id),on=sel.includes(id);
+      return `<button class="cell ${on?'on':''} ${own?'':'lock'} ${focus===id?'foc':''}" data-id="${id}"><span class="cell-h"><b>0${i+1}</b>${on?'<i class="chk">&#9632; Equipped</i>':''}</span><img src="${ICON[id]}" alt=""><span class="nm">${d.name}</span><span class="sh">Draw a ${d.shape}</span><span class="st">${own?wStats(d):'Locked &middot; '+d.cost+' coins'}</span></button>`}).join('')}</div>
+      <nav class="menu"><button id="ok" class="prim" ${sel.length?'':'disabled'}><b>&mdash;</b>Save loadout<i>&rarr;</i></button></nav></div>${detailPane(focus,save.owned.includes(focus)?'':`<p class="note">Unlock in the shop for ${CREATIONS[focus].cost} coins.</p>`)}</div>`));
+  screenEl.querySelectorAll('.cell').forEach(el=>{el.onmouseenter=()=>{if(focus!==el.dataset.id){focus=el.dataset.id;render()}};el.onclick=()=>{const id=el.dataset.id;focus=id;if(!save.owned.includes(id)){toast('Unlock it in the shop');render();return}const i=sel.indexOf(id);if(i>=0)sel.splice(i,1);else if(sel.length<save.slots)sel.push(id);else toast('Slots full');render()}});
   $('ok').onclick=()=>{if(!sel.length)return;save.loadout=sel;persist();home()};$('back').onclick=home};
   render();
 }
 function shop(){
-  show(sheet('Shop',`03 &mdash; ${coinI()} ${save.coins} &nbsp; ${gemI()} ${save.gems}`,`<div class="list">${SHOP.map((it,i)=>{
+  const f=SHOP.find(s=>s.id===shop.focus)||SHOP[0];
+  const pane=f.type==='creation'?detailPane(f.id):`<aside class="pane"><div class="pane-art"><img src="${f.id==='slot4'?iconURL(SPR.chest,8):f.id==='dbl'?iconURL(SPR.pu.coin,8):iconURL(SPR.pu.wind,8)}" alt=""></div><div class="lab">${f.type==='slot'?'Upgrade':'Coming soon'}</div><h3 class="pane-nm">${f.name}</h3><p class="note">${f.type==='slot'?'Carry four creations into every run instead of three.':f.note}</p></aside>`;
+  show(sheet('Shop',`03 &mdash; ${coinI()} ${save.coins} &nbsp; ${gemI()} ${save.gems}`,`<div class="split"><div class="list">${SHOP.map((it,i)=>{
     const d=it.type==='creation'?CREATIONS[it.id]:it;const owned=it.type==='creation'?save.owned.includes(it.id):it.type==='slot'?save.slots>=4:false;
     const desc=it.type==='creation'?`New creation &middot; draw a ${d.shape} &middot; ${wStats(d)}`:it.type==='slot'?'Bring a fourth creation into each run':it.note;
     const icon=it.type==='creation'?ICON[it.id]:it.id==='slot4'?ICON.slot4:it.id==='dbl'?ICON.pu_coin:ICON.pu_wind;
     const afford=it.cur==='coins'?save.coins>=it.cost:save.gems>=it.cost;
     return `<div class="li"><b>0${i+1}</b><img src="${icon}" alt=""><div class="li-t"><span class="nm">${d.name}</span><span class="sh">${desc}</span></div>
-     <button class="buy ${owned?'own':''} ${afford||owned?'':'poor'}" data-id="${it.id}">${owned?'Owned':(it.cur==='coins'?coinI():gemI())+' '+it.cost}</button></div>`}).join('')}</div>`));
+     <button class="buy ${owned?'own':''} ${afford||owned?'':'poor'}" data-id="${it.id}">${owned?'Owned':(it.cur==='coins'?coinI():gemI())+' '+it.cost}</button></div>`}).join('')}</div>${pane}</div>`));
+  screenEl.querySelectorAll('.li').forEach(el=>el.onmouseenter=()=>{const id=el.querySelector('.buy').dataset.id;if(shop.focus!==id){shop.focus=id;shop()}});
   screenEl.querySelectorAll('.buy').forEach(el=>el.onclick=()=>buy(SHOP.find(s=>s.id===el.dataset.id)));
   $('back').onclick=home;
 }
@@ -660,4 +676,4 @@ function endRun(){
 
 // expose for tests
 window.EraDraw={step:(a,b)=>step(a,b),mouse,kiteVector,recognize,get G(){return G},get mode(){return mode},startRun,save:()=>save,spawnCreation,ERAS,CREATIONS};
-home();checkOrientation();requestAnimationFrame(frame);
+applyScale();home();checkOrientation();requestAnimationFrame(frame);
