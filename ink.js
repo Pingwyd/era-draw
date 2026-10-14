@@ -29,3 +29,15 @@ function inks(){
   $('back').onclick=home;
 }
 hub('inks','Inks',inks);
+
+// ---- stroke-speed bonus: a fast, confident stroke hits harder ----
+function strokeBonus(d,pts,id){const dur=(performance.now()-(d.t0||performance.now()))/1000;let m=1;
+  if(dur<.22){m=1.2;floatText(G.player.x,G.player.y-50,'SWIFT','#9fe0ff',.8,11)}else if(dur<.4)m=1.1;
+  const key=CREATIONS[id]&&CREATIONS[id].shapeKey||id;masteryAdd(key);return m}
+// ---- shape mastery: lifetime draws per shape -> levels (+5% damage each) ----
+const MASTERY_STEPS=[10,40,120,300,700];
+if(!save.mastery)save.mastery={};
+function masteryLv(key){const n=save.mastery[key]||0;let l=0;for(const s of MASTERY_STEPS)if(n>=s)l++;return l}
+function masteryAdd(key){const before=masteryLv(key);save.mastery[key]=(save.mastery[key]||0)+1;const l=masteryLv(key);if(l>before){toast('Mastery '+l+': '+SHAPE_NAMES[key]+' (+'+l*5+'% dmg)');sfx('lvl')}}
+const SHAPE_NAMES={short:'Short line',long:'Long line',circle:'Circle',v:'V shape',zig:'Zigzag'};
+DMG_MODS.push((e,d,src,from)=>{const def=from&&from.def;if(!def)return d;const l=masteryLv(def.shapeKey||from.id);return l?d*(1+.05*l):d});
