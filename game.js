@@ -18,8 +18,8 @@ const CREATIONS = {
   sling: { name:'Sling', icon:'🪃', era:'stone', shape:'V shape', kind:'ranged', dmg:7, life:11, uses:40, rate:0.28, speed:720, pierce:1, cost:150 },
   dagger:{ name:'Bone Dagger', icon:'🦴', era:'stone', shape:'zigzag', kind:'melee', dmg:8, life:10, uses:60, rate:0.22, range:46, knock:60, cost:250, orbitSpeed:5 },
 };
-// Max active creations of the SAME type. A future upgrade can raise this (G.player.typeCap).
-const BASE_TYPE_CAP = 3;
+// Max active creations per CATEGORY (def.kind). Upgrades can raise each one via G.player.caps[kind].
+const BASE_CAPS = { melee:3, ranged:2 };
 // Drawing a different type shatters all active creations.
 const SWITCH_SHATTERS = true;
 const BASE_CAST_CD = 0.6;
@@ -107,7 +107,7 @@ let mode='home';
 function newRun(){
   const era=ERAS[CURRENT_ERA];
   G={t:0,wave:1,kills:0,coins:0,spawnT:0,level:1,xp:0,xpNext:5,ink:[],trails:[],
-    player:{x:0,y:0,r:16,hp:100,maxHp:100,speed:190,dmgMul:1,cdMul:1,durMul:1,focus:BASE_FOCUS,homing:0,echo:0,magnet:90,secondWind:false,typeCap:BASE_TYPE_CAP,usedWind:false,invul:0,face:0},
+    player:{x:0,y:0,r:16,hp:100,maxHp:100,speed:190,dmgMul:1,cdMul:1,durMul:1,focus:BASE_FOCUS,homing:0,echo:0,magnet:90,secondWind:false,caps:{...BASE_CAPS},usedWind:false,invul:0,face:0},
     picks:{},enemies:[],creations:[],shots:[],orbs:[],fx:[],texts:[],castCd:0,focusLeft:BASE_FOCUS,drawing:null,
     era, loadout:save.loadout.slice(),paused:false,shake:0,dbl:false};
 }
@@ -169,8 +169,8 @@ function creationDmgMul(def){const ei=ERA_ORDER.indexOf(def.era),ci=ERA_ORDER.in
 function spawnCreation(id,dir,echo){
   const def=CREATIONS[id],p=G.player;
   if(SWITCH_SHATTERS&&!echo){const others=G.creations.filter(c=>c.id!==id);if(others.length){for(const c of others)shatterCreation(c);G.shake=Math.max(G.shake,6);floatText(p.x,p.y-52,'Shatter!','#cfe3ff')}}
-  const same=G.creations.filter(c=>c.id===id);
-  while(same.length>=p.typeCap){const old=same.shift();breakCreation(old,true)} // replace oldest
+  const same=G.creations.filter(c=>c.def.kind===def.kind);
+  while(same.length>=(p.caps[def.kind]||1)){const old=same.shift();breakCreation(old,true)} // replace oldest
   const dur=G.era.durability*p.durMul;
   const c={id,def,life:def.life*dur,max:def.life*dur,uses:Math.round(def.uses*dur),maxUses:Math.round(def.uses*dur),cd:0.15,
     ang:Math.random()*6.28,x:p.x,y:p.y,swing:0,dir};
@@ -528,7 +528,7 @@ function how(){
   <b>Laptop:</b> <b>hold right mouse button</b> to walk toward the cursor, <b>left-drag</b> to draw (anywhere). WASD / arrows also move.<br>
   Optional <b>Auto-move (kite)</b> in Settings. Time slows while you draw (up to 2s).<br><br>
   ${save.owned.map(id=>`${CREATIONS[id].icon} <b>${CREATIONS[id].name}</b> — draw a <i>${CREATIONS[id].shape}</i>`).join('<br>')}<br><br>
-  Creations fight <b>on their own</b>: melee ones orbit &amp; smash, ranged ones fire at the nearest enemy. Each has <b>durability</b> (the ring around it) and breaks — redraw it! Up to ${BASE_TYPE_CAP} of one type at once (a 4th replaces the oldest); drawing a <b>different</b> type shatters all active ones.<br><br>
+  Creations fight <b>on their own</b>: melee ones orbit &amp; smash, ranged ones fire at the nearest enemy. Each has <b>durability</b> (the ring around it) and breaks — redraw it! Up to ${BASE_CAPS.melee} melee (Club, Bone Dagger) or ${BASE_CAPS.ranged} ranged (Spear, Rock, Sling) at once; drawing one more replaces the oldest; drawing a <b>different</b> type shatters all active ones.<br><br>
   Collect XP orbs, pick upgrades on level-up, earn coins when you fall.</div>
   <button class="btn" id="back">Back</button></div>`);$('back').onclick=home;
 }
