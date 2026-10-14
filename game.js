@@ -217,7 +217,7 @@ function updateCreations(dt){
         if(targets.length){
           c.cd=def.rate;c.swing=1;
           for(const e of targets.slice(0,c.id==='club'?6:2)){
-            hurtEnemy(e,def.dmg*(c.power||1)*p.dmgMul*creationDmgMul(def));
+            hurtEnemy(e,def.dmg*(c.power||1)*p.dmgMul*creationDmgMul(def),'melee',c);
             const a=Math.atan2(e.y-p.y,e.x-p.x);e.kx+=Math.cos(a)*def.knock;e.ky+=Math.sin(a)*def.knock;
           }
           c.uses--; if(c.id==='club'){G.shake=Math.max(G.shake,4);ring(c.x,c.y,def.range,'#ffb35c')}
@@ -243,8 +243,8 @@ function updateShots(dt){
       if(s.hit.has(e)||e.hp<=0)continue;
       if(Math.hypot(e.x-s.x,e.y-s.y)<e.r+(s.id==='rock'?12:7)){
         s.hit.add(e);
-        if(s.aoe){for(const o of queryGrid(s.x,s.y,s.aoe))if(Math.hypot(o.x-s.x,o.y-s.y)<s.aoe)hurtEnemy(o,s.dmg);ring(s.x,s.y,s.aoe,s.def.fire?'#ff4a2a':'#d8c7a0');G.shake=Math.max(G.shake,3);if(!s.def.fire||--s.pierce<=0){dead=true;break}continue}
-        hurtEnemy(e,s.dmg);e.kx+=s.vx*0.12;e.ky+=s.vy*0.12;
+        if(s.aoe){for(const o of queryGrid(s.x,s.y,s.aoe))if(Math.hypot(o.x-s.x,o.y-s.y)<s.aoe)hurtEnemy(o,s.dmg,'aoe',s);ring(s.x,s.y,s.aoe,s.def.fire?'#ff4a2a':'#d8c7a0');G.shake=Math.max(G.shake,3);if(!s.def.fire||--s.pierce<=0){dead=true;break}continue}
+        hurtEnemy(e,s.dmg,'ranged',s);e.kx+=s.vx*0.12;e.ky+=s.vy*0.12;
         if(--s.pierce<=0){dead=true;break}
       }
     }
@@ -253,8 +253,10 @@ function updateShots(dt){
 }
 
 // ================= ENEMIES =================
-function hurtEnemy(e,d){
-  if(e.hp<=0)return;
+// damage pipeline: systems push f(e,d,src,from)->d (src: melee|ranged|aoe|fire|spell...)
+const DMG_MODS=[];
+function hurtEnemy(e,d,src,from){
+  if(e.hp<=0)return;for(const f of DMG_MODS)d=f(e,d,src,from);if(!(d>0))return;
   e.hp-=d;e.flash=0.1;sfx('hit');
   const dv=Math.max(1,Math.round(d));const prev=e.dn&&e.dn.life>.3&&G.dnums.includes(e.dn)?e.dn:null;
   if(prev){prev.v+=dv;prev.life=prev.max;prev.big=prev.v>=25;prev.col=prev.v>=25?'#ffe08a':'#fff6e0'}
