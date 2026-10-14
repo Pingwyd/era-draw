@@ -559,7 +559,7 @@ addEventListener('resize',applyScale);
 function show(html){screenEl.innerHTML=html;if(html){$('toast').style.opacity=0;clearTimeout(toastT)}}
 const coinI=()=>`<img class="pi" src="${ICON.coin}" alt="coins">`,gemI=()=>`<img class="pi" src="${ICON.gemHard}" alt="gems">`;
 function home(){
-  mode='home';G=null;$('hud').classList.add('hidden');const E=ERAS[CURRENT_ERA];
+  leaveRun();setRoute('home');mode='home';G=null;$('hud').classList.add('hidden');const E=ERAS[CURRENT_ERA];
   show(`<div class="home">
    <div class="home-l"><div class="lab">Era ${E.no} &mdash; ${E.name} &middot; ${E.date}</div>
     <h1 class="mast">Era<br>Draw</h1>
@@ -588,6 +588,7 @@ function startDiorama(){
 }
 function sheet(title,lab,body,back='Back'){return `<div class="sheet"><header class="row"><span class="lab">${lab}</span><button class="lab back" id="back">&larr; ${back}</button></header><h2 class="disp">${title}</h2>${body}</div>`}
 function settings(){
+  leaveRun();setRoute('settings');
   const sl=(id,label,key,min,max)=>`<label class="slider"><b>${label}</b><input type="range" id="${id}" min="${min}" max="${max}" step="10" value="${Math.round((save[key]||1)*100)}"><span id="${id}v">${Math.round((save[key]||1)*100)}%</span></label>`;
   show(sheet('Settings','04 &mdash; Options',`<div class="cols"><div><div class="lab rule">Display</div>
    ${sl('sHud','HUD size','hudScale',50,200)}${sl('sZoom','Game zoom','zoom',50,200)}${sl('sUi','Menu text size','uiScale',70,160)}
@@ -603,6 +604,7 @@ function settings(){
 function controlsHint(){return isTouch?'Left thumb: move · Right thumb: draw':'Hold right-click: walk · Left-drag: draw · WASD also works'}
 function fmt(s){s=Math.floor(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
 function how(){
+  leaveRun();setRoute('how-to-play');
   show(sheet('How to play','05 &mdash; Field notes',`<div class="cols">
    <div><div class="lab rule">Controls</div><ul class="stats"><li>Phone<em>left thumb moves, right thumb draws</em></li><li>Laptop<em>hold right-click to walk, left-drag to draw</em></li><li>Keys<em>WASD / arrows</em></li><li>Focus<em>time slows while drawing, up to ${BASE_FOCUS}s</em></li></ul>
    <p class="note">Creations fight on their own and wear out. Up to ${BASE_CAPS.melee} melee or ${BASE_CAPS.ranged} ranged at once; one more replaces the oldest. Drawing a different weapon shatters the ones you have out.</p></div>
@@ -619,6 +621,7 @@ function detailPane(id,extra=''){const d=CREATIONS[id];const dur=Math.round(d.li
    <div class="pane-shape">${shapeDemo(id)}<span class="lab">Draw a ${d.shape}</span></div>
    <ul class="stats"><li>Damage<em>${d.dmg}</em></li><li>Lasts<em>${dur}s / ${d.uses} uses</em></li><li>Max active<em>${BASE_CAPS[d.kind]}</em></li>${d.pierce?`<li>Pierce<em>${d.pierce}</em></li>`:''}${d.aoe?`<li>Blast radius<em>${d.aoe}</em></li>`:''}</ul>${extra}</aside>`}
 function loadout(){
+  leaveRun();setRoute('loadout');
   const sel=save.loadout.slice();let focus=sel[0]||'club';
   const render=()=>{show(sheet('Loadout',`02 &mdash; Choose up to ${save.slots} &middot; ${sel.length} selected`,`<div class="split"><div><div class="tbl">${Object.keys(CREATIONS).map((id,i)=>{const d=CREATIONS[id],own=save.owned.includes(id),on=sel.includes(id);
       return `<button class="cell ${on?'on':''} ${own?'':'lock'} ${focus===id?'foc':''}" data-id="${id}"><span class="cell-h"><b>0${i+1}</b>${on?'<i class="chk">&#9632; Equipped</i>':''}</span><img src="${ICON[id]}" alt=""><span class="nm">${d.name}</span><span class="sh">Draw a ${d.shape}</span><span class="st">${own?wStats(d):'Locked &middot; '+d.cost+' coins'}</span></button>`}).join('')}</div>
@@ -628,6 +631,7 @@ function loadout(){
   render();
 }
 function shop(){
+  leaveRun();setRoute('shop');
   const f=SHOP.find(s=>s.id===shop.focus)||SHOP[0];
   const pane=f.type==='creation'?detailPane(f.id):`<aside class="pane"><div class="pane-art"><img src="${f.id==='slot4'?iconURL(SPR.chest,8):f.id==='dbl'?iconURL(SPR.pu.coin,8):iconURL(SPR.pu.wind,8)}" alt=""></div><div class="lab">${f.type==='slot'?'Upgrade':'Coming soon'}</div><h3 class="pane-nm">${f.name}</h3><p class="note">${f.type==='slot'?'Carry four creations into every run instead of three.':f.note}</p></aside>`;
   show(sheet('Shop',`03 &mdash; ${coinI()} ${save.coins} &nbsp; ${gemI()} ${save.gems}`,`<div class="split"><div class="list">${SHOP.map((it,i)=>{
@@ -668,21 +672,62 @@ function checkOrientation(){
 }
 addEventListener('resize',checkOrientation);addEventListener('orientationchange',()=>setTimeout(checkOrientation,200));
 function startRun(){
+  sessionStorage.removeItem(RUN_KEY);setRoute('play');
   newRun();mode='run';show('');$('hud').classList.remove('hidden');updateHud.sig=null;cam.x=0;cam.y=0;last=performance.now();
   toast(ERAS[CURRENT_ERA].name+' · survive');setTimeout(()=>mode==='run'&&toast(controlsHint()),1700);mouse.walk=false;checkOrientation();
 }
 function endRun(){
-  if(mode!=='run')return;mode='dead';$('bossbar').classList.add('hidden');
-  const coins=calcCoins();save.coins+=coins;save.runs++;const newBest=G.t>save.best;if(newBest)save.best=G.t;persist();
-  $('hud').classList.add('hidden');sfx('die');
-  show(`<div class="sheet res"><header class="row"><span class="lab">${ERAS[CURRENT_ERA].name} &middot; Run ${save.runs}</span><span class="lab">${newBest?'New best':'Best '+fmt(save.best)}</span></header>
+  if(mode!=='run')return;mode='dead';$('bossbar').classList.add('hidden');sessionStorage.removeItem(RUN_KEY);
+  const coins=calcCoins();save.coins+=coins;save.runs++;const newBest=G.t>save.best;if(newBest)save.best=G.t;
+  save.lastRun={era:CURRENT_ERA,t:G.t,wave:G.wave,kills:G.kills,level:G.level,coins,newBest,run:save.runs};persist();
+  $('hud').classList.add('hidden');sfx('die');G=null;results();
+}
+function results(){
+  setRoute('results');mode='dead';$('hud').classList.add('hidden');const r=save.lastRun;
+  if(!r){home();return}
+  show(`<div class="sheet res"><header class="row"><span class="lab">${ERAS[r.era].name} &middot; Run ${r.run}</span><span class="lab">${r.newBest?'New best':'Best '+fmt(save.best)}</span></header>
    <h2 class="disp">The ink fades.</h2>
-   <div class="resgrid"><div><b>01</b><span class="lab">Survived</span><em>${fmt(G.t)}</em></div><div><b>02</b><span class="lab">Wave</span><em>${G.wave}</em></div><div><b>03</b><span class="lab">Kills</span><em>${G.kills}</em></div><div><b>04</b><span class="lab">Level</span><em>${G.level}</em></div><div class="gold"><b>05</b><span class="lab">Coins earned</span><em>+${coins}</em></div></div>
+   <div class="resgrid"><div><b>01</b><span class="lab">Survived</span><em>${fmt(r.t)}</em></div><div><b>02</b><span class="lab">Wave</span><em>${r.wave}</em></div><div><b>03</b><span class="lab">Kills</span><em>${r.kills}</em></div><div><b>04</b><span class="lab">Level</span><em>${r.level}</em></div><div class="gold"><b>05</b><span class="lab">Coins earned</span><em>+${r.coins}</em></div></div>
    <p class="note">Total ${coinI()} ${save.coins}</p>
    <nav class="menu"><button id="retry" class="prim"><b>01</b>Draw again<i>&rarr;</i></button><button id="hm"><b>02</b>Home<i>&rarr;</i></button></nav></div>`);
   $('retry').onclick=()=>{goLandscape();startRun()};$('hm').onclick=home;
 }
+// ================= ROUTING + RUN PERSISTENCE =================
+const RUN_KEY='eradraw.run.v1';
+function setRoute(r){const h='#/'+r;if(location.hash!==h)history.pushState(null,'',h)}
+function leaveRun(){if(mode==='run'&&G){saveRun();$('hud').classList.add('hidden');$('bossbar').classList.add('hidden')}}
+function saveRun(){
+  if(mode!=='run'||!G)return;
+  const p=G.player;
+  const d={t:G.t,wave:G.wave,kills:G.kills,level:G.level,xp:G.xp,xpNext:G.xpNext,bonus:G.bonus||0,evT:G.evT||0,spawnT:G.spawnT,bossNext:G.bossNext,loadout:G.loadout,picks:G.picks,
+    player:{...p},focusLeft:G.focusLeft,
+    creations:G.creations.map(c=>({id:c.id,life:c.life,max:c.max,uses:c.uses,maxUses:c.maxUses,ang:c.ang,dir:c.dir})),
+    enemies:G.enemies.map(e=>({type:e.type,x:e.x,y:e.y,hp:e.hp,maxHp:e.maxHp,speed:e.speed,dmg:e.dmg})),
+    orbs:G.orbs.map(o=>({x:o.x,y:o.y,v:o.v})),chests:G.chests};
+  try{sessionStorage.setItem(RUN_KEY,JSON.stringify(d))}catch(e){}
+}
+function restoreRun(){
+  let d=null;try{d=JSON.parse(sessionStorage.getItem(RUN_KEY))}catch(e){}
+  if(!d)return false;
+  newRun();Object.assign(G,{t:d.t,wave:d.wave,kills:d.kills,level:d.level,xp:d.xp,xpNext:d.xpNext,bonus:d.bonus,evT:d.evT,spawnT:d.spawnT,bossNext:d.bossNext,loadout:d.loadout,picks:d.picks,focusLeft:d.focusLeft});
+  Object.assign(G.player,d.player);G.player.invul=1.5;
+  G.creations=d.creations.map(c=>({...c,def:CREATIONS[c.id],cd:.2,x:G.player.x,y:G.player.y,swing:0}));
+  G.enemies=d.enemies.map(e=>({...e,T:ENEMY_TYPES[e.type],r:ENEMY_TYPES[e.type].r*(EN_SCALE[ENEMY_TYPES[e.type].spr]||1),kx:0,ky:0,flash:0,wob:Math.random()*6,st:'move',timer:rnd(1,3),vx:0,vy:0,sw:0}));
+  G.orbs=d.orbs.map(o=>({...o,t:0}));G.chests=d.chests||[];
+  mode='run';$('hud').classList.remove('hidden');updateHud.sig=null;cam.x=G.player.x;cam.y=G.player.y;last=performance.now();updateHud();
+  togglePause();toast('Run restored');return true;
+}
+setInterval(saveRun,2000);
+addEventListener('beforeunload',saveRun);addEventListener('pagehide',saveRun);
+document.addEventListener('visibilitychange',()=>{if(document.hidden){saveRun();if(mode==='run'&&G&&!G.paused)togglePause()}});
+function route(){
+  const r=(location.hash.replace(/^#\/?/,'')||'home');
+  if(r==='play'){if(mode==='run'&&G)return;if(!restoreRun())startRun();return}
+  ({home,loadout,shop,settings,'how-to-play':how,results}[r]||home)();
+}
+addEventListener('popstate',route);
+
 
 // expose for tests
 window.EraDraw={step:(a,b)=>step(a,b),mouse,kiteVector,recognize,get G(){return G},get mode(){return mode},startRun,save:()=>save,spawnCreation,ERAS,CREATIONS};
-applyScale();home();checkOrientation();requestAnimationFrame(frame);
+applyScale();if(!location.hash)history.replaceState(null,'','#/home');route();checkOrientation();requestAnimationFrame(frame);
