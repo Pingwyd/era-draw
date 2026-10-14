@@ -322,4 +322,3 @@ const _updF=updatePickups;updatePickups=function(dt){_updF(dt);if(mode!=='run'||
 const _rndF=renderPickups;renderPickups=function(){if(G.fire)for(const f of G.fire){const sx=X(f.x),sy=Y(f.y),a=Math.min(1,f.life/.6);const fl=Math.floor(G.t*12+f.x)&1;
   bx.globalAlpha=.55*a;bx.fillStyle='#ff6a2a';bx.fillRect(sx-4,sy-2,8,3);bx.fillStyle=fl?'#ffd34a':'#ffb13a';bx.fillRect(sx-2,sy-3-fl,4,2);bx.globalAlpha=1}_rndF()};
 
-boot();
