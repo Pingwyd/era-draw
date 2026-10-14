@@ -57,7 +57,7 @@ const SHRINES={
 BUFF_END.wind=G=>{G.player.speed/=1.3};
 DMG_MODS.push((e,d)=>hasBuff('fury')?d*1.35:d);
 SPR.shrine=outline(grid(['..kkkk..','.kssssk.','.ksSSsk.','..kssk..','..ksSk..','..kssk..','..ksSk..','.kssssk.','kssSSssk','kkkkkkkk'],{...PAL,k:'#1a0f0e',s:'#8a8178',S:'#c8bfb2'}));
-runHooks.push(G=>{G.shrines=[];G.shrineT=40;G.buffs={};G.quest=null;G.questT=25;G.relics={};G.relicPending=0;G.frenzy=null;G.boneUsed=false});
+runHooks.push(G=>{G.clouds=[];G.shrines=[];G.shrineT=40;G.buffs={};G.quest=null;G.questT=25;G.relics={};G.relicPending=0;G.frenzy=null;G.boneUsed=false});
 CAVE_TICK.push(dt=>{const p=G.player;G.shrineT-=dt;
   if(G.shrineT<=0&&G.shrines.length<2){G.shrineT=55+Math.random()*20;const ks=Object.keys(SHRINES),k=ks[Math.floor(Math.random()*ks.length)],a=Math.random()*6.283,d=180+Math.random()*120;G.shrines.push({x:p.x+Math.cos(a)*d,y:p.y+Math.sin(a)*d,k,prog:0,t:0});toast(SHRINES[k].name+' nearby')}
   for(let i=G.shrines.length-1;i>=0;i--){const s=G.shrines[i];s.t+=dt;const inR=Math.hypot(s.x-p.x,s.y-p.y)<42;s.prog=inR?s.prog+dt:Math.max(0,s.prog-dt*.5);
@@ -91,3 +91,26 @@ const _cvSp2=spawnCreation;spawnCreation=function(id,dir,echo){const r=_cvSp2.ap
 function questHud(){let el=$('quest');const q=G&&G.quest;if(!q||mode!=='run'){if(el)el.remove();return}
   if(!el){el=document.createElement('div');el.id='quest';$('hud').appendChild(el)}
   const txt=`<b>QUEST</b> ${q.txt} <i>${Math.floor(q.c)}/${q.n} &middot; ${Math.ceil(q.time)}s</i>`;if(el.innerHTML!==txt)el.innerHTML=txt}
+
+// ---- new enemy variants: poison gnats, armored bears (melee resistant), tar blob splitters ----
+function tintCanvas(src,col,a){const [c,x]=mk(src.width,src.height);x.drawImage(src,0,0);x.globalCompositeOperation='source-atop';x.globalAlpha=a;x.fillStyle=col;x.fillRect(0,0,c.width,c.height);return c}
+function tintSet(base,col,a=.45){const fs=(base.frames||[base]).map(f=>({...f,r:tintCanvas(f.r,col,a),l:tintCanvas(f.l,col,a)}));return {...fs[0],frames:fs}}
+SPR.en.pgnat=tintSet(SPR.en.insect,'#9cff3a',.5);
+SPR.en.abear=tintSet(SPR.en.bear,'#9aa7b8',.55);
+const BLOB_PAL={...PAL,k:'#1a0f0e',t:'#2a2030',T:'#55406a',w:'#e9dcc3'};
+SPR.en.blob=(()=>{const fs=[['...kkkk...','..kttttk..','.kttTTttk.','kttTwTwttk','kttttttttk','kTttttttTk','.kkkkkkkk.'],['..........','..kkkkkk..','.kttTTttk.','kttTwTwttk','kttttttttk','kTttttttTk','kkkkkkkkkk']].map(r=>set(outline(grid(r,BLOB_PAL))));return {...fs[0],frames:fs}})();
+SPR.en.tarling=SPR.en.blob;
+Object.assign(EN_SCALE,{pgnat:1,abear:.72,blob:1,tarling:.6});
+Object.assign(ENEMY_TYPES,{
+  pgnat:{name:'Poison Gnat',spr:'pgnat',r:7,hp:8,speed:90,dmg:4,xp:1,col:'#9cff3a',beh:'swarm',mat:'bone',poison:true,lore:'Bursts into a toxic cloud. Do not stand in the green.'},
+  abear:{name:'Armored Bear',spr:'abear',r:16,hp:110,speed:38,dmg:20,xp:5,col:'#9aa7b8',beh:'chase',mat:'hide',armor:.35,lore:'Plates of bone and slate. Clubs bounce off; throw things.'},
+  blob:{name:'Tar Blob',spr:'blob',r:12,hp:40,speed:44,dmg:10,xp:2,col:'#55406a',beh:'chase',mat:'flint',split:2,lore:'Hit it and there are two of them.'},
+  tarling:{name:'Tarling',spr:'tarling',r:7,hp:12,speed:70,dmg:6,xp:1,col:'#55406a',beh:'chase',mat:'flint',lore:'What a Tar Blob leaves behind.'},
+});
+ERAS.stone.spawns.push({type:'pgnat',from:60,w:10},{type:'blob',from:100,w:6},{type:'abear',from:160,w:5});
+DMG_MODS.push((e,d,src)=>{if(e.T.armor&&src==='melee'){d*=e.T.armor;if(Math.random()<.08)floatText(e.x,e.y-26,'RESIST','#9aa7b8',.6,10)}return d});
+killHooks.push(e=>{if(!G)return;if(e.T.poison)(G.clouds||(G.clouds=[])).push({x:e.x,y:e.y,t:3,tick:0});
+  if(e.T.split)for(let i=0;i<e.T.split;i++){const a=Math.random()*6.283;const n=spawnEnemy('tarling',1,{x:e.x+Math.cos(a)*14,y:e.y+Math.sin(a)*14});n.kx=Math.cos(a)*180;n.ky=Math.sin(a)*180}});
+CAVE_TICK.push(dt=>{if(!G.clouds)return;const p=G.player;for(let i=G.clouds.length-1;i>=0;i--){const c=G.clouds[i];c.t-=dt;c.tick-=dt;if(c.t<=0){G.clouds.splice(i,1);continue}
+  if(c.tick<=0&&Math.hypot(c.x-p.x,c.y-p.y)<34&&p.invul<=0){c.tick=.5;damagePlayer(3)}if(Math.random()<.3)G.fx.push({x:c.x+rnd(-24,24),y:c.y+rnd(-14,14),vx:0,vy:-8,life:.6,max:.6,col:'#9cff3a',r:2.5})}});
+const _cvRP2=renderPickups;renderPickups=function(){if(G.clouds)for(const c of G.clouds){bx.globalAlpha=.22*Math.min(1,c.t);bx.fillStyle='#7cdc2a';bx.beginPath();bx.ellipse(X(c.x),Y(c.y),Math.round(34/Z),Math.round(20/Z),0,0,6.283);bx.fill();bx.globalAlpha=1}_cvRP2()};
