@@ -274,6 +274,20 @@ function killEnemy(e){
 const CHEST_CAP=2;function chestOk(){return !G||G.chests.filter(c=>!c.boss).length<CHEST_CAP}
 // balance: XP needed grows ~level^1.45, plus a +25% step every 10 levels
 const SCREEN_LABELS=[];
+// ---- XP gem merging: resting gems close together fuse into a clump that keeps the exact summed XP (and gem count) ----
+const ORB_MERGE_R=22,ORB_SOFT_CAP=220;
+function mergeOrbs(dt){G.orbMergeT=(G.orbMergeT||0)-dt;if(G.orbMergeT>0)return;G.orbMergeT=.4;const over=G.orbs.length>ORB_SOFT_CAP;
+  // over the soft cap the merge radius grows until the count fits (XP is never dropped)
+  G.orbMergeR=over?Math.min(480,(G.orbMergeR||ORB_MERGE_R)*1.6):ORB_MERGE_R;const R=G.orbMergeR,C=R,cells=new Map(),out=[];
+  for(const o of G.orbs){if(o.pull){out.push(o);continue}const k=Math.floor(o.x/C)+','+Math.floor(o.y/C);let hit=null;
+    const cx=Math.floor(o.x/C),cy=Math.floor(o.y/C);
+    for(let i=-1;i<=1&&!hit;i++)for(let j=-1;j<=1&&!hit;j++){const l=cells.get((cx+i)+','+(cy+j));if(l)for(const q of l){if((q.x-o.x)**2+(q.y-o.y)**2<R*R){hit=q;break}}}
+    if(hit){const tv=hit.v+o.v;hit.x=(hit.x*hit.v+o.x*o.v)/tv;hit.y=(hit.y*hit.v+o.y*o.v)/tv;hit.v=tv;hit.n=(hit.n||1)+(o.n||1);hit.t=Math.min(hit.t,o.t)}
+    else{(cells.get(k)||cells.set(k,[]).get(k)).push(o);out.push(o)}}
+  G.orbs=out}
+function orbSprite(o){if((o.n||1)>1)return o.v>=60?SPR.clump3:o.v>=20?SPR.clump2:SPR.clump1;return o.v>=10?SPR.gem3:o.v>=3?SPR.gem2:SPR.gem1}
+// ---- render culling: only draw what is on screen (plus a margin) ----
+function onScr(x,y,m){const sx=X(x),sy=Y(y);return sx>-m&&sx<BW+m&&sy>-m&&sy<BH+m}
 function finalBoss(){const b=(G.era.bosses||[]).find(x=>x.t===ERA_CLEAR_T);return b&&b.type}
 function xpFor(l){return Math.round((5+3.2*Math.pow(l,1.45))*(1+.25*Math.floor(l/10)))}
 function damagePlayer(d){
@@ -289,9 +303,12 @@ function updateOrbs(dt){
   const p=G.player;
   for(let i=G.orbs.length-1;i>=0;i--){const o=G.orbs[i];o.t+=dt;const d=Math.hypot(p.x-o.x,p.y-o.y);
     if(d<p.magnet||o.pull){o.pull=true;const a=Math.atan2(p.y-o.y,p.x-o.x),sp=300+o.t*200;o.x+=Math.cos(a)*sp*dt;o.y+=Math.sin(a)*sp*dt}
-    if(d<p.r+6){G.orbs.splice(i,1);G.xp+=o.v;if(G.xp>=G.xpNext){G.xp-=G.xpNext;G.level++;G.xpNext=xpFor(G.level);levelUp()}}}
+    if(d<p.r+6){G.orbs.splice(i,1);G.xp+=o.v;G.gemsPicked=(G.gemsPicked||0)+(o.n||1);if(G.xp>=G.xpNext){G.xp-=G.xpNext;G.level++;G.xpNext=xpFor(G.level);levelUp()}}}
+  // a merged clump can carry more than one level: spend the overflow on the next free frame
+  if(G.xp>=G.xpNext&&!G.paused&&mode==='run'){G.xp-=G.xpNext;G.level++;G.xpNext=xpFor(G.level);levelUp()}
+  mergeOrbs(dt);
   for(let i=G.chests.length-1;i>=0;i--){const c=G.chests[i];if(Math.hypot(c.x-p.x,c.y-p.y)<p.r+14){G.chests.splice(i,1);G.bonus=(G.bonus||0)+25;floatText(p.x,p.y-40,'+25 COINS','#d9c27a',1.4);const rc=$('runcoins');rc.classList.remove('flash');void rc.offsetWidth;rc.classList.add('flash');burst(c.x,c.y,'#d9c27a',24);toast('Chest! +25 coins');(window.openChest?openChest(c):levelUp(true));return}}
-  if(G.orbs.length>250)G.orbs.splice(0,G.orbs.length-250);
+
 }
 function rollRarity(epicOk){
   const minutes=G.t/60;let we=minutes>=2?14:4;if(!epicOk)we=0;
@@ -425,18 +442,18 @@ function renderInner(dt){
   const p=G.player;const ct=window.camTarget?camTarget():p;cam.x+=(ct.x-cam.x)*0.15;cam.y+=(ct.y-cam.y)*0.15;
   ox=Math.round((Math.random()-.5)*G.shake/Z);oy=Math.round((Math.random()-.5)*G.shake/Z);
   drawGround();
-  for(const s of G.ink){bx.fillStyle=`rgba(26,15,14,${s.a})`;const r=Math.round(s.r/Z),sx=X(s.x),sy=Y(s.y);bx.fillRect(sx-r,sy-(r>>1),r*2,r);bx.fillRect(sx-(r>>1),sy-r+1,r,r*2-2)}
-  for(const o of G.orbs){const im=o.v>=10?SPR.gem3:o.v>=3?SPR.gem2:SPR.gem1;bx.drawImage(im,X(o.x)-(im.width>>1),Y(o.y)-(im.height>>1)-((Math.floor(G.t*3+o.x*.1)&1)))}
+  for(const s of G.ink){if(!onScr(s.x,s.y,40))continue;bx.fillStyle=`rgba(26,15,14,${s.a})`;const r=Math.round(s.r/Z),sx=X(s.x),sy=Y(s.y);bx.fillRect(sx-r,sy-(r>>1),r*2,r);bx.fillRect(sx-(r>>1),sy-r+1,r,r*2-2)}
+  for(const o of G.orbs){if(!onScr(o.x,o.y,12))continue;const im=orbSprite(o);bx.drawImage(im,X(o.x)-(im.width>>1),Y(o.y)-(im.height>>1)-((Math.floor(G.t*3+o.x*.1)&1)))}
   if(G.chests)for(const c of G.chests){shadow(c.x,c.y,6);blit(SPR.chest,c.x,c.y-((Math.floor(G.t*4)&1)))}
   if(window.renderPickups)renderPickups();
   // y-sorted actors
-  const actors=G.enemies.slice();actors.push(p);for(const c of G.creations)if(c.def.kind==='melee')actors.push(c);
+  const actors=[];for(const e of G.enemies)if(onScr(e.x,e.y,48))actors.push(e);actors.push(p);for(const c of G.creations)if(c.def.kind==='melee')actors.push(c);
   actors.sort((a,b)=>a.y-b.y);
   for(const a of actors){if(a===p)drawPlayer(p);else if(a.def)drawCreation(a);else drawEnemy(a)}
   for(const c of G.creations)if(c.def.kind!=='melee')drawCreation(c);
-  for(const s of G.shots)drawShot(s);
+  for(const s of G.shots)if(onScr(s.x,s.y,24))drawShot(s);
   if(G.eshots)for(const s of G.eshots){const im=s.kind==='orb'?SPR.p_orb:SPR.p_enemyRock;bx.drawImage(im,X(s.x)-(im.width>>1),Y(s.y)-(im.height>>1))}
-  for(const f of G.fx){const a=f.life/f.max;
+  for(const f of G.fx){if(!f.ring&&!onScr(f.x,f.y,4))continue;const a=f.life/f.max;
     if(f.ring){bx.globalAlpha=a;pxCircle(X(f.x),Y(f.y),f.r/Z*(1.2-a*.5),f.col)}
     else{bx.globalAlpha=Math.min(1,a*1.5);bx.fillStyle=f.col;const s=f.shard?2:f.r>2.5?2:1;bx.fillRect(X(f.x),Y(f.y),s,s)}}
   bx.globalAlpha=1;
@@ -762,7 +779,7 @@ function saveRun(){
     player:{...p},focusLeft:G.focusLeft,
     creations:G.creations.map(c=>({id:c.id,life:c.life,max:c.max,uses:c.uses,maxUses:c.maxUses,ang:c.ang,dir:c.dir})),
     enemies:G.enemies.map(e=>({type:e.type,x:e.x,y:e.y,hp:e.hp,maxHp:e.maxHp,speed:e.speed,dmg:e.dmg})),
-    orbs:G.orbs.map(o=>({x:o.x,y:o.y,v:o.v})),chests:G.chests};
+    orbs:G.orbs.map(o=>({x:o.x,y:o.y,v:o.v,n:o.n||1})),chests:G.chests};
   try{sessionStorage.setItem(RUN_KEY,JSON.stringify(d))}catch(e){}
 }
 function restoreRun(){

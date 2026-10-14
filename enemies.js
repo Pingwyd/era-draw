@@ -82,10 +82,12 @@ function updateSpawns(dt){
   BS.forEach((b,i)=>{if(G.t>=G.bossNext[i]){G.bossNext[i]+=b.every;spawnEnemy(b.type,scale);toast(ENEMY_TYPES[b.type].name+', '+ENEMY_TYPES[b.type].title+'!');G.shake=10;sfx('boss')}});
 }
 function updateEnemies(dt){
-  const P0=G.player;buildGrid();const PL=(window.partyTargets?partyTargets():null);
+  const P0=G.player;buildGrid();const FAR=Math.hypot(viewW(),viewH())/2+380;const PL=(window.partyTargets?partyTargets():null);
   for(const e of G.enemies){
     let p=P0;if(PL){let bd=1e18;for(const q of PL){const dd=(q.x-e.x)**2+(q.y-e.y)**2;if(dd<bd){bd=dd;p=q}}}
     const dx=p.x-e.x,dy=p.y-e.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d;
+    // far off-screen: cheap update (walk straight in, no behaviour/AI) until it gets close
+    if(d>FAR){e.x+=ux*e.speed*dt;e.y+=uy*e.speed*dt;e.kx*=.9;e.ky*=.9;continue}
     let mx=ux,my=uy,sp=e.speed;e.timer-=dt;
     switch(e.T.beh){
       case 'swarm':e.sw+=dt*6;mx=ux+Math.cos(e.sw)*.7*-uy;my=uy+Math.cos(e.sw)*.7*ux;break;
