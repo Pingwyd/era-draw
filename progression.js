@@ -235,4 +235,27 @@ function musTick(){
 setInterval(musTick,100);
 addEventListener('keydown',e=>{if(e.key==='m'||e.key==='M'){save.music=save.music===false;persist();toast('Music '+(save.music===false?'off':'on'))}});
 
+
+// ================= TUTORIAL =================
+const TUT_TOUCH=matchMedia('(pointer:coarse)').matches;
+const TUT=[
+  {t:'Move',d:()=>TUT_TOUCH?'Drag the left side of the screen to walk.':'Hold right-click or use WASD to walk.',done:(G,s)=>Math.hypot(G.player.x-s.x0,G.player.y-s.y0)>140},
+  {t:'Draw a weapon',d:()=>TUT_TOUCH?'Draw a short line on the right side: a Club appears.':'Left-drag a short line: a Club appears.',done:G=>G.creations.length>0},
+  {t:'They fight for you',d:()=>'Weapons attack on their own and break with use. Draw a long line for a Spear, a circle for a Rock.',done:(G,s)=>s.tt>6},
+  {t:'Dash',d:()=>TUT_TOUCH?'Double-tap to dash through danger.':'Press Space to dash through danger.',done:G=>G.player.dashCd>0},
+  {t:'Survive',d:()=>'Collect gems to level up. Survive 15:00 to clear the era. Good luck.',done:(G,s)=>s.tt>5},
+];
+runHooks.push(G=>{if(save.tutDone||G.daily){G.tut=null;return}G.tut={i:0,tt:0,x0:G.player.x,y0:G.player.y};G.diffDef={...G.diffDef,spawn:G.diffDef.spawn*.35}});
+function tutRender(){let el=$('tut');const G_=G;
+  if(mode!=='run'||!G_||!G_.tut||G_.paused){if(el)el.remove();return}
+  if(!el){el=document.createElement('div');el.id='tut';document.body.appendChild(el)}
+  const s=G_.tut,st=TUT[s.i];const h=`<span class="lab">Tutorial &middot; ${s.i+1} / ${TUT.length}</span><b>${st.t}</b><p>${st.d()}</p><button id="tutSkip" class="lab">Skip</button>`;
+  if(el.dataset.i!=String(s.i)){el.innerHTML=h;el.dataset.i=s.i;$('tutSkip').onclick=tutEnd}}
+function tutEnd(){if(G&&G.tut){G.tut=null;G.diffDef={...G.diffDef,spawn:G.diffDef.spawn/.35}}save.tutDone=true;persist();const el=$('tut');if(el)el.remove()}
+const _updT=updatePickups;updatePickups=function(dt){_updT(dt);const s=G&&G.tut;if(!s)return;s.tt+=dt;
+  if(TUT[s.i].done(G,s)){s.i++;s.tt=0;sfx('pick');haptic(15);if(s.i>=TUT.length){tutEnd();toast('Tutorial complete')}}};
+setInterval(tutRender,120);
+function tutorial(){save.tutDone=false;persist();startRun()}
+hub('tutorial','Tutorial',tutorial);
+
 boot();
