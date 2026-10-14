@@ -69,17 +69,17 @@ function updateSpawns(dt){
   G.spawnT+=dt*(1+G.t/13);
   const cap=Math.min(ENEMY_CAP,45+G.wave*18);
   while(G.spawnT>=1){G.spawnT-=1;if(G.enemies.length>=cap)break;
-    const r=Math.random(),t=G.t;let type='insect';
-    if(t>150&&r<.05)type='rhino';else if(t>120&&r<.12)type='bear';else if(t>90&&r<.2)type='caveman';else if(t>70&&r<.32)type='saber';else if(t>30&&r<.55)type='bird';
+    const pool=G.era.spawns.filter(s=>G.t>=s.from);let tot=0;for(const s of pool)tot+=s.w;let r=Math.random()*tot,type=pool[0].type;
+    for(const s of pool){r-=s.w;if(r<=0){type=s.type;break}}
     spawnEnemy(type,scale);}
   // horde events
   G.evT=(G.evT||0)+dt;
   if(G.evT>40){G.evT=0;const ring=Math.random()<.5;const n=Math.min(40,16+G.wave*3),p=G.player,R=Math.hypot(viewW(),viewH())/2+30;
-    if(ring){for(let i=0;i<n;i++){const a=i/n*6.283;spawnEnemy('insect',scale,{x:p.x+Math.cos(a)*R,y:p.y+Math.sin(a)*R})}toast('A swarm closes in!')}
-    else{const a=Math.random()*6.283,cx=p.x+Math.cos(a)*R,cy=p.y+Math.sin(a)*R;for(let i=0;i<n*.6;i++)spawnEnemy(G.t>30?'bird':'insect',scale,{x:cx+rnd(-50,50),y:cy+rnd(-50,50)});toast('A flock stampedes!')}}
-  for(const b of BOSS_SCHEDULE){if(b.next===undefined)b.next=b.t;}
-  if(!G.bossNext)G.bossNext=BOSS_SCHEDULE.map(b=>b.t);
-  BOSS_SCHEDULE.forEach((b,i)=>{if(G.t>=G.bossNext[i]){G.bossNext[i]+=b.every;spawnEnemy(b.type,scale);toast(ENEMY_TYPES[b.type].name+', '+ENEMY_TYPES[b.type].title+'!');G.shake=10;sfx('boss')}});
+    if(ring){for(let i=0;i<n;i++){const a=i/n*6.283;spawnEnemy(G.era.swarm,scale,{x:p.x+Math.cos(a)*R,y:p.y+Math.sin(a)*R})}toast('A swarm closes in!')}
+    else{const a=Math.random()*6.283,cx=p.x+Math.cos(a)*R,cy=p.y+Math.sin(a)*R;for(let i=0;i<n*.6;i++)spawnEnemy(G.t>30?G.era.flock:G.era.swarm,scale,{x:cx+rnd(-50,50),y:cy+rnd(-50,50)});toast('A flock stampedes!')}}
+  const BS=G.era.bosses;
+  if(!G.bossNext)G.bossNext=BS.map(b=>b.t);
+  BS.forEach((b,i)=>{if(G.t>=G.bossNext[i]){G.bossNext[i]+=b.every;spawnEnemy(b.type,scale);toast(ENEMY_TYPES[b.type].name+', '+ENEMY_TYPES[b.type].title+'!');G.shake=10;sfx('boss')}});
 }
 function updateEnemies(dt){
   const p=G.player;buildGrid();
@@ -105,7 +105,7 @@ function updateEnemies(dt){
       case 'shaman':
         if(d<200){mx=-ux*.8;my=-uy*.8}else if(d<260){mx=-uy;my=ux}
         if(e.timer<=0){e.timer=3.6;const n=12,off=Math.random();for(let i=0;i<n;i++){const a=(i+off)/n*6.283;G.eshots.push({x:e.x,y:e.y-12,vx:Math.cos(a)*120,vy:Math.sin(a)*120,dmg:e.dmg*.6,life:3.5,kind:'orb'})}
-          for(let i=0;i<5;i++)spawnEnemy('insect',1+G.t/100,{x:e.x+rnd(-30,30),y:e.y+rnd(-30,30)})}
+          for(let i=0;i<5;i++)spawnEnemy(G.era.swarm,1+G.t/100,{x:e.x+rnd(-30,30),y:e.y+rnd(-30,30)})}
         break;
     }
     const mm=Math.hypot(mx,my)||1;
