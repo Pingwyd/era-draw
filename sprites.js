@@ -93,6 +93,10 @@ SPR.p_orb=outline(grid(['.uu.','uyyu','uyyu','.uu.']),'#2a0f2a');
 SPR.gem1=outline(grid(['..e..','.eEe.','eewEe','.eEe.','..E..']));
 SPR.gem2=outline(grid(['..n..','.nNn.','nnwNn','nnnNn','.nNn.','..N..']));
 SPR.gem3=outline(grid(['...m...','..mMm..','.mmwMm.','mmmmMMm','.mmMMm.','..mMm..','...M...']));
+// merged gem clumps (tier by total value)
+SPR.clump1=outline(grid(['..e..n..','.eEenNn.','eewEnwNn','.eEennNn','..E.nNn.','.....N..']));
+SPR.clump2=outline(grid(['...m.....','..mMm.n..','.mmwMmnNn','mmmmMnwNn','.mmMMnnNn','..mMme.N.','...MeEe..','....eE...']));
+SPR.clump3=outline(grid(['....m..m...','...mMmmMm..','..mmwMmwMm.','.mmmmMmmMMm','mmwmMMmmMm.','.mmmMMmMm..','..mMmmMm...','...M..M....']),'#1a0f0e','#ffffff');
 SPR.coin=outline(grid(['.aaaa.','aayyaa','ayaaAa','aaaaAa','aaAAAa','.AAAA.']));
 SPR.chest=outline(grid([
 '.bbbbbbbb.','bBBBBBBBBb','baaaaaaaab','bBBByaBBBb','bbbbAAbbbb','bBBBBBBBBb','bbbbbbbbbb','BBBBBBBBBB']));
