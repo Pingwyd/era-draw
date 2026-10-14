@@ -169,7 +169,7 @@ function finishDraw(){
   const dir=Math.atan2(b.y-a.y,b.x-a.x);
   const kindQ=(sid==='club'||sid==='spear')?'line':sid==='rock'?'circle':'poly';const q=lastQuality[kindQ];
   const power=0.85+0.45*q;const fid=resolveDraw(id);spawnCreation(fid,dir,false,power);
-  if(q>=.85){floatText(G.player.x,G.player.y-64,'PERFECT DRAW','#ffe08a',1.2);sfx('lvl');haptic(30)}else if(q>=.6)floatText(G.player.x,G.player.y-64,'CLEAN','#e9dcc3',.8);
+  if(q>=.85){G.perfects=(G.perfects||0)+1;floatText(G.player.x,G.player.y-64,'PERFECT DRAW','#ffe08a',1.2);sfx('lvl');haptic(30)}else if(q>=.6)floatText(G.player.x,G.player.y-64,'CLEAN','#e9dcc3',.8);
   if(Math.random()<G.player.echo){setTimeout(()=>G&&spawnCreation(fid,dir+0.4,true),150)}
   G.castCd=BASE_CAST_CD*G.player.cdMul;
   G.trails.push({pts,life:0.7,max:0.7,ok:true});
