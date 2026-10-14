@@ -203,3 +203,5 @@ input[type=range]::-moz-range-thumb{width:12px;height:12px;background:var(--embe
 html.small #screen button,html.small #screen [data-m],html.small .menu button{min-height:calc(40px / var(--ui,1));min-width:calc(40px / var(--ui,1))}
 html.small #pauseBtn{min-width:calc(42px / var(--hud,1));min-height:calc(42px / var(--hud,1))}
 html.small #install{font-size:15px;padding:4px 6px 4px 10px}html.small #install button{min-height:36px}
+#quest{position:absolute;top:calc(64px * var(--hud,1));left:50%;transform:translateX(-50%);font-family:VT323,monospace;font-size:calc(17px * var(--hud,1));color:#e9dcc3;white-space:nowrap;background:rgba(20,11,12,.55);padding:1px 8px}
+#quest b{font-family:Silkscreen,monospace;font-size:.6em;color:#ffd34a;font-weight:400;letter-spacing:.1em}#quest i{font-style:normal;color:#b9ab90}
