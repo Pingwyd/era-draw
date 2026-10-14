@@ -136,7 +136,7 @@ cv.addEventListener('pointerdown',e=>{
   if(isMouse&&e.button===2){mouse.walk=true;mouse.x=e.clientX;mouse.y=e.clientY;e.preventDefault();return}
   if(isMouse&&e.button!==0)return;
   if(!isMouse&&e.clientX<W*0.5&&stick.id===null){const now=performance.now();if(now-(stick.lastTap||0)<280)tryDash();stick.lastTap=now;Object.assign(stick,{id:e.pointerId,ox:e.clientX,oy:e.clientY,x:e.clientX,y:e.clientY,active:true});return}
-  if(!G.drawing&&(isMouse||e.clientX>=W*0.5)){G.drawing={id:e.pointerId,pts:[{x:e.clientX,y:e.clientY}]};sfx('draw');}
+  if(!G.drawing&&(isMouse||e.clientX>=W*0.5)){G.drawing={id:e.pointerId,t0:performance.now(),pts:[{x:e.clientX,y:e.clientY}]};sfx('draw');}
 });
 cv.addEventListener('pointermove',e=>{
   if(mode!=='run')return;
@@ -168,7 +168,7 @@ function finishDraw(){
   const a=pts[0],b=pts[pts.length-1];
   const dir=Math.atan2(b.y-a.y,b.x-a.x);
   const kindQ=(sid==='club'||sid==='spear')?'line':sid==='rock'?'circle':'poly';const q=lastQuality[kindQ];
-  const power=0.85+0.45*q;const fid=resolveDraw(id);spawnCreation(fid,dir,false,power);
+  const power=(0.85+0.45*q)*(window.strokeBonus?strokeBonus(d,pts,id):1);const fid=resolveDraw(id);spawnCreation(fid,dir,false,power);
   if(q>=.85){G.perfects=(G.perfects||0)+1;floatText(G.player.x,G.player.y-64,'PERFECT DRAW','#ffe08a',1.2);sfx('lvl');haptic(30)}else if(q>=.6)floatText(G.player.x,G.player.y-64,'CLEAN','#e9dcc3',.8);
   if(Math.random()<G.player.echo){setTimeout(()=>G&&spawnCreation(fid,dir+0.4,true),150)}
   G.castCd=BASE_CAST_CD*G.player.cdMul;
@@ -428,7 +428,7 @@ function render(dt){
   // slow-mo: warm ink tint + dithered edges
   if(G.slow){bx.fillStyle='rgba(60,25,10,.28)';bx.fillRect(0,0,BW,BH);bx.fillStyle='rgba(20,8,6,.6)';for(let i=0;i<BW;i+=2){bx.fillRect(i,0,1,3);bx.fillRect(i+1,BH-3,1,3)}for(let j=0;j<BH;j+=2){bx.fillRect(0,j,3,1);bx.fillRect(BW-3,j+1,3,1)}}
   drawLight(p);
-  for(const tr of G.trails)drawStroke(tr.pts,tr.ok?'#ff9a3c':'#e0504e',tr.life/tr.max);
+  for(const tr of G.trails)drawStroke(tr.pts,tr.ok?(window.inkCol?inkCol():'#ff9a3c'):'#e0504e',tr.life/tr.max);
   if(G.drawing)drawStroke(G.drawing.pts,'#fff1d0',1,true);
   if(window.drawLootTop)drawLootTop();
   ctx.drawImage(buf,0,0,BW*S,BH*S);
