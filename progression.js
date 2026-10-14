@@ -203,4 +203,36 @@ const _updP=updatePickups;updatePickups=function(dt){_updP(dt);if(mode!=='run'||
 const _rndP=renderPickups;renderPickups=function(){if(G.props)for(const k of G.props){shadow(k.x,k.y,6);blit(SPR.prop[k.type],k.x,k.y+(k.cd>0?-1:0));
   if(k.type==='torch'){const sx=X(k.x),sy=Y(k.y)-14;const al=.05+.025*Math.sin(G.t*9+k.x);bx.fillStyle='rgba(255,170,60,'+al+')';for(const r of [4,7,10])bx.fillRect(sx-r,sy-r+2,r*2,r*2-4)}}_rndP()};
 
+
+// ================= PROCEDURAL MUSIC =================
+// Per-era data: tempo, scale (semitones), root (Hz), instrument timbres, drum pattern. Add an entry for any new era.
+const ERA_MUSIC={
+  stone: {bpm:96, root:110,scale:[0,3,5,7,10],lead:'triangle',bass:'sine',  drum:'x..x..x.x..x....',hat:'..x...x...x...x.',prog:[0,0,3,4]},
+  bronze:{bpm:112,root:123,scale:[0,2,3,7,8], lead:'square',  bass:'triangle',drum:'x...x.x.x...x...',hat:'x.x.x.x.x.x.x.x.',prog:[0,3,4,0]},
+  _menu: {bpm:72, root:98, scale:[0,3,7,10],  lead:'sine',    bass:'sine',  drum:'................',hat:'................',prog:[0,2,3,1]},
+};
+const MUS={on:false,next:0,step:0,bus:null,seed:1,motif:[]};
+function mrand(){MUS.seed=(MUS.seed*1103515245+12345)&0x7fffffff;return MUS.seed/0x7fffffff}
+function musNote(m,deg,oct){const n=m.scale.length,s=m.scale[((deg%n)+n)%n]+12*(oct+Math.floor(deg/n));return m.root*Math.pow(2,s/12)}
+function musVoice(f,t,dur,type,vol){const o=AC.createOscillator(),g=AC.createGain();o.type=type;o.frequency.value=f;g.gain.setValueAtTime(0,t);g.gain.linearRampToValueAtTime(vol,t+.01);g.gain.exponentialRampToValueAtTime(.0001,t+dur);o.connect(g);g.connect(MUS.bus);o.start(t);o.stop(t+dur+.05)}
+function musDrum(t,kick){const o=AC.createOscillator(),g=AC.createGain();o.frequency.setValueAtTime(kick?120:900,t);o.frequency.exponentialRampToValueAtTime(kick?40:300,t+.12);g.gain.setValueAtTime(kick?.5:.06,t);g.gain.exponentialRampToValueAtTime(.0001,t+(kick?.18:.04));o.type=kick?'sine':'square';o.connect(g);g.connect(MUS.bus);o.start(t);o.stop(t+.2)}
+function musKey(){return mode==='run'&&G?(ERA_MUSIC[CURRENT_ERA]?CURRENT_ERA:'stone'):'_menu'}
+function musTick(){
+  const want=AC&&!save.mute&&save.music!==false&&!(mode==='run'&&G&&G.paused&&!screenEl.innerHTML.includes('chestr'));
+  if(!want){if(MUS.bus)MUS.bus.gain.setTargetAtTime(0,AC.currentTime,.1);MUS.on=false;return}
+  if(!MUS.bus){MUS.bus=AC.createGain();MUS.bus.connect(master)}
+  const key=musKey(),m=ERA_MUSIC[key];
+  if(!MUS.on||MUS.key!==key){MUS.on=true;MUS.key=key;MUS.next=AC.currentTime+.05;MUS.step=0;MUS.seed=seedOf(key);MUS.motif=Array.from({length:8},()=>Math.floor(mrand()*7)-1)}
+  MUS.bus.gain.setTargetAtTime(key==='_menu'?.35:.5,AC.currentTime,.3);
+  const sp=60/m.bpm/4;
+  while(MUS.next<AC.currentTime+.25){const t=MUS.next,s=MUS.step,bar=Math.floor(s/16)%m.prog.length,ch=m.prog[bar],i=s%16;
+    if(m.drum[i]==='x')musDrum(t,true);if(m.hat[i]==='x')musDrum(t,false);
+    if(i%8===0)musVoice(musNote(m,ch,-1),t,sp*7,m.bass,.22);
+    if(i%2===0){const k=i/2,deg=MUS.motif[k]+ch;if(MUS.motif[k]>=0&&(bar%2===0||mrand()<.7))musVoice(musNote(m,deg,1),t,sp*1.8,m.lead,.07)}
+    if(s%64===63)MUS.motif=MUS.motif.map(d=>mrand()<.25?Math.floor(mrand()*7)-1:d);
+    MUS.next+=sp;MUS.step++}
+}
+setInterval(musTick,100);
+addEventListener('keydown',e=>{if(e.key==='m'||e.key==='M'){save.music=save.music===false;persist();toast('Music '+(save.music===false?'off':'on'))}});
+
 boot();

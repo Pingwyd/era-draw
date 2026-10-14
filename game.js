@@ -617,11 +617,12 @@ function settings(){
    <div><div class="lab rule">Play</div><nav class="menu">
    <button id="am"><b>01</b>Auto-move (kite)<span>${save.autoMove?'On':'Off'}</span><i>${save.autoMove?'&#9632;':'&#9633;'}</i></button>
    <button id="snd"><b>02</b>Sound<span>${save.mute?'Off':'On'}</span><i>${save.mute?'&#9633;':'&#9632;'}</i></button>
-   <button id="hap"><b>03</b>Haptics<span>${save.haptics===false?'Off':'On'}</span><i>${save.haptics===false?'&#9633;':'&#9632;'}</i></button></nav>
+   <button id="hap"><b>03</b>Haptics<span>${save.haptics===false?'Off':'On'}</span><i>${save.haptics===false?'&#9633;':'&#9632;'}</i></button>
+   <button id="mus"><b>04</b>Music<span>${save.music===false?'Off':'On'}</span><i>${save.music===false?'&#9633;':'&#9632;'}</i></button></nav>
    <p class="note">Auto-move steers the mage away from nearby enemies and toward XP whenever you are not steering.</p></div></div>`));
   for(const [id,key] of [['sHud','hudScale'],['sZoom','zoom'],['sUi','uiScale']]){const el=$(id);el.oninput=()=>{save[key]=el.value/100;$(id+'v').textContent=el.value+'%';applyScale();layoutBuf();persist()}}
   $('sReset').onclick=()=>{save.hudScale=save.zoom=save.uiScale=1;persist();applyScale();layoutBuf();settings()};
-  $('am').onclick=()=>{save.autoMove=!save.autoMove;persist();settings()};$('snd').onclick=()=>{save.mute=!save.mute;persist();settings()};$('hap').onclick=()=>{save.haptics=save.haptics===false;persist();haptic(20);settings()};$('back').onclick=home;
+  $('mus').onclick=()=>{save.music=save.music===false;persist();settings()};$('am').onclick=()=>{save.autoMove=!save.autoMove;persist();settings()};$('snd').onclick=()=>{save.mute=!save.mute;persist();settings()};$('hap').onclick=()=>{save.haptics=save.haptics===false;persist();haptic(20);settings()};$('back').onclick=home;
 }
 function controlsHint(){return isTouch?'Left thumb: move · Right thumb: draw':'Hold right-click: walk · Left-drag: draw · WASD also works'}
 function fmt(s){s=Math.floor(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
