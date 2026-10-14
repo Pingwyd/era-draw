@@ -53,3 +53,12 @@ h2{font-size:28px;color:#ffd98a;margin-bottom:10px}
  #stats{font-size:12px}#slots{margin-top:3px}.slot{font-size:10px;padding:2px 6px}
  .help{font-size:12px;line-height:1.4}
 }
+
+#bossbar{position:fixed;top:calc(30px + env(safe-area-inset-top));left:50%;transform:translateX(-50%);width:min(46vw,420px);text-align:center;pointer-events:none;z-index:5}
+.bb-name{font-family:'Instrument Serif',serif;font-size:22px;color:#e9dcc3;line-height:1;text-shadow:0 2px 0 #1a0f0e}
+.bb-name small{display:block;font-family:Silkscreen,monospace;font-size:9px;letter-spacing:2px;color:#d9c27a;margin:2px 0 4px;text-transform:uppercase}
+.bb-frame{position:relative;height:12px;background:#1a0f0e;border:1px solid #d9c27a;outline:1px solid #1a0f0e;box-shadow:0 0 0 3px #1a0f0e,0 0 0 4px #7a5a2a}
+.bb-frame:before,.bb-frame:after{content:'';position:absolute;top:50%;width:8px;height:8px;background:#d9c27a;border:1px solid #1a0f0e;transform:translateY(-50%) rotate(45deg)}
+.bb-frame:before{left:-9px}.bb-frame:after{right:-9px}
+.bb-frame i{position:absolute;left:1px;top:1px;bottom:1px;background:repeating-linear-gradient(90deg,#b3243b 0 6px,#8f1d30 6px 7px);display:block}
+.bb-frame span{position:absolute;inset:0;font-family:Silkscreen,monospace;font-size:9px;line-height:11px;color:#fff6e0;text-shadow:1px 1px 0 #1a0f0e}
