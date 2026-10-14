@@ -42,4 +42,28 @@ function upgrades(){
 }
 hub('upgrades','Upgrades',upgrades);
 
+
+// ================= MAGE SELECT =================
+if(!save.mages)save.mages=['ink'];if(!save.mage)save.mage='ink';
+const MAGES={
+  ink:   {name:'Ink Mage',   cost:0,   pal:{},                                              perk:'Balanced. No strengths, no weaknesses.', apply:G=>{}},
+  flint: {name:'Flint Witch',cost:300, pal:{h:'#2a1a1a',H:'#140c0c',r:'#8f2430',R:'#5a1620'}, perk:'+20% damage, -15% max HP.',             apply:G=>{G.player.dmgMul*=1.2;G.player.maxHp*=.85;G.player.hp=G.player.maxHp}},
+  wind:  {name:'Wind Sage',  cost:400, pal:{h:'#e9dcc3',H:'#b9ab90',r:'#4c7a4a',R:'#2e4f2e'}, perk:'+15% speed, +0.4s slow-mo, -10% damage.', apply:G=>{G.player.speed*=1.15;G.player.focus+=.4;G.focusLeft=G.player.focus;G.player.dmgMul*=.9}},
+  hermit:{name:'Bone Hermit',cost:600, pal:{h:'#6b5038',H:'#4a3626',r:'#7b5a44',R:'#4f3a2c',w:'#efe6d2'},perk:'+1 melee cap, +20% durability, -10% speed.',apply:G=>{G.player.caps.melee+=1;G.player.durMul*=1.2;G.player.speed*=.9}},
+};
+const MAGE_SPR={};
+function mageFrames(id){if(MAGE_SPR[id])return MAGE_SPR[id];const pal={...PAL,...MAGES[id].pal};return MAGE_SPR[id]=[0,1,0,2].map(i=>set(grid([...MAGE_TOP,...LEGS[i]],pal)))}
+const BASE_MAGE=SPR.mage;
+runHooks.push(G=>{const id=G.daily?'ink':(save.mages.includes(save.mage)?save.mage:'ink');G.mage=id;MAGES[id].apply(G);SPR.mage=mageFrames(id)});
+function mages(){
+  leaveRun();setRoute('mages');
+  show(sheet('Mages',`08 &mdash; Choose who walks the ages &middot; ${coinI()} ${save.coins}`,`<div class="tbl">${Object.entries(MAGES).map(([id,m],i)=>{const own=save.mages.includes(id),on=save.mage===id;
+    return `<button class="cell ${on?'on':''}" data-m="${id}"><span class="cell-h"><b>0${i+1}</b>${on?'<i class="chk">&#9632; Chosen</i>':''}</span><img class="mimg" src="${iconURL(mageFrames(id)[0].r,4)}" alt=""><span class="nm">${m.name}</span><span class="sh">${m.perk}</span><span class="st">${own?'Unlocked':coinI()+' '+m.cost}</span></button>`}).join('')}</div>`));
+  screenEl.querySelectorAll('[data-m]').forEach(el=>el.onclick=()=>{const id=el.dataset.m,m=MAGES[id];
+    if(!save.mages.includes(id)){if(save.coins<m.cost){toast('Not enough coins');return}save.coins-=m.cost;save.mages.push(id);toast(m.name+' joins you');sfx('chest')}
+    save.mage=id;persist();mages()});
+  $('back').onclick=home;
+}
+hub('mages','Mages',mages);
+
 boot();
