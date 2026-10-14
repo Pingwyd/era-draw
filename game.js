@@ -556,14 +556,17 @@ function togglePause(){
   if(!G)return;
   if(G.paused&&$('resume')){show('');G.paused=false;last=performance.now();return}
   if(G.paused)return;
-  G.paused=true;
+  G.paused=true;pauseMenu();
+}
+function pauseMenu(){
+  screenEl.classList.remove('live');setRoute('play');
   const build=Object.keys(G.picks).map(id=>{const pu=POWERUPS.find(p=>p.id===id);return `<li><img src="${ICON['pu_'+id]}" alt=""><span>${pu.name}</span><em>LV ${G.picks[id]}</em></li>`}).join('')||'<li class="mute">No upgrades yet</li>';
   show(`<div class="sheet"><header class="row"><span class="lab">${ERAS[CURRENT_ERA].name} · ${fmt(G.t)} · Wave ${G.wave}</span><span class="lab">${G.kills} kills</span></header>
    <h2 class="disp">Paused</h2>
    <div class="cols"><div><div class="lab rule">Build</div><ul class="build">${build}</ul></div>
    <div><div class="lab rule">Stats</div><ul class="stats"><li>Damage<em>x${G.player.dmgMul.toFixed(2)}</em></li><li>Cast cooldown<em>x${G.player.cdMul.toFixed(2)}</em></li><li>Durability<em>x${(G.player.durMul*G.era.durability).toFixed(2)}</em></li><li>Focus<em>${G.player.focus.toFixed(1)}s</em></li><li>Move<em>${Math.round(G.player.speed)}</em></li></ul></div></div>
-   <nav class="menu"><button id="resume"><b>01</b>Resume<i>&rarr;</i></button><button id="quit"><b>02</b>Give up and keep coins<i>&rarr;</i></button></nav></div>`);
-  $('resume').onclick=togglePause;$('quit').onclick=()=>{show('');endRun()};
+   <nav class="menu"><button id="resume"><b>01</b>Resume<i>&rarr;</i></button><button id="pset"><b>02</b>Settings<i>&rarr;</i></button><button id="quit"><b>03</b>Give up and keep coins<i>&rarr;</i></button></nav></div>`);
+  $('resume').onclick=togglePause;$('pset').onclick=()=>settings(true);$('quit').onclick=()=>{show('');endRun()};
 }
 
 $('pauseBtn').onclick=togglePause;
@@ -577,7 +580,7 @@ function applyScale(){
   document.documentElement.style.setProperty('--hud',hud.toFixed(3));HUDK=hud;
 }
 addEventListener('resize',applyScale);
-function show(html){screenEl.innerHTML=html;if(html){$('toast').style.opacity=0;clearTimeout(toastT)}}
+function show(html){if(!html)screenEl.classList.remove('live');screenEl.innerHTML=html;if(html){$('toast').style.opacity=0;clearTimeout(toastT)}}
 const coinI=()=>`<img class="pi" src="${ICON.coin}" alt="coins">`,gemI=()=>`<img class="pi" src="${ICON.gemHard}" alt="gems">`;
 function home(){
   leaveRun();setRoute('home');mode='home';G=null;$('hud').classList.add('hidden');const E=ERAS[CURRENT_ERA];
@@ -608,10 +611,12 @@ function startDiorama(){
     requestAnimationFrame(loop)};requestAnimationFrame(loop);
 }
 function sheet(title,lab,body,back='Back'){return `<div class="sheet"><header class="row"><span class="lab">${lab}</span><button class="lab back" id="back">&larr; ${back}</button></header><h2 class="disp">${title}</h2>${body}</div>`}
-function settings(){
-  leaveRun();setRoute('settings');
+function settings(inRun){
+  inRun=inRun===true&&mode==='run'&&!!G;
+  if(inRun){G.paused=true;setRoute('play/settings');screenEl.classList.add('live')}else{screenEl.classList.remove('live');leaveRun();setRoute('settings')}
+  const again=()=>settings(inRun);
   const sl=(id,label,key,min,max)=>`<label class="slider"><b>${label}</b><input type="range" id="${id}" min="${min}" max="${max}" step="10" value="${Math.round((save[key]||1)*100)}"><span id="${id}v">${Math.round((save[key]||1)*100)}%</span></label>`;
-  show(sheet('Settings','04 &mdash; Options',`<div class="cols"><div><div class="lab rule">Display</div>
+  show(sheet('Settings',inRun?'Paused &mdash; changes apply live':'04 &mdash; Options',`<div class="cols"><div><div class="lab rule">Display</div>
    ${sl('sHud','HUD size','hudScale',50,200)}${sl('sZoom','Game zoom','zoom',50,200)}${sl('sUi','Menu text size','uiScale',70,160)}
    <button class="lab back" id="sReset">Reset to defaults</button></div>
    <div><div class="lab rule">Play</div><nav class="menu">
@@ -621,8 +626,8 @@ function settings(){
    <button id="mus"><b>04</b>Music<span>${save.music===false?'Off':'On'}</span><i>${save.music===false?'&#9633;':'&#9632;'}</i></button></nav>
    <p class="note">Auto-move steers the mage away from nearby enemies and toward XP whenever you are not steering.</p></div></div>`));
   for(const [id,key] of [['sHud','hudScale'],['sZoom','zoom'],['sUi','uiScale']]){const el=$(id);el.oninput=()=>{save[key]=el.value/100;$(id+'v').textContent=el.value+'%';applyScale();layoutBuf();persist()}}
-  $('sReset').onclick=()=>{save.hudScale=save.zoom=save.uiScale=1;persist();applyScale();layoutBuf();settings()};
-  $('mus').onclick=()=>{save.music=save.music===false;persist();settings()};$('am').onclick=()=>{save.autoMove=!save.autoMove;persist();settings()};$('snd').onclick=()=>{save.mute=!save.mute;persist();settings()};$('hap').onclick=()=>{save.haptics=save.haptics===false;persist();haptic(20);settings()};$('back').onclick=home;
+  $('sReset').onclick=()=>{save.hudScale=save.zoom=save.uiScale=1;persist();applyScale();layoutBuf();again()};
+  $('mus').onclick=()=>{save.music=save.music===false;persist();again()};$('am').onclick=()=>{save.autoMove=!save.autoMove;persist();again()};$('snd').onclick=()=>{save.mute=!save.mute;persist();again()};$('hap').onclick=()=>{save.haptics=save.haptics===false;persist();haptic(20);again()};$('back').onclick=inRun?pauseMenu:home;if(inRun){render(0);updateHud()}
 }
 function controlsHint(){return isTouch?'Left thumb: move · Right thumb: draw':'Hold right-click: walk · Left-drag: draw · WASD also works'}
 function fmt(s){s=Math.floor(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
@@ -720,7 +725,7 @@ function results(){
 // ================= ROUTING + RUN PERSISTENCE =================
 const RUN_KEY='eradraw.run.v1';
 function setRoute(r){const h='#/'+r;if(location.hash!==h)history.pushState(null,'',h)}
-function leaveRun(){if(mode==='run'&&G){saveRun();$('hud').classList.add('hidden');$('bossbar').classList.add('hidden')}}
+function leaveRun(){screenEl.classList.remove('live');if(mode==='run'&&G){saveRun();$('hud').classList.add('hidden');$('bossbar').classList.add('hidden')}}
 function saveRun(){
   if(mode!=='run'||!G)return;
   const p=G.player;
@@ -747,7 +752,8 @@ addEventListener('beforeunload',saveRun);addEventListener('pagehide',saveRun);
 document.addEventListener('visibilitychange',()=>{if(document.hidden){saveRun();if(mode==='run'&&G&&!G.paused)togglePause()}});
 function route(){
   const r=(location.hash.replace(/^#\/?/,'')||'home');
-  if(r==='play'){if(mode==='run'&&G)return;if(!restoreRun())startRun();return}
+  if(r==='play'){if(mode==='run'&&G){if(G.paused&&!$('resume'))pauseMenu();return}if(!restoreRun())startRun();return}
+  if(r==='play/settings'){if(!(mode==='run'&&G)&&!restoreRun()){home();return}settings(true);return}
   ({home,loadout,shop,settings,'how-to-play':how,results}[r]||home)();
 }
 addEventListener('popstate',route);
