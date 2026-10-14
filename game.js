@@ -334,17 +334,28 @@ function updateFx(dt){
 
 // ================= LOOP =================
 let last=performance.now();
+const FIXED_DT=1/60;let simAcc=0;
+// all simulation randomness comes from the run's seeded RNG; rendering keeps Math.random
+const NATIVE_RANDOM=Math.random;let RENDERING=false;
+Math.random=function(){return (!RENDERING&&mode==='run'&&G&&G.rng)?G.rng():NATIVE_RANDOM()};
+function simStep(dt,realDt){step(dt,realDt)}
+function renderSafe(dt){const r=RENDERING;RENDERING=true;try{return renderInner(dt)}finally{RENDERING=r}}
 function frame(now){
   requestAnimationFrame(frame);
   const realDt=Math.min(0.05,(now-last)/1000);last=now;
   if(mode==='run'&&G&&!G.paused){
-    let scale=1;
-    if(G.drawing&&G.focusLeft>0){scale=SLOWMO;G.focusLeft-=realDt}
-    else if(!G.drawing)G.focusLeft=Math.min(G.player.focus,G.focusLeft+realDt*0.5);
-    G.slow=scale<1;
-    try{step(realDt*scale,realDt)}catch(e){console.error('step',e)}
-  }
-  try{render(realDt)}catch(e){console.error('render',e)}
+    // fixed-timestep simulation (deterministic for a given seed + input), render at display rate
+    simAcc+=realDt;let n=0;
+    while(simAcc>=FIXED_DT&&n<6&&mode==='run'&&G&&!G.paused){
+      let scale=1;
+      if(G.drawing&&G.focusLeft>0){scale=SLOWMO;G.focusLeft-=FIXED_DT}
+      else if(!G.drawing)G.focusLeft=Math.min(G.player.focus,G.focusLeft+FIXED_DT*0.5);
+      G.slow=scale<1;
+      try{simStep(FIXED_DT*scale,FIXED_DT)}catch(e){console.error('step',e)}
+      simAcc-=FIXED_DT;n++}
+    if(n>=6)simAcc=0;
+  }else simAcc=0
+  RENDERING=true;try{render(realDt)}catch(e){console.error('render',e)}RENDERING=false;
 }
 function step(dt,realDt){
   const p=G.player;G.t+=dt;G.castCd-=realDt;p.invul-=dt;G.shake=Math.min(14,G.shake)*Math.pow(.004,realDt);if(G.shake<.3)G.shake=0;
@@ -401,7 +412,8 @@ function blobSprite(T){ // fallback pixel blob for enemies without authored art
   return blobCache[T.name]=set(c);
 }
 function shade(hex){const n=parseInt(hex.slice(1),16);const f=v=>Math.max(0,Math.round(v*.7));return'#'+[(n>>16)&255,(n>>8)&255,n&255].map(f).map(v=>v.toString(16).padStart(2,'0')).join('')}
-function render(dt){
+function render(dt){return renderSafe(dt)}
+function renderInner(dt){
   ctx.imageSmoothingEnabled=false;
   if(mode!=='run'||!G){ctx.fillStyle='#140b0c';ctx.fillRect(0,0,W,H);drawMenuBg(dt);return}
   const p=G.player;cam.x+=(p.x-cam.x)*0.15;cam.y+=(p.y-cam.y)*0.15;
@@ -767,5 +779,5 @@ addEventListener('popstate',route);
 
 
 // expose for tests
-window.EraDraw={step:(a,b)=>step(a,b),mouse,kiteVector,recognize,get G(){return G},get mode(){return mode},startRun,save:()=>save,spawnCreation,ERAS,CREATIONS};
+window.EraDraw={step:(a,b)=>simStep(a,b===undefined?a:b),mouse,kiteVector,recognize,get G(){return G},get mode(){return mode},startRun,save:()=>save,spawnCreation,ERAS,CREATIONS};
 function boot(){applyScale();if(!location.hash)history.replaceState(null,'','#/home');route();checkOrientation();requestAnimationFrame(frame)}

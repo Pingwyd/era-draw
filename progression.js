@@ -122,9 +122,9 @@ const DAILY_MODS=[{n:'Glass Ink',d:'Weapons break 40% faster',f:G=>G.player.durM
 function dailyInfo(){const k=todayKey(),s=seedOf('eradraw'+k),r=mulberry(s);return {k,s,era:'stone',mod:DAILY_MODS[Math.floor(r()*DAILY_MODS.length)]}}
 if(!save.daily)save.daily={};
 runHooks.push(G=>{if(!G.daily)return;const d=dailyInfo();G.dailyKey=d.k;d.mod.f(G)});
-endHooks.push(g=>{if(g&&g.daily){const b=save.daily[g.dailyKey]||{t:0,kills:0};if(g.t>b.t)save.daily[g.dailyKey]={t:Math.floor(g.t),kills:g.kills};DAILY_ON=null;Math.random=_RND;persist()}});
-function startDaily(){const d=dailyInfo();DAILY_ON=d.k;Math.random=mulberry(d.s);const pe=save.era;save.era=d.era;startRun();save.era=pe;setRoute('play')}
-const _leave=leaveRun;leaveRun=function(){if(DAILY_ON&&mode!=='run'){DAILY_ON=null;Math.random=_RND}return _leave.apply(this,arguments)};
+endHooks.push(g=>{if(g&&g.daily){const b=save.daily[g.dailyKey]||{t:0,kills:0};if(g.t>b.t)save.daily[g.dailyKey]={t:Math.floor(g.t),kills:g.kills};DAILY_ON=null;persist()}});
+function startDaily(){const d=dailyInfo();DAILY_ON=d.k;RUN_SEED=d.s;const pe=save.era;save.era=d.era;startRun();save.era=pe;setRoute('play')}
+const _leave=leaveRun;leaveRun=function(){if(DAILY_ON&&mode!=='run'){DAILY_ON=null}return _leave.apply(this,arguments)};
 function daily(){
   leaveRun();setRoute('daily');const d=dailyInfo(),b=save.daily[d.k];
   const hist=Object.entries(save.daily).sort((a,b)=>b[0]<a[0]?-1:1).slice(0,6);
