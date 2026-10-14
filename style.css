@@ -225,3 +225,5 @@ body.hc #hud{text-shadow:0 0 2px #000,0 0 2px #000}
 #quest{top:calc(54px * var(--hud,1));font-size:min(calc(13px * var(--hud,1)),14px);line-height:1.2;padding:0 6px;max-width:min(46vw,360px);overflow:hidden;text-overflow:ellipsis;pointer-events:none}
 #quest b{font-size:.62em}
 html.small #quest{font-size:12px;top:calc(46px * var(--hud,1));max-width:52vw}
+#minimap{position:absolute;left:calc(12px + env(safe-area-inset-left));top:calc(36px * var(--hud,1));width:min(calc(96px * var(--hud,1)),150px);height:min(calc(96px * var(--hud,1)),150px);pointer-events:none;image-rendering:auto}
+html.small #minimap{width:calc(64px * var(--hud,1));height:calc(64px * var(--hud,1));top:calc(30px * var(--hud,1))}
