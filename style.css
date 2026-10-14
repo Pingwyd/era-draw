@@ -170,3 +170,12 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:14px;heigh
 input[type=range]::-moz-range-thumb{width:12px;height:12px;background:var(--ember);border:2px solid #1a0f0e;border-radius:0}
 #sReset{margin-top:10px}
 @media (max-height:500px){.split .pane{display:none}.split{grid-template-columns:1fr}.cell{min-height:104px}.slider{padding:4px 0;font-size:17px}}
+.subgrid{display:grid;grid-template-columns:repeat(3,1fr);border-left:1px solid var(--rule);margin-top:10px}
+.subgrid button{display:flex;justify-content:space-between;align-items:baseline;padding:8px 10px;border-right:1px solid var(--rule);border-bottom:1px solid var(--rule);font-size:18px;text-align:left}
+.subgrid button b{font-weight:400}.subgrid button span{font:9px Silkscreen,monospace;color:var(--mute)}
+.subgrid button:hover{background:#24130f}
+.subgrid{border-top:1px solid var(--rule)}
+.menu button span{max-width:55%;text-align:right}
+.eras .cell{min-height:120px}
+@media (max-height:500px){.subgrid button{padding:5px 8px;font-size:15px}.home .plate{display:none}}
+#screen{align-items:flex-start;justify-content:flex-start}#screen>*{margin:auto}
