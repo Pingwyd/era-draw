@@ -82,8 +82,9 @@ function updateSpawns(dt){
   BS.forEach((b,i)=>{if(G.t>=G.bossNext[i]){G.bossNext[i]+=b.every;spawnEnemy(b.type,scale);toast(ENEMY_TYPES[b.type].name+', '+ENEMY_TYPES[b.type].title+'!');G.shake=10;sfx('boss')}});
 }
 function updateEnemies(dt){
-  const p=G.player;buildGrid();
+  const P0=G.player;buildGrid();const PL=(window.partyTargets?partyTargets():null);
   for(const e of G.enemies){
+    let p=P0;if(PL){let bd=1e18;for(const q of PL){const dd=(q.x-e.x)**2+(q.y-e.y)**2;if(dd<bd){bd=dd;p=q}}}
     const dx=p.x-e.x,dy=p.y-e.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d;
     let mx=ux,my=uy,sp=e.speed;e.timer-=dt;
     switch(e.T.beh){
@@ -111,8 +112,8 @@ function updateEnemies(dt){
     const mm=Math.hypot(mx,my)||1;
     e.x+=(mx/mm*sp+e.kx)*dt;e.y+=(my/mm*sp+e.ky)*dt;
     const kd=Math.pow(e.T.boss?.001:.02,dt);e.kx*=kd;e.ky*=kd;e.flash-=dt;e.wob+=dt*(e.st==='go'?3:1);
-    if(d<p.r+e.r*.8&&p.invul<=0)damagePlayer(e.dmg);
-    if(d>Math.hypot(viewW(),viewH())*1.2&&!e.T.boss){const R=Math.hypot(viewW(),viewH())/2+40,b=Math.random()*6.283;e.x=p.x+Math.cos(b)*R;e.y=p.y+Math.sin(b)*R}
+    if(d<p.r+e.r*.8&&p.invul<=0){if(p===P0)damagePlayer(e.dmg);else damageAlly(p,e.dmg)}
+    if(Math.hypot(P0.x-e.x,P0.y-e.y)>Math.hypot(viewW(),viewH())*1.2&&!e.T.boss&&!(PL&&PL.some(q=>Math.hypot(q.x-e.x,q.y-e.y)<Math.hypot(viewW(),viewH())*.8))){const R=Math.hypot(viewW(),viewH())/2+40,b=Math.random()*6.283;e.x=P0.x+Math.cos(b)*R;e.y=P0.y+Math.sin(b)*R}
   }
   // separation via grid
   const near=[];
@@ -120,6 +121,7 @@ function updateEnemies(dt){
     for(const B of near){if(B===A||n>8)continue;const dx=B.x-A.x,dy=B.y-A.y,m=(A.r+B.r)*.85,d2=dx*dx+dy*dy;if(d2<m*m&&d2>0){const d=Math.sqrt(d2),push=(m-d)/d*.25;const wa=A.T.boss?0:1;A.x-=dx*push*wa;A.y-=dy*push*wa;n++}}}
   // enemy projectiles
   for(let i=G.eshots.length-1;i>=0;i--){const s=G.eshots[i];s.x+=s.vx*dt;s.y+=s.vy*dt;s.life-=dt;
-    if(Math.hypot(s.x-p.x,s.y-(p.y-10))<p.r&&p.invul<=0){damagePlayer(s.dmg);s.life=0}
+    if(Math.hypot(s.x-P0.x,s.y-(P0.y-10))<P0.r&&P0.invul<=0){damagePlayer(s.dmg);s.life=0}
+    else if(PL)for(const q of PL)if(q!==P0&&Math.hypot(s.x-q.x,s.y-(q.y-10))<q.r&&q.invul<=0){damageAlly(q,s.dmg);s.life=0;break}
     if(s.life<=0)G.eshots.splice(i,1)}
 }
