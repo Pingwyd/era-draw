@@ -99,4 +99,18 @@ function achievements(){
 }
 hub('achievements','Achievements',achievements);
 
+
+// ================= BESTIARY =================
+if(!save.seen)save.seen={};
+killHooks.push(e=>{save.seen[e.type]=(save.seen[e.type]||0)+1});
+function bestiary(){
+  leaveRun();setRoute('bestiary');
+  const groups=Object.values(ERAS).filter(er=>er.spawns).map(er=>({er,ids:[...new Set([...er.spawns.map(s=>s.type||s[0]||s),...(er.bosses||[]).map(b=>b.type||b)])].filter(id=>ENEMY_TYPES[id])}));
+  const total=groups.reduce((a,g)=>a+g.ids.length,0),known=groups.reduce((a,g)=>a+g.ids.filter(i=>save.seen[i]).length,0);
+  show(sheet('Bestiary',`10 &mdash; ${known} / ${total} recorded`,groups.map((g,gi)=>`<div class="sec">0${gi+1} &mdash; ${g.er.name}</div><div class="tbl">${g.ids.map(id=>{const T=ENEMY_TYPES[id],n=save.seen[id];const fr=SPR.en[id];const img=fr&&fr.r?iconURL(fr.r,T.boss?2:3):'';
+    return `<div class="cell ${n?'':'dim'}"><span class="cell-h"><b>${T.boss?'BOSS':''}</b><i>${n?n+' felled':''}</i></span>${img?`<img class="bimg ${n?'':'sil'}" src="${img}" alt="">`:''}<span class="nm">${n?(T.title||T.name||id):'???'}</span><span class="sh">${n?(T.lore||''):'Defeat one to record it.'}</span>${n?`<span class="st">HP ${T.hp} &middot; DMG ${T.dmg||T.contact||'-'}${T.mat?' &middot; drops '+MAT_NAMES[T.mat]:''}</span>`:''}</div>`}).join('')}</div>`).join('')));
+  $('back').onclick=home;
+}
+hub('bestiary','Bestiary',bestiary);
+
 boot();
