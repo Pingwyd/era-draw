@@ -42,7 +42,8 @@ const CB_NAMES={off:'Off',deut:'Deuteranopia',prot:'Protanopia',trit:'Tritanopia
   const C={deut:'1 0.6 -0.6 0 0  0 1 0 0 0  -0.3 0.6 1 0 0  0 0 0 1 0',prot:'1 0 0 0 0  0.6 0.6 -0.2 0 0  0.6 -0.4 1 0 0  0 0 0 1 0',trit:'1 0 0.3 0 0  0 1 0.3 0 0  0 -0.5 1.2 0 0  0 0 0 1 0'};
   s.innerHTML=Object.keys(C).map(k=>`<filter id="cb-${k}" color-interpolation-filters="sRGB"><feColorMatrix type="matrix" values="${C[k]}"/></filter>`).join('');
   document.body.appendChild(s)})();
-function applyA11y(){const c=$('c');if(c)c.style.filter=[CB_FILTERS[save.cb]||'',save.hc?'contrast(1.35) saturate(1.25)':''].join(' ').trim();document.body.classList.toggle('hc',!!save.hc);document.body.classList.toggle('cb',save.cb!=='off')}
+// applies to the whole page (menus, settings, HUD and the game canvas) so changes preview live
+function applyA11y(){const f=[CB_FILTERS[save.cb]||'',save.hc?'contrast(1.35) saturate(1.25)':''].join(' ').trim();const c=$('c');if(c)c.style.filter='';document.documentElement.style.filter=f;document.body.classList.toggle('hc',!!save.hc);document.body.classList.toggle('cb',save.cb!=='off')}
 applyA11y();
 // high contrast in-world: thicker outlines on enemies + bright ring under player and loot
 const _plTop=drawLootTop;drawLootTop=function(){_plTop();if(!G||!save.hc)return;const p=G.player;bx.strokeStyle='#ffffff';bx.lineWidth=1;bx.beginPath();bx.arc(X(p.x),Y(p.y),9,0,6.283);bx.stroke();

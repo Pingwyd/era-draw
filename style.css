@@ -219,3 +219,14 @@ html.small #install{font-size:15px;padding:4px 6px 4px 10px}html.small #install 
 .sk .nm,.sk .sh{display:block}
 html.ins-on .home{padding-top:var(--insH,0px);box-sizing:border-box}
 html.small #install b{display:none}html.small #install{font-size:14px;line-height:1.1}
+/* high contrast: menus and HUD */
+body.hc{--rule:#e9dcc3}
+body.hc .sheet,body.hc .home{color:#fff}
+body.hc .sh,body.hc .note,body.hc .lab{color:#f2e8d4 !important}
+body.hc button{outline:1px solid rgba(255,255,255,.55);outline-offset:-1px}
+body.hc button:focus,body.hc button:hover{outline:2px solid #ffd34a}
+body.hc #hud{text-shadow:0 0 2px #000,0 0 2px #000}
+/* quest banner: compact strip under the timer/wave */
+#quest{top:calc(54px * var(--hud,1));font-size:min(calc(13px * var(--hud,1)),14px);line-height:1.2;padding:0 6px;max-width:min(46vw,360px);overflow:hidden;text-overflow:ellipsis;pointer-events:none}
+#quest b{font-size:.62em}
+html.small #quest{font-size:12px;top:calc(46px * var(--hud,1));max-width:52vw}

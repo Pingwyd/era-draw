@@ -651,6 +651,7 @@ function settings(inRun){
    <button id="hap"><b>03</b>Haptics<span>${save.haptics===false?'Off':'On'}</span><i>${save.haptics===false?'&#9633;':'&#9632;'}</i></button>
    <button id="mus"><b>04</b>Music<span>${save.music===false?'Off':'On'}</span><i>${save.music===false?'&#9633;':'&#9632;'}</i></button>
    <button id="perf"><b>05</b>Performance mode<span>${save.perf?'On':'Off'}</span><i>${save.perf?'&#9632;':'&#9633;'}</i></button></nav>
+   <p class="note" id="perfNote">Performance mode: draws the world at a lower internal resolution (150 instead of 180 lines tall, so about 30% fewer pixels), cuts hit and death particles to 40% and caps them at 160 on screen, and limits enemies on screen to 140 (normally 320). Gameplay rules and damage are unchanged. It turns on by itself on small or low-end devices until you change it.</p>
    <p class="note">Auto-move steers the mage away from nearby enemies and toward XP whenever you are not steering.</p></div></div>`));
   for(const [id,key] of [['sHud','hudScale'],['sZoom','zoom'],['sUi','uiScale']]){const el=$(id);el.oninput=()=>{save[key]=el.value/100;save.scaleSet=true;$(id+'v').textContent=el.value+'%';applyScale();layoutBuf();persist()}}
   $('sReset').onclick=()=>{save.hudScale=save.zoom=save.uiScale=1;persist();applyScale();layoutBuf();again()};
