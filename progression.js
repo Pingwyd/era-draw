@@ -66,4 +66,37 @@ function mages(){
 }
 hub('mages','Mages',mages);
 
+
+// ================= ACHIEVEMENTS =================
+if(!save.ach)save.ach={};if(!save.stats)save.stats={kills:0,bosses:{},dailies:0};
+const ACH=[
+  {id:'kills100',name:'First Ink',       desc:'Defeat 100 enemies in one run',   coins:25, test:g=>g&&g.kills>=100},
+  {id:'kills1k', name:'Inkstorm',        desc:'Defeat 1,000 enemies in total',   coins:80, test:()=>save.stats.kills>=1000},
+  {id:'t5',      name:'Five Minutes',    desc:'Survive 5:00',                    coins:50, test:g=>g&&g.t>=300},
+  {id:'t10',     name:'Ten Minutes',     desc:'Survive 10:00',                   coins:100,test:g=>g&&g.t>=600},
+  {id:'clear1',  name:'Out of the Cave', desc:'Clear the Stone Age (15:00)',     coins:200,test:g=>g&&g.victory&&g.era===ERAS.stone},
+  {id:'grael',   name:'Elder Felled',    desc:'Defeat Grael, the Woolly Elder',  coins:75, test:()=>save.stats.bosses.mammoth},
+  {id:'urkesh',  name:'Tar Silenced',    desc:'Defeat Ur-Kesh, the Bone Shaman', coins:100,test:()=>save.stats.bosses.shaman},
+  {id:'perfect10',name:'Steady Hand',    desc:'10 perfect draws in one run',     coins:50, test:g=>g&&g.perfects>=10},
+  {id:'combo',   name:'Fusion',          desc:'Perform a combo draw',            coins:30, test:g=>g&&Object.keys(g.combosSeen||{}).length>0},
+  {id:'evolve',  name:'Evolution',       desc:'Evolve a weapon',                 coins:60, test:g=>g&&Object.keys(g.evolved||{}).length>0},
+  {id:'rich',    name:'Hoarder',         desc:'Hold 1,000 coins at once',        coins:50, test:()=>save.coins>=1000},
+  {id:'cursed3', name:'Cursed Ink',      desc:'Survive 3:00 on Cursed or harder',coins:80, test:g=>g&&g.diff!=='normal'&&g.t>=180},
+  {id:'bronze',  name:'Bronze Footing',  desc:'Enter the Bronze Age',            coins:50, test:g=>g&&g.era===ERAS.bronze},
+  {id:'daily',   name:'Daily Ritual',    desc:'Finish a daily challenge',        coins:40, test:()=>save.stats.dailies>0},
+  {id:'mage',    name:'New Robes',       desc:'Unlock another mage',             coins:30, test:()=>save.mages.length>1},
+];
+function checkAch(g){for(const a of ACH){if(save.ach[a.id])continue;let ok=false;try{ok=a.test(g)}catch(e){}
+  if(ok){save.ach[a.id]=Date.now();save.coins+=a.coins;persist();toast('Achievement: '+a.name+' (+'+a.coins+')');sfx('chest');haptic([20,30,20])}}}
+killHooks.push(e=>{save.stats.kills++;if(e.T.boss)save.stats.bosses[e.type]=(save.stats.bosses[e.type]||0)+1});
+endHooks.push(g=>{if(g&&g.daily)save.stats.dailies++;checkAch(g)});
+setInterval(()=>{if(mode==='run'&&G&&!G.paused)checkAch(G)},1500);
+function achievements(){
+  leaveRun();setRoute('achievements');const done=ACH.filter(a=>save.ach[a.id]).length;
+  show(sheet('Achievements',`09 &mdash; ${done} / ${ACH.length} earned`,`<div class="list achl">${ACH.map((a,i)=>{const d=save.ach[a.id];
+    return `<div class="li ${d?'':'dim'}"><b>${String(i+1).padStart(2,'0')}</b><span class="seal ${d?'on':''}"></span><div class="li-t"><span class="nm">${a.name}</span><span class="sh">${a.desc}</span></div><span class="buy ${d?'own':'poor'}">${d?'Earned':coinI()+' '+a.coins}</span></div>`}).join('')}</div>`));
+  $('back').onclick=home;
+}
+hub('achievements','Achievements',achievements);
+
 boot();
