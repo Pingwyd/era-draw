@@ -416,7 +416,7 @@ function render(dt){return renderSafe(dt)}
 function renderInner(dt){
   ctx.imageSmoothingEnabled=false;
   if(mode!=='run'||!G){ctx.fillStyle='#140b0c';ctx.fillRect(0,0,W,H);drawMenuBg(dt);return}
-  const p=G.player;cam.x+=(p.x-cam.x)*0.15;cam.y+=(p.y-cam.y)*0.15;
+  const p=G.player;const ct=window.camTarget?camTarget():p;cam.x+=(ct.x-cam.x)*0.15;cam.y+=(ct.y-cam.y)*0.15;
   ox=Math.round((Math.random()-.5)*G.shake/Z);oy=Math.round((Math.random()-.5)*G.shake/Z);
   drawGround();
   for(const s of G.ink){bx.fillStyle=`rgba(26,15,14,${s.a})`;const r=Math.round(s.r/Z),sx=X(s.x),sy=Y(s.y);bx.fillRect(sx-r,sy-(r>>1),r*2,r);bx.fillRect(sx-(r>>1),sy-r+1,r,r*2-2)}
