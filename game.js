@@ -101,6 +101,9 @@ function resample(pts,n){
   while(out.length<n)out.push(pts[pts.length-1]);return out;
 }
 
+const ICON={};
+for(const id of ['club','spear','rock','sling','dagger'])ICON[id]=iconURL(SPR[id].r,3);
+ICON.skull=iconURL(SPR.deco.skull,3);ICON.coin=iconURL(SPR.coin,3);ICON.chest=iconURL(SPR.chest,3);ICON.gem=iconURL(SPR.gem1,3);
 // ================= GAME STATE =================
 let G=null; // current run
 let mode='home';
@@ -248,7 +251,7 @@ function hurtEnemy(e,d){
 }
 function killEnemy(e){
   const i=G.enemies.indexOf(e);if(i>=0)G.enemies.splice(i,1);
-  G.kills++;burst(e.x,e.y,e.T.col,e.T.boss?40:8);
+  G.kills++;burst(e.x,e.y,e.T.col,e.T.boss?50:7);burst(e.x,e.y,'#1a0f0e',e.T.boss?20:3);if(e.T.boss||e.T.elite)ring(e.x,e.y,e.T.boss?120:50,'#ffe08a');
   G.ink.push({x:e.x,y:e.y,r:e.r*rnd(.8,1.4),a:.35});if(G.ink.length>120)G.ink.shift();
   G.orbs.push({x:e.x,y:e.y,v:e.T.xp,t:0});
   if(e.T.boss||(e.T.elite&&Math.random()<.25)){G.chests.push({x:e.x,y:e.y});if(e.T.boss){toast(e.T.name+' falls!');G.shake=14}}
@@ -324,7 +327,7 @@ function frame(now){
   requestAnimationFrame(frame);
 }
 function step(dt,realDt){
-  const p=G.player;G.t+=dt;G.castCd-=realDt;p.invul-=dt;G.shake=Math.max(0,G.shake-realDt*30);
+  const p=G.player;G.t+=dt;G.castCd-=realDt;p.invul-=dt;G.shake=Math.min(14,G.shake)*Math.pow(.004,realDt);if(G.shake<.3)G.shake=0;
   let mx=0,my=0;
   if(keys.w||keys.arrowup)my--;if(keys.s||keys.arrowdown)my++;if(keys.a||keys.arrowleft)mx--;if(keys.d||keys.arrowright)mx++;
   if(stick.active){const dx=stick.x-stick.ox,dy=stick.y-stick.oy,d=Math.hypot(dx,dy);if(d>6){const k=Math.min(1,d/55);mx=dx/d*k;my=dy/d*k}}
@@ -393,6 +396,7 @@ function render(dt){
   bx.globalAlpha=1;
   // slow-mo: warm ink tint + dithered edges
   if(G.slow){bx.fillStyle='rgba(60,25,10,.28)';bx.fillRect(0,0,BW,BH);bx.fillStyle='rgba(20,8,6,.6)';for(let i=0;i<BW;i+=2){bx.fillRect(i,0,1,3);bx.fillRect(i+1,BH-3,1,3)}for(let j=0;j<BH;j+=2){bx.fillRect(0,j,3,1);bx.fillRect(BW-3,j+1,3,1)}}
+  drawLight(p);
   for(const tr of G.trails)drawStroke(tr.pts,tr.ok?'#ff9a3c':'#e0504e',tr.life/tr.max);
   if(G.drawing)drawStroke(G.drawing.pts,'#fff1d0',1,true);
   ctx.drawImage(buf,0,0,BW*S,BH*S);
@@ -407,6 +411,16 @@ function render(dt){
   ctx.font='10px Silkscreen, monospace';ctx.textAlign='right';ctx.fillStyle=G.castCd>0?'#e0504e':'#e9dcc3';ctx.fillText(G.castCd>0?'RECHARGING':'FOCUS',W-16,fy-6);
   if(stick.active){ctx.strokeStyle='#e9dcc355';ctx.lineWidth=2;ctx.beginPath();ctx.arc(stick.ox,stick.oy,55,0,6.283);ctx.stroke();const dx=stick.x-stick.ox,dy=stick.y-stick.oy,d=Math.min(55,Math.hypot(dx,dy)),a=Math.atan2(dy,dx);ctx.fillStyle='#e9dcc388';ctx.beginPath();ctx.arc(stick.ox+Math.cos(a)*d,stick.oy+Math.sin(a)*d,22,0,6.283);ctx.fill()}
   else if(G.t<8){ctx.fillStyle='#e9dcc377';ctx.font='12px Silkscreen, monospace';ctx.textAlign='center';if(isTouch){ctx.fillText('< MOVE',W*.25,H-56);ctx.fillText('DRAW >',W*.75,H-56);ctx.fillStyle='#e9dcc322';ctx.fillRect(W/2-1,H*.3,2,H*.5)}else ctx.fillText(controlsHint().toUpperCase(),W/2,H-56)}
+}
+// dithered darkness with a warm light radius around the mage
+let lightCv=null,lightKey='';
+const BAYER=[0,8,2,10,12,4,14,6,3,11,1,9,15,7,13,5];
+function drawLight(p){
+  const R=Math.round(Math.min(BW,BH)*.62),key=BW+'x'+BH;
+  if(lightKey!==key){lightKey=key;const w=BW*2,h=BH*2;lightCv=document.createElement('canvas');lightCv.width=w;lightCv.height=h;const x=lightCv.getContext('2d');const img=x.createImageData(w,h);
+    for(let j=0;j<h;j++)for(let i=0;i<w;i++){const d=Math.hypot(i-w/2,(j-h/2)*1.15)/R;let lv=clamp((d-.45)/.6,0,1)*4+BAYER[(j&3)*4+(i&3)]/16;lv=Math.floor(lv);const a=[0,.18,.34,.5,.66][Math.min(4,lv)];const k=(j*w+i)*4;img.data[k]=14;img.data[k+1]=8;img.data[k+2]=10;img.data[k+3]=a*255}
+    x.putImageData(img,0,0)}
+  bx.drawImage(lightCv,Math.round(X(p.x)-lightCv.width/2),Math.round(Y(p.y)-8-lightCv.height/2));
 }
 function hash(a,b){let h=(a*374761393+b*668265263)|0;h=(h^(h>>>13))*1274126177|0;return((h^(h>>>16))>>>0)/4294967295}
 function drawGround(){
@@ -480,14 +494,18 @@ function drawMenuBg(dt){for(const m of motes){m.y-=m.s*dt;if(m.y<0)m.y=1;ctx.fil
 // ================= HUD =================
 function updateHud(){
   const p=G.player;
-  $('hpb').style.width=clamp(p.hp/p.maxHp*100,0,100)+'%';$('hpt').textContent=`${Math.ceil(Math.max(0,p.hp))} / ${Math.round(p.maxHp)}`;
-  $('xpb').style.width=(G.xp/G.xpNext*100)+'%';$('lvt').textContent='Lv '+G.level;
+  $('hpb').style.width=clamp(p.hp/p.maxHp*100,0,100)+'%';$('hpt').textContent=`${Math.ceil(Math.max(0,p.hp))}/${Math.round(p.maxHp)}`;
+  $('xpb').style.width=(G.xp/G.xpNext*100)+'%';$('lvt').textContent='LV '+G.level;
   const s=Math.floor(G.t);$('timer').textContent=Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
-  $('wave').textContent=G.wave;$('kills').textContent=G.kills;$('runcoins').textContent=G.coins;
+  $('wave').textContent='WAVE '+G.wave;$('kills').textContent=G.kills;$('runcoins').textContent=G.coins;
   const boss=G.enemies.find(e=>e.T.boss);const bb=$('bossbar');
   if(boss){bb.classList.remove('hidden');$('bbName').textContent=boss.T.name;$('bbTitle').textContent=boss.T.title;$('bbFill').style.width='calc('+clamp(boss.hp/boss.maxHp*100,0,100)+'% - 2px)';$('bbHp').textContent=Math.ceil(Math.max(0,boss.hp))+' / '+Math.round(boss.maxHp)}else bb.classList.add('hidden');
-  const sig=G.loadout.join()+G.creations.length;
-  if(updateHud.sig!==sig){updateHud.sig=sig;$('slots').innerHTML=G.loadout.map(id=>{const d=CREATIONS[id];const n=G.creations.filter(c=>c.id===id).length;return `<span class="slot">${d.icon} ${d.name}: <i>${d.shape}</i>${n?' ×'+n:''}</span>`}).join('')}
+  if(updateHud.sig!==G.loadout.join()){updateHud.sig=G.loadout.join();
+    $('icSkull').src=ICON.skull;$('icCoin').src=ICON.coin;
+    $('slots').innerHTML=G.loadout.map(id=>`<div class="slot" id="sl-${id}"><img src="${ICON[id]}" alt=""><span class="sh">${CREATIONS[id].shape.toUpperCase()}</span><span class="n"></span><span class="du"><i></i></span></div>`).join('')}
+  for(const id of G.loadout){const el=$('sl-'+id);if(!el)continue;const act=G.creations.filter(c=>c.id===id);
+    el.classList.toggle('on',act.length>0);el.querySelector('.n').textContent=act.length?'x'+act.length:'';
+    const f=act.length?Math.max(...act.map(c=>Math.min(c.life/c.max,c.uses/c.maxUses))):0;el.querySelector('.du i').style.width=(f*100)+'%'}
 }
 function togglePause(){
   if(!G)return;
