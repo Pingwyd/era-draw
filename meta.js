@@ -4,8 +4,8 @@ let DAILY_ON=null;const _RND=Math.random;
 if(!save.eras)save.eras=['stone'];if(!save.era)save.era='stone';if(!save.diff)save.diff='normal';
 const DIFFS={
   normal:   {name:'Normal',   hp:1,  dmg:1,   spawn:1,   coins:1,   desc:'The age as it was.'},
-  cursed:   {name:'Cursed',   hp:1.5,dmg:1.25,spawn:1.2, coins:1.5, desc:'+50% enemy HP, +25% damage, more spawns. 1.5x coins.'},
-  nightmare:{name:'Nightmare',hp:2.2,dmg:1.6, spawn:1.45,coins:2.2, desc:'For the ink-mad. 2.2x enemy HP. 2.2x coins.'},
+  cursed:   {name:'Cursed',   hp:1.35,dmg:1.2,spawn:1.15, coins:1.5, desc:'+35% enemy HP, +20% damage, more spawns. 1.5x coins.'},
+  nightmare:{name:'Nightmare',hp:1.8,dmg:1.45,spawn:1.3,coins:2.2, desc:'For the ink-mad. 1.8x enemy HP, +45% damage, many more spawns. 2.2x coins.'},
 };
 const _spawnEnemy=spawnEnemy;
 spawnEnemy=function(type,scale,at){const e=_spawnEnemy(type,scale,at);const d=G.diffDef||DIFFS.normal;e.hp*=d.hp;e.maxHp*=d.hp;e.dmg*=d.dmg;return e};
@@ -34,7 +34,7 @@ results=function(){_results();const r=save.lastRun;if(!r)return;
 function eras(){
   leaveRun();setRoute('eras');
   show(sheet('Eras','06 &mdash; Choose your age and its curse',`<div class="tbl eras">${ERA_ORDER.map((id,i)=>{const E=ERAS[id],open=save.eras.includes(id)&&!E.locked;
-     return `<button class="cell ${save.era===id?'on':''} ${open?'':'lock'}" data-era="${id}"><span class="cell-h"><b>${E.no||'?'}</b>${save.era===id?'<i class="chk">&#9632; Selected</i>':''}</span><span class="nm">${E.name}</span><span class="sh">${E.date||''}</span><span class="st">${open?E.lore:(E.locked?'Coming soon':'Survive 15:00 in the '+ERAS[ERA_ORDER[i-1]].name)}</span></button>`}).join('')}</div>
+     return `<button class="cell ${save.era===id?'on':''} ${open?'':'lock'}" data-era="${id}"><span class="cell-h"><b>${E.no||'?'}</b>${save.era===id?'<i class="chk">&#9632; Selected</i>':''}</span><span class="nm">${E.name}</span><span class="sh">${E.date||''}</span><span class="st">${open?E.lore:(E.locked?'Coming soon':'Survive 10:00 in the '+ERAS[ERA_ORDER[i-1]].name)}</span></button>`}).join('')}</div>
     <div class="lab rule">Difficulty</div><nav class="menu">${Object.entries(DIFFS).map(([k,d],i)=>`<button data-diff="${k}" class="${save.diff===k?'prim':''}"><b>0${i+1}</b>${d.name}<span>${d.desc}</span><i>${save.diff===k?'&#9632;':'&#9633;'}</i></button>`).join('')}</nav>`));
   screenEl.querySelectorAll('[data-era]').forEach(el=>el.onclick=()=>{const id=el.dataset.era;if(!save.eras.includes(id)||ERAS[id].locked){toast('Locked');return}save.era=id;persist();eras()});
   screenEl.querySelectorAll('[data-diff]').forEach(el=>el.onclick=()=>{save.diff=el.dataset.diff;persist();eras()});
