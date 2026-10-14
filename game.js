@@ -173,7 +173,7 @@ function fizzle(pts,msg){sfx('fizzle');G.trails.push({pts,life:0.5,max:0.5,ok:fa
 function creationDmgMul(def){const ei=ERA_ORDER.indexOf(def.era),ci=ERA_ORDER.indexOf(CURRENT_ERA);return ei<ci?OLD_ERA_DMG:1}
 function spawnCreation(id,dir,echo){
   const def=CREATIONS[id],p=G.player;
-  if(SWITCH_SHATTERS&&!echo){const others=G.creations.filter(c=>c.id!==id);if(others.length){for(const c of others)shatterCreation(c);G.shake=Math.max(G.shake,6);floatText(p.x,p.y-52,'Shatter!','#cfe3ff');sfx('shatter')}}
+  if(SWITCH_SHATTERS&&!echo){const others=G.creations.filter(c=>c.id!==id);if(others.length){for(const c of others)shatterCreation(c);G.shake=Math.max(G.shake,6);floatText(p.x,p.y-52,'Shatter!','#cfe3ff');sfx('shatter');haptic(25)}}
   const same=G.creations.filter(c=>c.def.kind===def.kind);
   while(same.length>=(p.caps[def.kind]||1)){const old=same.shift();breakCreation(old,true)} // replace oldest
   const dur=G.era.durability*p.durMul;
@@ -181,7 +181,7 @@ function spawnCreation(id,dir,echo){
     ang:Math.random()*6.28,x:p.x,y:p.y,swing:0,dir};
   G.creations.push(c);
   if(id==='spear')fireShot(c,dir); // first throw goes where you drew
-  burst(p.x,p.y,G.era.ink,14);sfx('spawn');
+  burst(p.x,p.y,G.era.ink,14);sfx('spawn');haptic(15);
   floatText(p.x,p.y-34,(echo?'Echo ':'')+def.name+'!',G.era.ink);
 }
 function breakCreation(c,quiet){const i=G.creations.indexOf(c);if(i>=0)G.creations.splice(i,1);burst(c.x,c.y,'#cfc3a8',10);if(!quiet)floatText(c.x,c.y-10,'broke','#cfc3a8')}
@@ -261,7 +261,7 @@ function killEnemy(e){
   if(e.T.boss||(e.T.elite&&Math.random()<.25)){G.chests.push({x:e.x,y:e.y});if(e.T.boss){toast(e.T.name+' falls!');G.shake=14}}
 }
 function damagePlayer(d){
-  const p=G.player;p.hp-=d;p.invul=0.5;sfx('hurt');G.shake=8;burst(p.x,p.y,'#ff6b6b',10);
+  const p=G.player;p.hp-=d;p.invul=0.5;sfx('hurt');haptic(35);G.shake=8;burst(p.x,p.y,'#ff6b6b',10);
   if(p.hp<=0){
     if(p.secondWind&&!p.usedWind){p.usedWind=true;p.hp=1;p.invul=2;toast('Second Wind!');ring(p.x,p.y,200,'#fff');for(const e of G.enemies){const a=Math.atan2(e.y-p.y,e.x-p.x);e.kx+=Math.cos(a)*500;e.ky+=Math.sin(a)*500}}
     else endRun();
@@ -299,7 +299,7 @@ function rollPicks(){
 }
 function levelUp(fromChest){
   G.paused=true;stick.id=null;stick.active=false;G.drawing=null;
-  const picks=rollPicks();sfx(fromChest?'chest':'lvl');
+  const picks=rollPicks();sfx(fromChest?'chest':'lvl');haptic([20,40,20]);
   show(`<div class="sheet lv">
    <header class="row"><span class="lab">${fromChest?'Chest opened · +25 coins':'Level up'}</span><span class="lab">Choose one · ${fmt(G.t)}</span></header>
    <h2 class="disp">${fromChest?'Treasure':'Level '+G.level}</h2>
@@ -605,11 +605,12 @@ function settings(){
    <button class="lab back" id="sReset">Reset to defaults</button></div>
    <div><div class="lab rule">Play</div><nav class="menu">
    <button id="am"><b>01</b>Auto-move (kite)<span>${save.autoMove?'On':'Off'}</span><i>${save.autoMove?'&#9632;':'&#9633;'}</i></button>
-   <button id="snd"><b>02</b>Sound<span>${save.mute?'Off':'On'}</span><i>${save.mute?'&#9633;':'&#9632;'}</i></button></nav>
+   <button id="snd"><b>02</b>Sound<span>${save.mute?'Off':'On'}</span><i>${save.mute?'&#9633;':'&#9632;'}</i></button>
+   <button id="hap"><b>03</b>Haptics<span>${save.haptics===false?'Off':'On'}</span><i>${save.haptics===false?'&#9633;':'&#9632;'}</i></button></nav>
    <p class="note">Auto-move steers the mage away from nearby enemies and toward XP whenever you are not steering.</p></div></div>`));
   for(const [id,key] of [['sHud','hudScale'],['sZoom','zoom'],['sUi','uiScale']]){const el=$(id);el.oninput=()=>{save[key]=el.value/100;$(id+'v').textContent=el.value+'%';applyScale();layoutBuf();persist()}}
   $('sReset').onclick=()=>{save.hudScale=save.zoom=save.uiScale=1;persist();applyScale();layoutBuf();settings()};
-  $('am').onclick=()=>{save.autoMove=!save.autoMove;persist();settings()};$('snd').onclick=()=>{save.mute=!save.mute;persist();settings()};$('back').onclick=home;
+  $('am').onclick=()=>{save.autoMove=!save.autoMove;persist();settings()};$('snd').onclick=()=>{save.mute=!save.mute;persist();settings()};$('hap').onclick=()=>{save.haptics=save.haptics===false;persist();haptic(20);settings()};$('back').onclick=home;
 }
 function controlsHint(){return isTouch?'Left thumb: move · Right thumb: draw':'Hold right-click: walk · Left-drag: draw · WASD also works'}
 function fmt(s){s=Math.floor(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
