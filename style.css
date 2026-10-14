@@ -85,7 +85,7 @@ img{image-rendering:pixelated}
 .cell .nm{font-family:'Instrument Serif',serif;font-size:26px;line-height:1}
 .cell .sh{font-size:16px;color:var(--mute)}
 .cell .st{font:8px Silkscreen,monospace;letter-spacing:1px;color:var(--mute);margin-top:auto;padding-top:6px}
-.cell .chk{position:absolute;bottom:8px;right:8px;font:8px Silkscreen,monospace;font-style:normal;color:var(--ember);letter-spacing:1px}
+.cell-h{display:flex;width:100%;justify-content:space-between;align-items:center}.cell .chk{font:8px Silkscreen,monospace;font-style:normal;color:var(--ember);letter-spacing:1px}
 .cell.on{background:#24130f;box-shadow:inset 0 -2px 0 var(--ember)}
 .cell.lock{opacity:.45}
 .list{border-top:1px solid var(--rule)}
@@ -144,3 +144,19 @@ img{image-rendering:pixelated}
 .plate canvas{position:static;display:block;width:100%;height:auto;image-rendering:pixelated}
 .plate .cap{display:flex;justify-content:space-between;padding:4px 6px;border-top:1px solid var(--rule)}
 @media (max-height:500px){.plate canvas{max-height:96px;object-fit:cover}}
+
+/* ===== responsive desktop: scale whole sheets by --ui, widen layouts ===== */
+#screen>*{zoom:var(--ui,1)}
+.home{max-width:1180px}.sheet{max-width:1180px}
+.split{display:grid;grid-template-columns:minmax(0,1fr) 300px;gap:24px;align-items:start}
+.pane{border:1px solid var(--rule);padding:14px;background:#180d0e}
+.pane-art{display:flex;align-items:center;justify-content:center;height:120px;border-bottom:1px solid var(--rule);margin:-14px -14px 12px;background:#100809}
+.pane-art img{width:auto;height:96px}
+.pane-nm{font-family:'Instrument Serif',serif;font-weight:400;font-size:40px;line-height:1;margin:4px 0 8px}
+.pane-shape{display:flex;align-items:center;gap:10px;border-top:1px solid var(--rule);border-bottom:1px solid var(--rule);padding:6px 0;margin-bottom:8px}
+.demo{width:90px;height:72px}
+.cell.foc{outline:1px solid var(--ink);outline-offset:-1px}
+.tbl{grid-template-columns:repeat(auto-fit,minmax(130px,1fr))}
+.home .plate canvas{min-height:180px}
+@media (max-height:500px){.split{grid-template-columns:minmax(0,1fr) 220px;gap:14px}.pane{padding:10px}.pane-art{height:70px;margin:-10px -10px 8px}.pane-art img{height:56px}.pane-nm{font-size:28px}.demo{width:60px;height:46px}.pane .stats li{font-size:14px}.home .plate canvas{min-height:0}}
+@media (max-width:760px){.split{grid-template-columns:1fr}.pane{display:none}}
