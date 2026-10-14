@@ -5,7 +5,7 @@ const UA='Mozilla/5.0 (iPod touch; CPU iPhone OS 15_7 like Mac OS X) AppleWebKit
 const out={};const errs=[];
 for(const [w,h] of [[568,320],[320,568]]){
  const ctx=await b.newContext({viewport:{width:w,height:h},hasTouch:true,isMobile:true,deviceScaleFactor:2,userAgent:UA});const p=await ctx.newPage();
- p.on('pageerror',e=>errs.push(w+': '+e.message));p.on('console',m=>m.type()==='error'&&errs.push(w+': '+m.text()));
+ p.on('response',r=>r.status()>=400&&errs.push(w+': HTTP '+r.status()+' '+r.url()));p.on('pageerror',e=>errs.push(w+': '+e.message));p.on('console',m=>m.type()==='error'&&errs.push(w+': '+m.text()));
  const sh=async n=>p.screenshot({path:`/workspace/era-draw/shots/ios-${n}-${w}x${h}.png`});
  await p.goto('http://localhost:8080/#/home');await p.waitForTimeout(1300);await sh('home');
  if(w<h){out.portrait=await p.evaluate(()=>!document.getElementById('rotate').classList.contains('hidden'));await ctx.close();continue}
