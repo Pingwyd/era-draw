@@ -74,7 +74,7 @@ const ACH=[
   {id:'kills1k', name:'Inkstorm',        desc:'Defeat 1,000 enemies in total',   coins:80, test:()=>save.stats.kills>=1000},
   {id:'t5',      name:'Five Minutes',    desc:'Survive 5:00',                    coins:50, test:g=>g&&g.t>=300},
   {id:'t10',     name:'Ten Minutes',     desc:'Survive 10:00',                   coins:100,test:g=>g&&g.t>=600},
-  {id:'clear1',  name:'Out of the Cave', desc:'Clear the Stone Age (15:00)',     coins:200,test:g=>g&&g.victory&&g.era===ERAS.stone},
+  {id:'clear1',  name:'Out of the Cave', desc:'Clear the Stone Age (10:00)',     coins:200,test:g=>g&&g.victory&&g.era===ERAS.stone},
   {id:'grael',   name:'Elder Felled',    desc:'Defeat Grael, the Woolly Elder',  coins:75, test:()=>save.stats.bosses.mammoth},
   {id:'urkesh',  name:'Tar Silenced',    desc:'Defeat Ur-Kesh, the Bone Shaman', coins:100,test:()=>save.stats.bosses.shaman},
   {id:'perfect10',name:'Steady Hand',    desc:'10 perfect draws in one run',     coins:50, test:g=>g&&g.perfects>=10},
@@ -150,7 +150,7 @@ function openChest(c){
     if(t<stop){el.firstChild.src=ICON['pu_'+ids[(t+i*3)%ids.length]];if(t%2)sfx('tick')}
     else if(t===stop){el.firstChild.src=ICON['pu_'+k.pu.id];el.className='reel done r-'+RAR[k.r];sfx('pick');
       $('rlist').insertAdjacentHTML('beforeend',`<span class="rr r-${RAR[k.r]}">${k.pu.name} <i>${RAR[k.r]}</i></span>`)}});
-    if(t>=10+(n-1)*5){clearInterval(spin);$('rok').disabled=false}},90);
+    if(t>=10+(n-1)*5){clearInterval(spin);const ok=$('rok');if(ok)ok.disabled=false}},90);
   $('rok').onclick=()=>{for(const k of rewards){k.pu.apply(G.player,k.r);G.picks[k.pu.id]=(G.picks[k.pu.id]||0)+1}show('');G.paused=false;last=performance.now()};
 }
 
@@ -171,7 +171,7 @@ const PICKUPS={
 };
 function dropPickup(x,y,type){if(!type){const tot=Object.values(PICKUPS).reduce((a,b)=>a+b.w,0);let r=Math.random()*tot;for(const k in PICKUPS){r-=PICKUPS[k].w;if(r<=0){type=k;break}}}
   (G.pickups||(G.pickups=[])).push({x,y,type,t:0})}
-runHooks.push(G=>{G.pickups=[];G.pickT=30;G.mapChestT=50});
+runHooks.push(G=>{G.pickups=[];G.pickT=30;G.mapChestT=75});
 function updatePickups(dt){const p=G.player;if(!G.pickups)G.pickups=[];
   G.pickT-=dt;if(G.pickT<=0){G.pickT=24+Math.random()*12;const a=Math.random()*6.283,d=170+Math.random()*130;dropPickup(p.x+Math.cos(a)*d,p.y+Math.sin(a)*d)}
   for(let i=G.pickups.length-1;i>=0;i--){const k=G.pickups[i];k.t+=dt;if(k.t>60){G.pickups.splice(i,1);continue}
@@ -243,7 +243,7 @@ const TUT=[
   {t:'Draw a weapon',d:()=>TUT_TOUCH?'Draw a short line on the right side: a Club appears.':'Left-drag a short line: a Club appears.',done:G=>G.creations.length>0},
   {t:'They fight for you',d:()=>'Weapons attack on their own and break with use. Draw a long line for a Spear, a circle for a Rock.',done:(G,s)=>s.tt>6},
   {t:'Dash',d:()=>TUT_TOUCH?'Double-tap to dash through danger.':'Press Space to dash through danger.',done:G=>G.player.dashCd>0},
-  {t:'Survive',d:()=>'Collect gems to level up. Survive 15:00 to clear the era. Good luck.',done:(G,s)=>s.tt>5},
+  {t:'Survive',d:()=>'Collect gems to level up. Survive 10:00 and beat the final boss (or outlast it to 11:00) to clear the era. Good luck.',done:(G,s)=>s.tt>5},
 ];
 runHooks.push(G=>{if(save.tutDone||G.daily){G.tut=null;return}G.tut={i:0,tt:0,x0:G.player.x,y0:G.player.y};G.diffDef={...G.diffDef,spawn:G.diffDef.spawn*.35}});
 function tutRender(){let el=$('tut');const G_=G;
@@ -288,10 +288,10 @@ const LOOT_COL={chest:'#ffd34a',magnet:'#ff6a5a',meat:'#8fe07a',bomb:'#ffb13a'};
 const HI={};function hiSpr(key,src,col){return HI[key]||(HI[key]=outline(src,col))}
 // timed map chests + champions (glowing elites that always drop a chest)
 const _updL=updatePickups;updatePickups=function(dt){_updL(dt);if(mode!=='run'||!G)return;const p=G.player;
-  G.mapChestT-=dt;if(G.mapChestT<=0){G.mapChestT=70+Math.random()*25;const a=Math.random()*6.283,d=200+Math.random()*120;G.chests.push({x:p.x+Math.cos(a)*d,y:p.y+Math.sin(a)*d});toast('A chest appeared nearby')}
+  G.mapChestT-=dt;if(G.mapChestT<=0){G.mapChestT=100+Math.random()*25;if(!chestOk())return;const a=Math.random()*6.283,d=200+Math.random()*120;G.chests.push({x:p.x+Math.cos(a)*d,y:p.y+Math.sin(a)*d});toast('A chest appeared nearby')}
   G.lootFx=(G.lootFx||0)-dt;if(G.lootFx<=0){G.lootFx=.12;const all=[...G.chests,...G.pickups];if(all.length){const o=all[Math.floor(Math.random()*all.length)];G.fx.push({x:o.x+rnd(-10,10),y:o.y-rnd(4,22),vx:0,vy:-20,life:.6,max:.6,col:'#fff6c8',r:1.5})}}};
 const _spE=spawnEnemy;spawnEnemy=function(){const e=_spE.apply(this,arguments);
-  if(e&&e.T&&!e.T.boss&&!e.T.elite&&G.t>40&&Math.random()<.012){e.champ=true;e.hp*=6;if(e.maxHp)e.maxHp*=6;if(e.hpMax)e.hpMax*=6}return e};
+  if(e&&e.T&&!e.T.boss&&!e.T.elite&&G.t>60&&Math.random()<.004){e.champ=true;e.hp*=6;if(e.maxHp)e.maxHp*=6;if(e.hpMax)e.hpMax*=6}return e};
 function drawLootTop(){if(!G)return;const t=G.t,pulse=.5+.5*Math.sin(t*5);
   const items=[...G.chests.map(c=>({o:c,k:'chest',spr:SPR.chest})),...(G.pickups||[]).map(k=>({o:k,k:k.type,spr:SPR.pick[k.type]}))];
   for(const it of items){const o=it.o,col=LOOT_COL[it.k];if(it.k!=='chest'&&o.t>54&&(Math.floor(o.t*8)&1))continue;

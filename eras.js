@@ -5,7 +5,7 @@
 // `kind:'spell'` creations are reserved for Mythic: they would use the same draw->creation pipeline.
 const SHAPE_KEY={club:'short',spear:'long',rock:'circle',sling:'v',dagger:'zig'};
 for(const id in CREATIONS)if(!CREATIONS[id].shapeKey)CREATIONS[id].shapeKey=SHAPE_KEY[CREATIONS[id].base&&CREATIONS[CREATIONS[id].base]?CREATIONS[id].base:id]||SHAPE_KEY[id];
-const ERA_CLEAR_T=900; // 15:00 survives the era and unlocks the next
+const ERA_CLEAR_T=600; // 10:00 + the final boss defeated clears the era and unlocks the next
 Object.assign(ERAS.stone,{
   spawns:[{type:'insect',from:0,w:45},{type:'bird',from:30,w:23},{type:'saber',from:70,w:12},{type:'caveman',from:90,w:8},{type:'bear',from:120,w:7},{type:'rhino',from:150,w:5}],
   bosses:[{t:180,type:'mammoth',every:240},{t:300,type:'shaman',every:300}],

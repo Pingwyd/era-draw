@@ -4,12 +4,12 @@
 let RUN_SEED=null;
 runHooks.unshift(G=>{G.seed=(RUN_SEED!=null?RUN_SEED:Math.floor(Math.random()*4294967295))>>>0;RUN_SEED=null;G.rng=mulberry(G.seed)});
 
-// ---- endless mode after the 15:00 clear ----
+// ---- endless mode after the 10:00 clear ----
 eraCleared=(function(orig){return function(){
   const i=ERA_ORDER.indexOf(CURRENT_ERA),next=ERA_ORDER[i+1];
   if(next&&!save.eras.includes(next)&&ERAS[next]&&!ERAS[next].locked){save.eras.push(next);persist();toast(ERAS[next].name+' unlocked!')}
   sfx('chest');haptic([40,40,80]);
-  modal(pickCards('Era cleared','15:00 survived'+(next?' &middot; '+ERAS[next].name+' unlocked':''),[
+  modal(pickCards('Era cleared','10:00 survived'+(next?' &middot; '+ERAS[next].name+' unlocked':''),[
     {name:'Go endless',desc:'Keep going. Bosses return in rotation, stronger every time. Coins x1.25 from here on.',tag:'&infin;',rar:'epic',sub:'endless'},
     {name:'Leave victorious',desc:'End the run now and bank everything.',tag:'END',rar:'rare',sub:'finish'}]),i=>{
       if(i===0){G.endless=true;toast('Endless mode');}else{G.victory=true;setTimeout(()=>{if(mode==='run')endRun()},0)}});

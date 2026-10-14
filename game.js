@@ -268,8 +268,13 @@ function killEnemy(e){
   G.kills++;sfx('kill');burst(e.x,e.y,e.T.col,e.T.boss?50:7);burst(e.x,e.y,'#1a0f0e',e.T.boss?20:3);if(e.T.boss||e.T.elite)ring(e.x,e.y,e.T.boss?120:50,'#ffe08a');
   G.ink.push({x:e.x,y:e.y,r:e.r*rnd(.8,1.4),a:.35});if(G.ink.length>120)G.ink.shift();
   G.orbs.push({x:e.x,y:e.y,v:e.T.xp,t:0});
-  if(e.T.boss||(e.T.elite&&Math.random()<.6)||(e.champ)){G.chests.push({x:e.x,y:e.y,boss:!!e.T.boss});if(e.T.boss){toast(e.T.name+' falls!');G.shake=14}}
+  if(e.T.boss||(chestOk()&&((e.T.elite&&Math.random()<.12)||e.champ))){G.chests.push({x:e.x,y:e.y,boss:!!e.T.boss});if(e.T.boss){toast(e.T.name+' falls!');G.shake=14}}
 }
+// balance: at most CHEST_CAP non-boss chests on the map at once; boss chests always drop
+const CHEST_CAP=2;function chestOk(){return !G||G.chests.filter(c=>!c.boss).length<CHEST_CAP}
+// balance: XP needed grows ~level^1.45, plus a +25% step every 10 levels
+function finalBoss(){const b=(G.era.bosses||[]).find(x=>x.t===ERA_CLEAR_T);return b&&b.type}
+function xpFor(l){return Math.round((5+3.2*Math.pow(l,1.45))*(1+.25*Math.floor(l/10)))}
 function damagePlayer(d){
   if(!G||G.dead)return;const p=G.player;p.hp-=d;p.invul=0.5;sfx('hurt');haptic(35);G.shake=8;burst(p.x,p.y,'#ff6b6b',10);
   if(p.hp<=0){
@@ -283,7 +288,7 @@ function updateOrbs(dt){
   const p=G.player;
   for(let i=G.orbs.length-1;i>=0;i--){const o=G.orbs[i];o.t+=dt;const d=Math.hypot(p.x-o.x,p.y-o.y);
     if(d<p.magnet||o.pull){o.pull=true;const a=Math.atan2(p.y-o.y,p.x-o.x),sp=300+o.t*200;o.x+=Math.cos(a)*sp*dt;o.y+=Math.sin(a)*sp*dt}
-    if(d<p.r+6){G.orbs.splice(i,1);G.xp+=o.v;if(G.xp>=G.xpNext){G.xp-=G.xpNext;G.level++;G.xpNext=Math.round(5+G.level*3.2+Math.pow(G.level,1.5));levelUp()}}}
+    if(d<p.r+6){G.orbs.splice(i,1);G.xp+=o.v;if(G.xp>=G.xpNext){G.xp-=G.xpNext;G.level++;G.xpNext=xpFor(G.level);levelUp()}}}
   for(let i=G.chests.length-1;i>=0;i--){const c=G.chests[i];if(Math.hypot(c.x-p.x,c.y-p.y)<p.r+14){G.chests.splice(i,1);G.bonus=(G.bonus||0)+25;floatText(p.x,p.y-40,'+25 COINS','#d9c27a',1.4);const rc=$('runcoins');rc.classList.remove('flash');void rc.offsetWidth;rc.classList.add('flash');burst(c.x,c.y,'#d9c27a',24);toast('Chest! +25 coins');(window.openChest?openChest(c):levelUp(true));return}}
   if(G.orbs.length>250)G.orbs.splice(0,G.orbs.length-250);
 }
@@ -370,7 +375,7 @@ function step(dt,realDt){
   const spd=p.dashT>0?p.speed*DASH.mult:p.speed;
   p.x+=mx*spd*dt;p.y+=my*spd*dt;if(m>0.1)p.face=Math.atan2(my,mx);p.moving=m>0.1;
   updateSpawns(dt);updateEnemies(dt);if(G.dead){updateHud();endRun();return}if(mode!=='run')return;updateCreations(dt);updateShots(dt);updateOrbs(dt);if(window.updatePickups)updatePickups(dt);if(!G||mode!=='run')return;updateFx(dt);if(G.dead){endRun();return}
-  if(G.t>=ERA_CLEAR_T&&!G.cleared){G.cleared=true;eraCleared();return}
+  if(G.t>=ERA_CLEAR_T+1&&!G.cleared&&(G.t>=ERA_CLEAR_T+60||!G.enemies.some(e=>e.T.boss&&e.type===finalBoss()))){G.cleared=true;eraCleared();return}
   G.coins=calcCoins();updateHud();
 }
 // Auto-move (kite): steer away from nearby enemies, drift toward nearby XP

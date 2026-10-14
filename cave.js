@@ -81,7 +81,7 @@ const QUESTS=[
 CAVE_TICK.push(dt=>{const q=G.quest;
   if(!q){G.questT-=dt;if(G.questT<=0){const Q=QUESTS[Math.floor(Math.random()*QUESTS.length)];G.quest={...Q.mk(G),def:Q};toast('Quest: '+G.quest.txt)}}
   else{q.time-=dt;if(q.def.tick)q.def.tick(q,dt);
-    if(q.c>=q.n){G.quest=null;G.questT=70+Math.random()*20;const p=G.player;G.chests.push({x:p.x+40,y:p.y-30});G.bonus=(G.bonus||0)+20;toast('Quest complete! Chest + 20 coins');sfx('chest');haptic([20,30,20]);(save.stats.quests=(save.stats.quests||0)+1)}
+    if(q.c>=q.n){G.quest=null;G.questT=70+Math.random()*20;const p=G.player;if(chestOk())G.chests.push({x:p.x+40,y:p.y-30});else G.bonus=(G.bonus||0)+25;G.bonus=(G.bonus||0)+20;toast('Quest complete! Chest + 20 coins');sfx('chest');haptic([20,30,20]);(save.stats.quests=(save.stats.quests||0)+1)}
     else if(q.time<=0||q.fail){G.quest=null;G.questT=60;toast('Quest failed')}}
   questHud()});
 killHooks.push(e=>{if(G&&G.quest&&G.quest.def.kill)G.quest.def.kill(G.quest,e)});
