@@ -23,9 +23,13 @@ function showInstall(){
   const el=document.createElement('div');el.id='install';
   el.innerHTML=IS_IOS?`<b>Install Era Draw</b><span>Tap <img src="${SHARE_ICON}" alt="Share"> Share, then <em>Add to Home Screen</em> for fullscreen play, offline.</span><button id="instX" aria-label="Dismiss">&times;</button>`
     :`<b>Install Era Draw</b><span>Play fullscreen and offline.</span><button id="instGo">Install</button><button id="instX" aria-label="Dismiss">&times;</button>`;
-  document.body.appendChild(el);
-  document.getElementById('instX').onclick=()=>{save.installDismissed=true;persist();el.remove()};
+  document.body.appendChild(el);setTimeout(()=>window.insPad&&insPad(),0);
+  document.getElementById('instX').onclick=()=>{save.installDismissed=true;persist();el.remove();insPad()};
   const go=document.getElementById('instGo');if(go)go.onclick=async()=>{if(!deferredPrompt)return;deferredPrompt.prompt();try{await deferredPrompt.userChoice}catch(e){}deferredPrompt=null;el.remove()};
 }
 // only nag on menus, never mid-run
 setInterval(()=>{const el=document.getElementById('install');if(mode==='run'||!/^#?\/?(home)?$/.test(location.hash.replace('#/',''))){if(el)el.style.display='none'}else{if(el)el.style.display='';else showInstall()}},1000);
+// reserve room for the install banner so it never covers home content (568x320 overlap fix)
+function insPad(){const el=document.getElementById('install');const on=!!(el&&el.style.display!=='none');document.documentElement.classList.toggle('ins-on',on);
+  document.documentElement.style.setProperty('--insH',on?Math.ceil(el.getBoundingClientRect().height+8)+'px':'0px')}
+setInterval(insPad,500);addEventListener('resize',insPad);
