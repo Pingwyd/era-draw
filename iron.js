@@ -40,7 +40,7 @@ Object.assign(ENEMY_TYPES,{
   warlord:{name:'Brennus',title:'The Iron Warlord',spr:'warlord',r:22,hp:3600,speed:44,dmg:40,xp:80,col:'#b8382f',beh:'charge',boss:true,mat:'iron',armor:.7,lore:'Vae victis.'},
   ram:{name:'Old Thunder',title:'The Siege Ram',spr:'ram',r:24,hp:4800,speed:30,dmg:46,xp:100,col:'#8a5a32',beh:'charge',boss:true,mat:'iron',lore:'It has broken eleven gates. You are smaller than a gate.'},
 });
-MAT_NAMES.iron=MAT_NAMES.iron||'Iron';MAT_NAMES.bronze=MAT_NAMES.bronze||'Bronze';
+MAT_NAMES.iron=MAT_NAMES.iron||'Iron';if(!SPR.mat.iron){SPR.mat.iron=outline(grid(['......','.zzzz.','zZZZZz','ZZZZZZ']));ICON.mat_iron=iconURL(SPR.mat.iron,3)}MAT_NAMES.bronze=MAT_NAMES.bronze||'Bronze';
 // ---- castle siege ground ----
 SPR.tiles.iron=makeTile(57,'#3d3f44',['#45474d','#36383d','#4d4f55','#2f3136'],'#55585f');
 SPR.decos.iron={
