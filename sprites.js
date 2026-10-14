@@ -24,6 +24,7 @@ const PAL = {
   a:'#d9c27a', A:'#a88f4d', // gold
   i:'#27201c', // dark detail
   u:'#a14d9c',  // shaman paint
+  j:'#3d4f78', J:'#232c47', // terror bird plumage
 };
 const SPR = {};
 function mk(w,h){const c=document.createElement('canvas');c.width=w;c.height=h;const x=c.getContext('2d');x.imageSmoothingEnabled=false;return [c,x]}

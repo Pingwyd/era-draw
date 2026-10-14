@@ -8,10 +8,10 @@ SPR.en.insect=enSet([
 ['WW.WW.','.GGGGi','GGGGG.','.G.G..'],
 ['......','WGGGGi','GGGGG.','G...G.']].map(f=>f.map(r=>r.replace(/W/g,'w'))));
 SPR.en.bird=enSet(LEG([
-'......mm..','.....fffaa','.....fifaaa','.....fff..','....ff....','.fffffff..','ffFfffff..','.FFFffF...'],
-['...a..a...','...a..a...','..aa.aa...'],['....aa....','...a..a...','..aa..aa..']));
+'.......mm..','......mjjm.','......jjiaa','......jjjaaa','.......jj...','..j...jj....','.jjjjjjjj...','jJjjjjjjJ...','.JJjjjjJ....','..JJJJJ.....'],
+['....a..a....','....a..a....','...aa.aa....'],['.....aa.....','....a..a....','...aa..aa...']));
 SPR.en.saber=enSet(LEG([
-'............ff..','...........fffi.','FF.ffffffffffffff','.FfffFfffFfffffw.','..fffffffffffff..','..FfFFFFFFFFfF...'],
+'.............ff..','...FF.......fffi.','..FFfFfFfFfFfffff','.FffFffFffFffffwf','..ffffffffffffw.w','..FfFFFFFFFFfF...'],
 ['..F.f......F.f...','..F.f......F.f...'],['...fF.....fF.....','...fF.....fF.....']));
 SPR.en.caveman=enSet(LEG([
 '...cccc...','..cssssc..','..csisic..','..cssss...','...ss..tt.','.FFFFFFstt','sFFFFFF...','s.FFFF....','..FFFF....'],
@@ -35,7 +35,7 @@ SPR.en.shaman=enSet(LEG([
 // behavior: chase | swarm | lunge | thrower | charge | shaman
 const ENEMY_TYPES={
   insect: {name:'Giant Gnat',  spr:'insect', r:7, hp:6,  speed:92, dmg:4, xp:1,col:'#3f5a28',beh:'swarm'},
-  bird:   {name:'Terror Bird', spr:'bird',   r:10,hp:12, speed:122,dmg:6, xp:1,col:'#c98a45',beh:'chase',min:30},
+  bird:   {name:'Terror Bird', spr:'bird',   r:10,hp:12, speed:122,dmg:6, xp:1,col:'#3d4f78',beh:'chase',min:30},
   saber:  {name:'Sabertooth',  spr:'saber',  r:13,hp:32, speed:68, dmg:12,xp:2,col:'#c98a45',beh:'lunge',min:70},
   caveman:{name:'Rival Caveman',spr:'caveman',r:11,hp:24,speed:62, dmg:8, xp:2,col:'#7b5a44',beh:'thrower',min:90},
   bear:   {name:'Cave Bear',   spr:'bear',   r:17,hp:120,speed:36, dmg:18,xp:5,col:'#7b5a44',beh:'chase',min:120},
@@ -62,8 +62,8 @@ function spawnEnemy(type,scale,at){
 function updateSpawns(dt){
   G.wave=1+Math.floor(G.t/30);
   const scale=1+G.t/100;
-  G.spawnT+=dt*(1.2+G.t/9);
-  const cap=Math.min(ENEMY_CAP,50+G.wave*22);
+  G.spawnT+=dt*(1+G.t/13);
+  const cap=Math.min(ENEMY_CAP,45+G.wave*18);
   while(G.spawnT>=1){G.spawnT-=1;if(G.enemies.length>=cap)break;
     const r=Math.random(),t=G.t;let type='insect';
     if(t>150&&r<.05)type='rhino';else if(t>120&&r<.12)type='bear';else if(t>90&&r<.2)type='caveman';else if(t>70&&r<.32)type='saber';else if(t>30&&r<.55)type='bird';
