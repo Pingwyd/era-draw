@@ -171,9 +171,9 @@ const PICKUPS={
 };
 function dropPickup(x,y,type){if(!type){const tot=Object.values(PICKUPS).reduce((a,b)=>a+b.w,0);let r=Math.random()*tot;for(const k in PICKUPS){r-=PICKUPS[k].w;if(r<=0){type=k;break}}}
   (G.pickups||(G.pickups=[])).push({x,y,type,t:0})}
-runHooks.push(G=>{G.pickups=[];G.pickT=45});
+runHooks.push(G=>{G.pickups=[];G.pickT=30;G.mapChestT=50});
 function updatePickups(dt){const p=G.player;if(!G.pickups)G.pickups=[];
-  G.pickT-=dt;if(G.pickT<=0){G.pickT=40+Math.random()*25;const a=Math.random()*6.283,d=260+Math.random()*200;dropPickup(p.x+Math.cos(a)*d,p.y+Math.sin(a)*d)}
+  G.pickT-=dt;if(G.pickT<=0){G.pickT=24+Math.random()*12;const a=Math.random()*6.283,d=170+Math.random()*130;dropPickup(p.x+Math.cos(a)*d,p.y+Math.sin(a)*d)}
   for(let i=G.pickups.length-1;i>=0;i--){const k=G.pickups[i];k.t+=dt;if(k.t>60){G.pickups.splice(i,1);continue}
     if(Math.hypot(k.x-p.x,k.y-p.y)<p.r+14){G.pickups.splice(i,1);sfx('pick');haptic(15);PICKUPS[k.type].fn(G);if(mode!=='run')return}}}
 function renderPickups(){if(!G.pickups)return;for(const k of G.pickups){if(k.t>54&&(Math.floor(k.t*8)&1))continue;shadow(k.x,k.y,5);blit(SPR.pick[k.type],k.x,k.y-((Math.floor(G.t*3)&1)))}}
@@ -192,7 +192,7 @@ runHooks.push(G=>{G.props=[];G.propT=2});
 function hitProp(k){k.hp--;burst(k.x,k.y-8,k.type==='bush'?'#5f8f3c':k.type==='urn'?'#d08a52':'#ff8a2a',10);sfx('hit');
   if(k.hp<=0){k.dead=true;burst(k.x,k.y-8,'#d9c27a',14);if(Math.random()<.3)dropPickup(k.x,k.y);else{G.orbs.push({x:k.x,y:k.y,v:3,t:0});G.bonus=(G.bonus||0)+2;floatText(k.x,k.y-24,'+2','#d9c27a',.8)}}}
 const _updP=updatePickups;updatePickups=function(dt){_updP(dt);if(mode!=='run'||!G.props)return;const p=G.player;
-  G.propT-=dt;if(G.propT<=0&&G.props.length<14){G.propT=6+Math.random()*6;const a=Math.random()*6.283,d=300+Math.random()*300,ts=ERA_PROPS[CURRENT_ERA]||ERA_PROPS.stone;
+  G.propT-=dt;if(G.propT<=0&&G.props.length<14){G.propT=5+Math.random()*5;const a=Math.random()*6.283,d=220+Math.random()*220,ts=ERA_PROPS[CURRENT_ERA]||ERA_PROPS.stone;
     G.props.push({x:p.x+Math.cos(a)*d,y:p.y+Math.sin(a)*d,type:ts[Math.floor(Math.random()*ts.length)],hp:2,cd:0})}
   for(const k of G.props){k.cd-=dt;if(k.cd>0)continue;let hit=false;
     for(const s of G.shots)if(Math.abs(s.x-k.x)<14&&Math.abs(s.y-(k.y-8))<16){hit=true;break}
@@ -281,5 +281,35 @@ addEventListener('keydown',e=>{
   const dir={ArrowDown:1,ArrowRight:1,ArrowUp:-1,ArrowLeft:-1}[k];
   if(dir&&!(isRange&&(k==='ArrowLeft'||k==='ArrowRight'))){e.preventDefault();let i=btns.indexOf(act);i=i<0?(dir>0?0:btns.length-1):(i+dir+btns.length)%btns.length;btns[i].focus()}
 });
+
+
+// ================= LOOT VISIBILITY =================
+const LOOT_COL={chest:'#ffd34a',magnet:'#ff6a5a',meat:'#8fe07a',bomb:'#ffb13a'};
+const HI={};function hiSpr(key,src,col){return HI[key]||(HI[key]=outline(src,col))}
+// timed map chests + champions (glowing elites that always drop a chest)
+const _updL=updatePickups;updatePickups=function(dt){_updL(dt);if(mode!=='run'||!G)return;const p=G.player;
+  G.mapChestT-=dt;if(G.mapChestT<=0){G.mapChestT=70+Math.random()*25;const a=Math.random()*6.283,d=200+Math.random()*120;G.chests.push({x:p.x+Math.cos(a)*d,y:p.y+Math.sin(a)*d});toast('A chest appeared nearby')}
+  G.lootFx=(G.lootFx||0)-dt;if(G.lootFx<=0){G.lootFx=.12;const all=[...G.chests,...G.pickups];if(all.length){const o=all[Math.floor(Math.random()*all.length)];G.fx.push({x:o.x+rnd(-10,10),y:o.y-rnd(4,22),vx:0,vy:-20,life:.6,max:.6,col:'#fff6c8',r:1.5})}}};
+const _spE=spawnEnemy;spawnEnemy=function(){const e=_spE.apply(this,arguments);
+  if(e&&e.T&&!e.T.boss&&!e.T.elite&&G.t>40&&Math.random()<.012){e.champ=true;e.hp*=6;if(e.maxHp)e.maxHp*=6;if(e.hpMax)e.hpMax*=6}return e};
+function drawLootTop(){if(!G)return;const t=G.t,pulse=.5+.5*Math.sin(t*5);
+  const items=[...G.chests.map(c=>({o:c,k:'chest',spr:SPR.chest})),...(G.pickups||[]).map(k=>({o:k,k:k.type,spr:SPR.pick[k.type]}))];
+  for(const it of items){const o=it.o,col=LOOT_COL[it.k];if(it.k!=='chest'&&o.t>54&&(Math.floor(o.t*8)&1))continue;
+    const sx=X(o.x),sy=Y(o.y)-6,bob=Math.round(Math.sin(t*4+o.x)*1.5);
+    bx.globalCompositeOperation='lighter';
+    for(const [r,a] of [[14,.10],[10,.14],[6,.2]]){bx.globalAlpha=a*(.6+.6*pulse);bx.fillStyle=col;bx.beginPath();bx.arc(sx,sy+bob,r+pulse*2,0,6.283);bx.fill()}
+    bx.globalCompositeOperation='source-over';bx.globalAlpha=1;
+    const hs=hiSpr(it.k,it.spr,'#fff6d8');bx.drawImage(hs,sx-(hs.width>>1),Y(o.y)-hs.height+bob);
+    // off-screen arrow
+    const m=6;if(sx<m||sx>BW-m||sy<m||sy>BH-m){const cx=BW/2,cy=BH/2,ang=Math.atan2(sy-cy,sx-cx);const ax=Math.max(m,Math.min(BW-m,sx)),ay=Math.max(m+8,Math.min(BH-m-14,sy));
+      bx.save();bx.translate(Math.round(ax),Math.round(ay));bx.rotate(ang);bx.globalAlpha=.75+.25*pulse;bx.fillStyle='#1a0f0e';bx.beginPath();bx.moveTo(6,0);bx.lineTo(-4,-5);bx.lineTo(-4,5);bx.fill();bx.fillStyle=col;bx.beginPath();bx.moveTo(5,0);bx.lineTo(-3,-3.5);bx.lineTo(-3,3.5);bx.fill();bx.restore();bx.globalAlpha=1}}
+  // champions glow + breakables stay readable in the dark
+  for(const e of G.enemies)if(e.champ){bx.globalCompositeOperation='lighter';bx.globalAlpha=.18+.12*pulse;bx.fillStyle='#ffd34a';bx.beginPath();bx.arc(X(e.x),Y(e.y)-6,12,0,6.283);bx.fill();bx.globalCompositeOperation='source-over';bx.globalAlpha=1}
+  if(G.props)for(const k of G.props){const sx=X(k.x),sy=Y(k.y);if(sx<-10||sx>BW+10||sy<-10||sy>BH+20)continue;
+    const fl=k.type==='torch'?.7+.3*Math.sin(t*17+k.x)*Math.sin(t*7):1;
+    if(k.type==='torch'){bx.globalCompositeOperation='lighter';for(const [r,a] of [[16,.07],[10,.12],[5,.25]]){bx.globalAlpha=a*fl;bx.fillStyle='#ff9a3a';bx.beginPath();bx.arc(sx,sy-15,r,0,6.283);bx.fill()}bx.globalCompositeOperation='source-over'}
+    bx.globalAlpha=1;const hs=hiSpr('prop_'+k.type,SPR.prop[k.type],k.type==='torch'?'#ffcf7a':'#e8dcb8');bx.drawImage(hs,sx-(hs.width>>1),sy-hs.height+(k.cd>0?-1:0))}
+  bx.globalAlpha=1;
+}
 
 boot();
