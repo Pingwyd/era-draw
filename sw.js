@@ -1,5 +1,5 @@
 // Era Draw service worker: cache-first, versioned. Bump VERSION on every release.
-const VERSION='eradraw-20261014165805';
+const VERSION='eradraw-20261014165818';
 const ASSETS=['./','index.html','style.css','fonts/fonts.css','manifest.webmanifest','icon.svg','icons/icon-180.png','icons/icon-192.png','fonts/Silkscreen-400.woff2','fonts/Silkscreen-700.woff2','fonts/VT323-400.woff2','fonts/InstrumentSerif-400.woff2',
  'audio.js','sprites.js','enemies.js','forge.js','game.js','eras.js','meta.js','platform.js','progression.js','cave.js','ink.js','iron.js','bosses.js','social.js','coop.js','mythic.js','polish.js','dev.js','main.js'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(VERSION).then(c=>c.addAll(ASSETS)).then(()=>self.skipWaiting()))});
