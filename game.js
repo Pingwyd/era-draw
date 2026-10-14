@@ -122,7 +122,7 @@ const stick={id:null,ox:0,oy:0,x:0,y:0,active:false};
 const keys={};
 const mouse={x:0,y:0,walk:false,id:null};
 const isTouch=matchMedia('(pointer:coarse)').matches||('ontouchstart' in window&&navigator.maxTouchPoints>0);
-addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.key==='Escape'&&mode==='run')togglePause()});
+addEventListener('keydown',e=>{keys[e.key.toLowerCase()]=true;if(e.code==='Space'&&mode==='run'){e.preventDefault();tryDash()}if(e.key==='Escape'&&mode==='run')togglePause()});
 addEventListener('keyup',e=>keys[e.key.toLowerCase()]=false);
 cv.addEventListener('pointerdown',e=>{
   if(mode!=='run'||G.paused)return;
@@ -130,7 +130,7 @@ cv.addEventListener('pointerdown',e=>{
   const isMouse=e.pointerType==='mouse';
   if(isMouse&&e.button===2){mouse.walk=true;mouse.x=e.clientX;mouse.y=e.clientY;e.preventDefault();return}
   if(isMouse&&e.button!==0)return;
-  if(!isMouse&&e.clientX<W*0.5&&stick.id===null){Object.assign(stick,{id:e.pointerId,ox:e.clientX,oy:e.clientY,x:e.clientX,y:e.clientY,active:true});return}
+  if(!isMouse&&e.clientX<W*0.5&&stick.id===null){const now=performance.now();if(now-(stick.lastTap||0)<280)tryDash();stick.lastTap=now;Object.assign(stick,{id:e.pointerId,ox:e.clientX,oy:e.clientY,x:e.clientX,y:e.clientY,active:true});return}
   if(!G.drawing&&(isMouse||e.clientX>=W*0.5)){G.drawing={id:e.pointerId,pts:[{x:e.clientX,y:e.clientY}]};sfx('draw');}
 });
 cv.addEventListener('pointermove',e=>{
@@ -344,7 +344,10 @@ function step(dt,realDt){
   if(mouse.walk&&!mx&&!my){const dx=(mouse.x-W/2)/S*Z-(p.x-cam.x),dy=(mouse.y-H/2)/S*Z-(p.y-cam.y),d=Math.hypot(dx,dy);if(d>12){const k=Math.min(1,d/80);mx=dx/d*k;my=dy/d*k}}
   if(save.autoMove&&!mx&&!my&&!stick.active){const v=kiteVector(p);mx=v.x;my=v.y}
   const m=Math.hypot(mx,my);if(m>1){mx/=m;my/=m}
-  p.x+=mx*p.speed*dt;p.y+=my*p.speed*dt;if(m>0.1)p.face=Math.atan2(my,mx);p.moving=m>0.1;
+  if(p.dashT>0){p.dashT-=dt;mx=p.dashX;my=p.dashY;p.invul=Math.max(p.invul,.05);if(Math.random()<.8)G.fx.push({x:p.x+rnd(-6,6),y:p.y-rnd(0,14),vx:-mx*40,vy:-my*40,life:.3,max:.3,col:'#ff9a3c',r:2})}
+  p.dashCd=Math.max(0,(p.dashCd||0)-dt);
+  const spd=p.dashT>0?p.speed*DASH.mult:p.speed;
+  p.x+=mx*spd*dt;p.y+=my*spd*dt;if(m>0.1)p.face=Math.atan2(my,mx);p.moving=m>0.1;
   updateSpawns(dt);updateEnemies(dt);if(mode!=='run')return;updateCreations(dt);updateShots(dt);updateOrbs(dt);updateFx(dt);
   G.coins=calcCoins();updateHud();
 }
@@ -356,6 +359,12 @@ function kiteVector(p){
   if(best){const dx=best.x-p.x,dy=best.y-p.y,d=Math.hypot(dx,dy)||1;x+=dx/d*.6;y+=dy/d*.6}
   const m=Math.hypot(x,y);if(m<0.15)return{x:0,y:0};return m>1?{x:x/m,y:y/m}:{x,y};
 }
+// ---- dash: Space / double-tap the move side. Short burst, brief invulnerability ----
+const DASH={mult:4.2,time:.17,cd:2.4};
+function tryDash(){if(!G||G.paused)return;const p=G.player;if(p.dashCd>0||p.dashT>0)return;
+  let dx=Math.cos(p.face),dy=Math.sin(p.face);if(stick.active){const sx=stick.x-stick.ox,sy=stick.y-stick.oy,d=Math.hypot(sx,sy);if(d>6){dx=sx/d;dy=sy/d}}
+  p.dashX=dx;p.dashY=dy;p.dashT=DASH.time;p.dashCd=DASH.cd*(p.dashCdMul||1);sfx('dash');haptic(12);G.shake=Math.max(G.shake,2)}
+function haptic(ms){if(typeof save!=='undefined'&&save.haptics===false)return;try{navigator.vibrate&&navigator.vibrate(ms)}catch(e){}}
 function calcCoins(){let c=10+G.t*0.25+G.kills*0.08+(G.bonus||0);c*=G.player.coinMul;if(G.dbl)c*=2;return Math.floor(c)}
 
 // ================= RENDER =================
@@ -424,6 +433,7 @@ function render(dt){
   const k=HUDK,fw=Math.round(120*k),fx=W-fw-16*k,fy=H-20*k;
   ctx.fillStyle='#1a0f0e';ctx.fillRect(fx-2,fy-2,fw+4,6*k+4);ctx.fillStyle='#3a2622';ctx.fillRect(fx,fy,fw,6*k);ctx.fillStyle='#ff9a3c';ctx.fillRect(fx,fy,Math.round(fw*clamp(G.focusLeft/G.player.focus,0,1)),6*k);
   ctx.font=Math.round(10*k)+'px Silkscreen, monospace';ctx.textAlign='right';ctx.fillStyle=G.castCd>0?'#e0504e':'#e9dcc3';ctx.fillText(G.castCd>0?'RECHARGING':'FOCUS',W-16*k,fy-6*k);
+  {const k=HUDK,cdF=G.player.dashCd?1-G.player.dashCd/DASH.cd:1;ctx.fillStyle='#1a0f0e';ctx.fillRect(fx-2,fy-20*k,fw*.5+4,6*k);ctx.fillStyle=cdF>=1?'#e9dcc3':'#5a4a40';ctx.fillRect(fx,fy-19*k,Math.round(fw*.5*cdF),4*k);ctx.font=Math.round(8*k)+'px Silkscreen, monospace';ctx.textAlign='left';ctx.fillText(isTouch?'DASH: DOUBLE-TAP':'DASH: SPACE',fx,fy-24*k)}
   if(stick.active){ctx.strokeStyle='#e9dcc355';ctx.lineWidth=2;ctx.beginPath();ctx.arc(stick.ox,stick.oy,55,0,6.283);ctx.stroke();const dx=stick.x-stick.ox,dy=stick.y-stick.oy,d=Math.min(55,Math.hypot(dx,dy)),a=Math.atan2(dy,dx);ctx.fillStyle='#e9dcc388';ctx.beginPath();ctx.arc(stick.ox+Math.cos(a)*d,stick.oy+Math.sin(a)*d,22,0,6.283);ctx.fill()}
   else if(G.t<8){ctx.fillStyle='#e9dcc377';ctx.font='12px Silkscreen, monospace';ctx.textAlign='center';if(isTouch){ctx.fillText('< MOVE',W*.25,H-56);ctx.fillText('DRAW >',W*.75,H-56);ctx.fillStyle='#e9dcc322';ctx.fillRect(W/2-1,H*.3,2,H*.5)}else ctx.fillText(controlsHint().toUpperCase(),W/2,H-56)}
 }
