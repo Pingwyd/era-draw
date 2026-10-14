@@ -5,7 +5,8 @@ Endless survivor game for phone browsers. You play a mage who hops through time 
 **Play:** https://pingwyd.github.io/era-draw/
 
 ## Controls
-- **Move:** drag on the left half of the screen (or use WASD / arrow keys)
+- **Laptop:** hold the right mouse button to walk toward the cursor, left-drag to draw. WASD works too. Settings has an optional **Auto-move (kite)** that steers away from enemies and toward XP.
+- **Move (phone):** drag on the left half of the screen (or use WASD / arrow keys)
 - **Draw:** drag on the right half (with a mouse, click and drag anywhere). Time slows down while you draw, for up to 2s.
   - Short straight line: 🪵 Club (orbits you and smashes nearby enemies with knockback)
   - Long straight line: 🗡️ Spear (first throw goes the way you drew, then it auto-throws piercing spears)
