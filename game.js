@@ -319,7 +319,7 @@ function levelUp(fromChest){
 
 
 // ================= FX =================
-function burst(x,y,col,n){for(let i=0;i<n;i++){const a=Math.random()*6.283,s=rnd(40,220);G.fx.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rnd(.3,.7),max:.7,col,r:rnd(1.5,4)})}}
+function burst(x,y,col,n){if(save.perf)n=Math.ceil(n*.4);if(save.perf&&G.fx.length>160)return;for(let i=0;i<n;i++){const a=Math.random()*6.283,s=rnd(40,220);G.fx.push({x,y,vx:Math.cos(a)*s,vy:Math.sin(a)*s,life:rnd(.3,.7),max:.7,col,r:rnd(1.5,4)})}}
 function ring(x,y,r,col){G.fx.push({ring:true,x,y,r,life:.35,max:.35,col})}
 function floatText(x,y,txt,col,life=0.9,size=15){G.texts.push({x,y,txt,col,life,max:life,size});if(G.texts.length>80)G.texts.shift()}
 let toastT=0;function toast(m){const t=$('toast');t.textContent=m;t.style.opacity=1;clearTimeout(toastT);toastT=setTimeout(()=>t.style.opacity=0,1600)}
@@ -381,7 +381,7 @@ const cam={x:0,y:0};
 // ---- low-res pixel buffer: 1 art pixel = Z world units = S screen px ----
 const Z=2;
 let S=2,BW=0,BH=0;const buf=document.createElement('canvas'),bx=buf.getContext('2d');
-function layoutBuf(){const zm=(typeof save!=='undefined'&&save.zoom)||1;S=Math.max(1,Math.round(H*zm/180));BW=Math.ceil(W/S);BH=Math.ceil(H/S);buf.width=BW;buf.height=BH;bx.imageSmoothingEnabled=false}
+function layoutBuf(){const zm=(typeof save!=='undefined'&&save.zoom)||1;S=Math.max(1,Math.round(H*zm/((typeof save!=='undefined'&&save.perf)?150:180)));BW=Math.ceil(W/S);BH=Math.ceil(H/S);buf.width=BW;buf.height=BH;bx.imageSmoothingEnabled=false}
 addEventListener('resize',layoutBuf);layoutBuf();
 const viewW=()=>BW*Z,viewH=()=>BH*Z;
 let ox=0,oy=0;
@@ -627,11 +627,12 @@ function settings(inRun){
    <button id="am"><b>01</b>Auto-move (kite)<span>${save.autoMove?'On':'Off'}</span><i>${save.autoMove?'&#9632;':'&#9633;'}</i></button>
    <button id="snd"><b>02</b>Sound<span>${save.mute?'Off':'On'}</span><i>${save.mute?'&#9633;':'&#9632;'}</i></button>
    <button id="hap"><b>03</b>Haptics<span>${save.haptics===false?'Off':'On'}</span><i>${save.haptics===false?'&#9633;':'&#9632;'}</i></button>
-   <button id="mus"><b>04</b>Music<span>${save.music===false?'Off':'On'}</span><i>${save.music===false?'&#9633;':'&#9632;'}</i></button></nav>
+   <button id="mus"><b>04</b>Music<span>${save.music===false?'Off':'On'}</span><i>${save.music===false?'&#9633;':'&#9632;'}</i></button>
+   <button id="perf"><b>05</b>Performance mode<span>${save.perf?'On':'Off'}</span><i>${save.perf?'&#9632;':'&#9633;'}</i></button></nav>
    <p class="note">Auto-move steers the mage away from nearby enemies and toward XP whenever you are not steering.</p></div></div>`));
-  for(const [id,key] of [['sHud','hudScale'],['sZoom','zoom'],['sUi','uiScale']]){const el=$(id);el.oninput=()=>{save[key]=el.value/100;$(id+'v').textContent=el.value+'%';applyScale();layoutBuf();persist()}}
+  for(const [id,key] of [['sHud','hudScale'],['sZoom','zoom'],['sUi','uiScale']]){const el=$(id);el.oninput=()=>{save[key]=el.value/100;save.scaleSet=true;$(id+'v').textContent=el.value+'%';applyScale();layoutBuf();persist()}}
   $('sReset').onclick=()=>{save.hudScale=save.zoom=save.uiScale=1;persist();applyScale();layoutBuf();again()};
-  $('mus').onclick=()=>{save.music=save.music===false;persist();again()};$('am').onclick=()=>{save.autoMove=!save.autoMove;persist();again()};$('snd').onclick=()=>{save.mute=!save.mute;persist();again()};$('hap').onclick=()=>{save.haptics=save.haptics===false;persist();haptic(20);again()};$('back').onclick=inRun?pauseMenu:home;if(inRun){render(0);updateHud()}
+  $('perf').onclick=()=>{save.perf=!save.perf;save.perfSet=true;persist();layoutBuf();again()};$('mus').onclick=()=>{save.music=save.music===false;persist();again()};$('am').onclick=()=>{save.autoMove=!save.autoMove;persist();again()};$('snd').onclick=()=>{save.mute=!save.mute;persist();again()};$('hap').onclick=()=>{save.haptics=save.haptics===false;persist();haptic(20);again()};$('back').onclick=inRun?pauseMenu:home;if(inRun){render(0);updateHud()}
 }
 function controlsHint(){return isTouch?'Left thumb: move · Right thumb: draw':'Hold right-click: walk · Left-drag: draw · WASD also works'}
 function fmt(s){s=Math.floor(s);return Math.floor(s/60)+':'+String(s%60).padStart(2,'0')}
