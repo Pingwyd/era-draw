@@ -269,10 +269,10 @@ function killEnemy(e){
   if(e.T.boss||(e.T.elite&&Math.random()<.6)||(e.champ)){G.chests.push({x:e.x,y:e.y,boss:!!e.T.boss});if(e.T.boss){toast(e.T.name+' falls!');G.shake=14}}
 }
 function damagePlayer(d){
-  const p=G.player;p.hp-=d;p.invul=0.5;sfx('hurt');haptic(35);G.shake=8;burst(p.x,p.y,'#ff6b6b',10);
+  if(!G||G.dead)return;const p=G.player;p.hp-=d;p.invul=0.5;sfx('hurt');haptic(35);G.shake=8;burst(p.x,p.y,'#ff6b6b',10);
   if(p.hp<=0){
     if(p.secondWind&&!p.usedWind){p.usedWind=true;p.hp=1;p.invul=2;toast('Second Wind!');ring(p.x,p.y,200,'#fff');for(const e of G.enemies){const a=Math.atan2(e.y-p.y,e.x-p.x);e.kx+=Math.cos(a)*500;e.ky+=Math.sin(a)*500}}
-    else endRun();
+    else{p.hp=0;G.dead=true} // finalize after this step, never mid-loop
   }
 }
 
@@ -333,16 +333,16 @@ function updateFx(dt){
 // ================= LOOP =================
 let last=performance.now();
 function frame(now){
+  requestAnimationFrame(frame);
   const realDt=Math.min(0.05,(now-last)/1000);last=now;
   if(mode==='run'&&G&&!G.paused){
     let scale=1;
     if(G.drawing&&G.focusLeft>0){scale=SLOWMO;G.focusLeft-=realDt}
     else if(!G.drawing)G.focusLeft=Math.min(G.player.focus,G.focusLeft+realDt*0.5);
     G.slow=scale<1;
-    step(realDt*scale,realDt);
+    try{step(realDt*scale,realDt)}catch(e){console.error('step',e)}
   }
-  render(realDt);
-  requestAnimationFrame(frame);
+  try{render(realDt)}catch(e){console.error('render',e)}
 }
 function step(dt,realDt){
   const p=G.player;G.t+=dt;G.castCd-=realDt;p.invul-=dt;G.shake=Math.min(14,G.shake)*Math.pow(.004,realDt);if(G.shake<.3)G.shake=0;
@@ -356,7 +356,7 @@ function step(dt,realDt){
   p.dashCd=Math.max(0,(p.dashCd||0)-dt);
   const spd=p.dashT>0?p.speed*DASH.mult:p.speed;
   p.x+=mx*spd*dt;p.y+=my*spd*dt;if(m>0.1)p.face=Math.atan2(my,mx);p.moving=m>0.1;
-  updateSpawns(dt);updateEnemies(dt);if(mode!=='run')return;updateCreations(dt);updateShots(dt);updateOrbs(dt);if(window.updatePickups)updatePickups(dt);updateFx(dt);
+  updateSpawns(dt);updateEnemies(dt);if(G.dead){updateHud();endRun();return}if(mode!=='run')return;updateCreations(dt);updateShots(dt);updateOrbs(dt);if(window.updatePickups)updatePickups(dt);if(!G||mode!=='run')return;updateFx(dt);if(G.dead){endRun();return}
   if(G.t>=ERA_CLEAR_T&&!G.cleared){G.cleared=true;eraCleared();return}
   G.coins=calcCoins();updateHud();
 }
@@ -702,7 +702,7 @@ function checkOrientation(){
 }
 addEventListener('resize',checkOrientation);addEventListener('orientationchange',()=>setTimeout(checkOrientation,200));
 function startRun(){
-  sessionStorage.removeItem(RUN_KEY);setRoute('play');
+  sessionStorage.removeItem(RUN_KEY);screenEl.classList.remove('live');show('');$('bossbar').classList.add('hidden');G=null;setRoute('play');
   CURRENT_ERA=(save.era&&ERAS[save.era]&&!ERAS[save.era].locked&&(save.eras||['stone']).includes(save.era))?save.era:'stone';
   newRun();mode='run';show('');$('hud').classList.remove('hidden');updateHud.sig=null;cam.x=0;cam.y=0;last=performance.now();
   toast(ERAS[CURRENT_ERA].name+' · survive');setTimeout(()=>mode==='run'&&toast(controlsHint()),1700);mouse.walk=false;checkOrientation();
@@ -728,7 +728,7 @@ const RUN_KEY='eradraw.run.v1';
 function setRoute(r){const h='#/'+r;if(location.hash!==h)history.pushState(null,'',h)}
 function leaveRun(){screenEl.classList.remove('live');if(mode==='run'&&G){saveRun();$('hud').classList.add('hidden');$('bossbar').classList.add('hidden')}}
 function saveRun(){
-  if(mode!=='run'||!G)return;
+  if(mode!=='run'||!G||G.dead||G.player.hp<=0)return;
   const p=G.player;
   const d={t:G.t,wave:G.wave,kills:G.kills,level:G.level,xp:G.xp,xpNext:G.xpNext,bonus:G.bonus||0,evT:G.evT||0,spawnT:G.spawnT,bossNext:G.bossNext,loadout:G.loadout,picks:G.picks,
     player:{...p},focusLeft:G.focusLeft,
@@ -739,7 +739,7 @@ function saveRun(){
 }
 function restoreRun(){
   let d=null;try{d=JSON.parse(sessionStorage.getItem(RUN_KEY))}catch(e){}
-  if(!d)return false;
+  if(!d||!d.player||d.player.hp<=0){sessionStorage.removeItem(RUN_KEY);return false}
   newRun();Object.assign(G,{t:d.t,wave:d.wave,kills:d.kills,level:d.level,xp:d.xp,xpNext:d.xpNext,bonus:d.bonus,evT:d.evT,spawnT:d.spawnT,bossNext:d.bossNext,loadout:d.loadout,picks:d.picks,focusLeft:d.focusLeft});
   Object.assign(G.player,d.player);G.player.invul=1.5;
   G.creations=d.creations.map(c=>({...c,def:CREATIONS[c.id],cd:.2,x:G.player.x,y:G.player.y,swing:0}));
