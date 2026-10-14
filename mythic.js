@@ -4,7 +4,7 @@
 ERA_ORDER.push('mythic');
 ERAS.mythic={name:'Mythic Age',durability:2.8,enemyHp:3.0,enemyDmg:2.2,ground:'#1d1830',ink:'#e0b0ff',date:'before time',no:'IV',
   spawns:[{type:'wisp',from:0,w:40},{type:'wraith',from:20,w:16},{type:'golem',from:60,w:8},{type:'hydra',from:110,w:5}],
-  bosses:bossTable([[180,'cyclops'],[300,'hydraking'],[600,'gorgon'],[900,'aeon']]),
+  bosses:bossTable([[180,'cyclops'],[300,'hydraking'],[450,'gorgon'],[600,'aeon']]),
   swarm:'wisp',flock:'wraith',tile:'mythic',decor:'mythic',music:'mythic',lore:'The age before ages, where every drawn line is a spell.'};
 Object.assign(PAL,{V:'#e0b0ff',X:'#6a4a9a',Y:'#fff0ff'});
 SPR.tiles.mythic=makeTile(91,'#221b38',['#2a2244','#1c1630','#30264e','#191428'],'#4a3a78');

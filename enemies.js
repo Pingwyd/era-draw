@@ -60,21 +60,21 @@ function spawnEnemy(type,scale,at){
   const T=ENEMY_TYPES[type],k=EN_SCALE[T.spr]||1,p=G.player,a=Math.random()*6.283,R=Math.hypot(viewW(),viewH())/2+40;
   const hpMul=T.boss?(1+G.t/400):scale;
   const e={type,T,x:at?at.x:p.x+Math.cos(a)*R,y:at?at.y:p.y+Math.sin(a)*R,r:T.r*k,hp:T.hp*hpMul*G.era.enemyHp,maxHp:T.hp*hpMul*G.era.enemyHp,
-    speed:T.speed*(1+Math.min(.45,G.t/700)),dmg:T.dmg*G.era.enemyDmg*(1+G.t/360),kx:0,ky:0,flash:0,wob:Math.random()*6,st:'move',timer:rnd(1,3),vx:0,vy:0,sw:Math.random()*6};
+    speed:T.speed*(1+Math.min(.3,G.t/1000)),dmg:T.dmg*G.era.enemyDmg*(1+G.t/720),kx:0,ky:0,flash:0,wob:Math.random()*6,st:'move',timer:rnd(1,3),vx:0,vy:0,sw:Math.random()*6};
   G.enemies.push(e);return e;
 }
 function updateSpawns(dt){
   G.wave=1+Math.floor(G.t/30);
-  const scale=1+G.t/100;
-  G.spawnT+=dt*(1+G.t/13);
-  const cap=Math.min((typeof save!=='undefined'&&save.perf)?140:ENEMY_CAP,45+G.wave*18);
+  const scale=1+G.t/300; // balance: softer HP ramp
+  G.spawnT+=dt*(1+G.t/90); // balance: softer spawn ramp
+  const cap=Math.min((typeof save!=='undefined'&&save.perf)?140:ENEMY_CAP,40+G.wave*7);
   while(G.spawnT>=1){G.spawnT-=1;if(G.enemies.length>=cap)break;
     const pool=G.era.spawns.filter(s=>G.t>=s.from);let tot=0;for(const s of pool)tot+=s.w;let r=Math.random()*tot,type=pool[0].type;
     for(const s of pool){r-=s.w;if(r<=0){type=s.type;break}}
     spawnEnemy(type,scale);}
   // horde events
   G.evT=(G.evT||0)+dt;
-  if(G.evT>40){G.evT=0;const ring=Math.random()<.5;const n=Math.min(40,16+G.wave*3),p=G.player,R=Math.hypot(viewW(),viewH())/2+30;
+  if(G.evT>55){G.evT=0;const ring=Math.random()<.5;const n=Math.min(32,12+G.wave*2),p=G.player,R=Math.hypot(viewW(),viewH())/2+30;
     if(ring){for(let i=0;i<n;i++){const a=i/n*6.283;spawnEnemy(G.era.swarm,scale,{x:p.x+Math.cos(a)*R,y:p.y+Math.sin(a)*R})}toast('A swarm closes in!')}
     else{const a=Math.random()*6.283,cx=p.x+Math.cos(a)*R,cy=p.y+Math.sin(a)*R;for(let i=0;i<n*.6;i++)spawnEnemy(G.t>30?G.era.flock:G.era.swarm,scale,{x:cx+rnd(-50,50),y:cy+rnd(-50,50)});toast('A flock stampedes!')}}
   const BS=G.era.bosses;
@@ -106,7 +106,7 @@ function updateEnemies(dt){
       case 'shaman':
         if(d<200){mx=-ux*.8;my=-uy*.8}else if(d<260){mx=-uy;my=ux}
         if(e.timer<=0){e.timer=3.6;const n=12,off=Math.random();for(let i=0;i<n;i++){const a=(i+off)/n*6.283;G.eshots.push({x:e.x,y:e.y-12,vx:Math.cos(a)*120,vy:Math.sin(a)*120,dmg:e.dmg*.6,life:3.5,kind:'orb'})}
-          for(let i=0;i<5;i++)spawnEnemy(G.era.swarm,1+G.t/100,{x:e.x+rnd(-30,30),y:e.y+rnd(-30,30)})}
+          for(let i=0;i<5;i++)spawnEnemy(G.era.swarm,1+G.t/300,{x:e.x+rnd(-30,30),y:e.y+rnd(-30,30)})}
         break;
     }
     const mm=Math.hypot(mx,my)||1;
