@@ -34,6 +34,14 @@ No build step. Run `python3 -m http.server` in this folder, then open http://loc
 
 - LAN test (2-3 headless browsers over WebRTC): `node tests/lan-webrtc.test.js`; offline/service-worker test: `node tests/offline-sw.test.js`.
 
+
+## Cosmetics, challenges and content
+- **Cosmetics** (`#/cosmetics`): mage skins, ink trails, weapon skins, kill and death effects, HUD themes, and LAN emotes. Prices are in coins, plus a premium section priced in gems.
+- **Gems** are earned for free: +1 per boss defeated and +3 per era cleared. Gems only buy cosmetics, never power.
+- **Gem Store** (`#/gemstore`): a preview UI only. It is labelled *coming soon*, and no real payments are wired up.
+- **Challenges** (`#/challenges`): One Shape (coins x1.5) and Iron Will, with no healing (coins x2).
+- **LAN emotes:** use keys 7-0 or the emote bar during a LAN run.
+
 ## Multiplayer
 - **Same screen** (`#/coop`): P2 on keyboard (IJKL + O), P3/P4 on gamepads.
 - **LAN, separate devices, no internet** (`#/lan`): the host taps *Invite a player* and the joiner scans the QR code (or pastes the code). The joiner then shows an answer code back to the host. Repeat for up to 3 joiners, then the host taps *Start run*. Everyone must be on the same Wi-Fi or hotspot. Open the game once while online so the service worker caches it.
