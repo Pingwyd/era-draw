@@ -320,3 +320,12 @@ button.dot::after{content:'';position:absolute;top:4px;right:4px;width:7px;heigh
 #dashBtn b{font:9px Silkscreen,monospace;letter-spacing:.08em}#dashBtn .dc{display:flex;gap:3px}#dashBtn .dc i{width:6px;height:6px;border-radius:50%;background:#3a2e28;border:1px solid #1a0f0e}#dashBtn .dc i.on{background:#e9dcc3}
 #dashBtn.empty{opacity:.45}#dashBtn.hit{animation:dhit .2s}@keyframes dhit{0%{transform:scale(.88)}100%{transform:none}}
 @media (max-height:360px){#dashBtn{width:46px;height:46px;bottom:calc(50px + env(safe-area-inset-bottom,0px))}}
+#updBar{position:fixed;top:calc(env(safe-area-inset-top,0px) + 8px);right:calc(env(safe-area-inset-right,0px) + 8px);z-index:70;display:flex;align-items:center;gap:6px;background:#1a0f10;border:1px solid #ffd34a;padding:4px 4px 4px 10px;font:10px Silkscreen,monospace;letter-spacing:.06em;text-transform:uppercase;color:#efe6d2;box-shadow:0 6px 20px rgba(0,0,0,.5)}
+#updBar button{font:inherit;color:inherit;border:1px solid var(--rule,#4a2a2a);padding:5px 8px;background:none;cursor:pointer}#updBar .pri{border-color:#ffd34a;color:#ffd34a}
+#updBar button:focus{outline:2px solid #ffd34a;outline-offset:1px}
+.fb{max-width:560px;display:flex;flex-direction:column;gap:6px}.fb-cats{display:flex;gap:6px;flex-wrap:wrap}.fb-cats label{cursor:pointer}.fb-cats input{position:absolute;opacity:0}
+.fb-cats span{display:inline-block;font:10px Silkscreen,monospace;text-transform:uppercase;letter-spacing:.06em;border:1px solid var(--rule);padding:5px 9px}.fb-cats input:checked+span{border-color:#ffd34a;color:#ffd34a}.fb-cats input:focus+span{outline:2px solid #ffd34a}
+.fb-l{font:9px Silkscreen,monospace;text-transform:uppercase;color:var(--mute);letter-spacing:.1em}
+.fb textarea,.fb input:not([type=radio]){font:15px VT323,monospace;background:#1a0f10;color:#efe6d2;border:1px solid var(--rule);padding:6px;width:100%;box-sizing:border-box}
+.fb-d pre{font:11px VT323,monospace;white-space:pre-wrap;word-break:break-all;color:var(--mute);margin:4px 0}.fb-d summary{font:9px Silkscreen,monospace;color:var(--mute);cursor:pointer}
+.fb-b{display:flex;gap:6px;flex-wrap:wrap}.fb-b .btn{text-decoration:none}
