@@ -138,8 +138,9 @@ hub('daily','Daily',daily);
 function openChest(c){
   G.paused=true;stick.id=null;stick.active=false;G.drawing=null;
   const r=Math.random(),n=c.boss?(r<.6?3:1):(r<.15?3:1); // max 3 rewards: outcomes are 1 or 3
-  const pool=POWERUPS.filter(pu=>!pu.max||(G.picks[pu.id]||0)<pu.max);const rewards=[];
+  const pool=window.chestPool?chestPool():POWERUPS.filter(pu=>!pu.max||(G.picks[pu.id]||0)<pu.max);const rewards=[];
   for(let i=0;i<n;i++){const pu=pool[Math.floor(Math.random()*pool.length)];rewards.push({pu,r:Math.random()<.05*n?2:Math.random()<.4?1:0})}
+  if(c.boss&&window.chestSkill){const s=chestSkill();if(s)rewards[0]={pu:s,r:G.picks[s.id]||0,skill:true}}
   sfx('chest');haptic([20,40,20,40,60]);
   show(`<div class="sheet lv chestr"><header class="row"><span class="lab">${c.boss?'Boss chest':'Chest'} &middot; +25 coins</span><span class="lab">${n} reward${n>1?'s':''}</span></header>
    <h2 class="disp">${n===3?'Jackpot':'Treasure'}</h2>
@@ -148,10 +149,10 @@ function openChest(c){
   const ids=POWERUPS.map(p=>p.id);let t=0;
   const spin=setInterval(()=>{t++;rewards.forEach((k,i)=>{const el=$('reel'+i);if(!el)return;const stop=10+i*5;
     if(t<stop){el.firstChild.src=ICON['pu_'+ids[(t+i*3)%ids.length]];if(t%2)sfx('tick')}
-    else if(t===stop){el.firstChild.src=ICON['pu_'+k.pu.id];el.className='reel done r-'+RAR[k.r];sfx('pick');
-      $('rlist').insertAdjacentHTML('beforeend',`<span class="rr r-${RAR[k.r]}">${k.pu.name} <i>${RAR[k.r]}</i></span>`)}});
+    else if(t===stop){el.firstChild.src=ICON['pu_'+k.pu.id];el.className='reel done r-'+(k.skill?'epic':RAR[k.r]);sfx('pick');
+      $('rlist').insertAdjacentHTML('beforeend',`<span class="rr r-${k.skill?'epic':RAR[k.r]}">${k.pu.name} <i>${k.skill?'skill up':RAR[k.r]}</i><small>${k.pu.desc(k.r)}</small></span>`)}});
     if(t>=10+(n-1)*5){clearInterval(spin);const ok=$('rok');if(ok)ok.disabled=false}},90);
-  $('rok').onclick=()=>{for(const k of rewards){k.pu.apply(G.player,k.r);if(window.noteCardPick)noteCardPick(k.pu.id,false);G.picks[k.pu.id]=(G.picks[k.pu.id]||0)+1}show('');G.paused=false;last=performance.now()};
+  $('rok').onclick=()=>{for(const k of rewards){if(window.takeCard)takeCard(k,false);else{k.pu.apply(G.player,k.r);G.picks[k.pu.id]=(G.picks[k.pu.id]||0)+1}}show('');G.paused=false;last=performance.now()};
 }
 
 
