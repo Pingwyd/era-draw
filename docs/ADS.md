@@ -5,7 +5,7 @@ All ad code is gated by the consent banner (`consent.js`, category `ads`). Nothi
 ## Providers (`ads.js` → `AD_CONFIG`)
 | provider | banners | rewarded (Shop) | interstitial |
 |---|---|---|---|
-| `adsterra` (default) | sandboxed `srcdoc` iframe per slot (no same-origin, no top navigation) | "sponsored link" (open in new tab, reward after ≥15 s away, 5/day, 3 min cooldown) | none |
+| `hilltop` (default, HilltopAds) | sandboxed `srcdoc` iframe per slot (no same-origin, no top navigation) | "sponsored link" (open in new tab, reward after ≥15 s away, 5/day, 3 min cooldown) | none |
 | `adsense` | `<ins class="adsbygoogle">` units at top level | H5 Games Ads `adBreak({type:'reward'})` – button enabled by `beforeReward`, coins granted only on `adViewed` (cap `rewardCap`/day, `rewardCooldown`) | `adBreak({type:'next'})` on results, every `interstitialEvery` runs, ≥ `interstitialMinGap` ms apart |
 
 AdSense cannot run inside a sandboxed srcdoc iframe, so with `provider:'adsense'` its script (`adsbygoogle.js?client=…`, with `data-ad-frequency-hint`) is loaded on the top-level page – still only after consent.
@@ -15,7 +15,7 @@ AdSense cannot run inside a sandboxed srcdoc iframe, so with `provider:'adsense'
 2. Create three display ad units (pause, results, home) and paste their slot IDs into `AD_CONFIG.adsense.slots`. Empty slot = that banner is skipped.
 3. In AdSense → *Games* enable H5 Games Ads (for rewarded/interstitial). `h5:false` disables them.
 4. Set `AD_CONFIG.provider='adsense'`, run `/tmp/reg.sh`, ship. The privacy page text and the consent "Personalised ads" checkbox switch automatically.
-5. To roll back, set `provider:'adsterra'`.
+5. To roll back, set `provider:'hilltop'`.
 
 ## Personalisation
 With AdSense, the Customize panel shows **Personalised ads**. Off (or Reject) → `adsbygoogle.requestNonPersonalizedAds=1` before the script loads. Stored as `adp` in `eradraw.consent`.
@@ -26,7 +26,16 @@ With AdSense, the Customize panel shows **Personalised ads**. Off (or Reject) �
   `google.com, pub-2853919516364773, DIRECT, f08c47fec0942fa0`
 - On localhost, H5 ads run in test mode (`data-adbreak-test="on"`).
 
-## Adcash zones (`AD_CONFIG.adcash`)
+## Current setup (HilltopAds active)
+- `AD_CONFIG.provider='hilltop'`: sandboxed srcdoc banners (desktop+mobile code on wide screens, mobile-only code on small/touch) in pause / results / home (home ~1 in 3, max once a minute).
+- AdSense stays configured (`ca-pub-2853919516364773`); its banners only appear for a placement whose `AD_CONFIG.adsense.slots[...]` ID is filled.
+- **Shop reward priority: VAST video > AdSense H5 rewarded > direct link.**
+  - VAST: set `AD_CONFIG.hilltop.vastUrl` to a VAST tag (HilltopAds "VAST" zone). A built-in minimal VAST 2/3/4 client follows up to 4 wrappers, picks an MP4/WebM MediaFile, plays it full-screen in-game, fires Impression/start/quartile/complete/close pixels and grants `hilltop.rewardCoins` only when the video ends. Any failure falls back to the direct link. The tag server must allow CORS.
+  - AdSense H5 `adBreak({type:'reward'})` is tried when no VAST tag is set; if it offers no ad within ~6 s, the direct link is shown.
+  - Direct link (physicaldad): opens in a new tab, reward after returning with >= 15 s away, 5/day, 3 min cooldown.
+- Adcash: **disabled** (`AD_CONFIG.adcash.enabled=false`, aclib never loads). Autotag removed.
+
+## Adcash zones (`AD_CONFIG.adcash`, currently disabled)
 - `{enabled:true, banner:'12319166', interstitial:'12319258'}`; `aclib.js` (`id="aclib"`) loads once, top level, only after ads consent and online.
 - Display 300x100 (`aclib.runBanner`) fills the pause / results / home slots whenever the AdSense slot ID for that placement is empty (an inline script is inserted inside the slot so it renders there). Collapses if nothing renders within 7 s.
 - Interstitial (`aclib.runInterstitial`) only on the results screen, at most every 3rd run and 3 min apart. AdSense `next` interstitial is off to avoid stacking.

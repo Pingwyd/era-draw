@@ -342,3 +342,4 @@ body.pad .pg{display:inline-block}body.pad .pgA::after{content:'A'}body.pad .pgS
 .adrw .sh{display:block}.adrw button{flex:none}
 @media (max-height:420px){.adslot iframe{max-width:320px}.adslot{margin-top:6px}}
 .adslot.ac{height:auto;min-height:0}.adslot.ac .ac-c{width:300px;max-width:100%;min-height:0;overflow:hidden}.adslot.ac:not(.on) .ac-c{height:1px}
+#vastOv{position:fixed;inset:0;z-index:9999;background:#000;display:flex;flex-direction:column;align-items:center;justify-content:center}#vastOv video{max-width:100%;max-height:calc(100% - 52px);width:100%;background:#000}#vastOv .vbar{display:flex;gap:10px;align-items:center;padding:8px;color:#efe6d2;font-size:14px}#vastOv button{min-height:36px}
