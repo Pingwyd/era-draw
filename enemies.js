@@ -86,9 +86,10 @@ function updateEnemies(dt){
   for(const e of G.enemies){
     let p=P0;if(PL){let bd=1e18;for(const q of PL){const dd=(q.x-e.x)**2+(q.y-e.y)**2;if(dd<bd){bd=dd;p=q}}}
     const dx=p.x-e.x,dy=p.y-e.y,d=Math.hypot(dx,dy)||1,ux=dx/d,uy=dy/d;
+    if(e.T.boss&&bossLeash(e,p,d,ux,uy,dt))continue;
     // far off-screen: cheap update (walk straight in, no behaviour/AI) until it gets close
-    if(d>FAR){e.x+=ux*e.speed*dt;e.y+=uy*e.speed*dt;e.kx*=.9;e.ky*=.9;continue}
-    let mx=ux,my=uy,sp=e.speed;e.timer-=dt;
+    if(d>FAR){const fs=e.speed*(e.T.boss?bossCatchup(d):1);e.x+=ux*fs*dt;e.y+=uy*fs*dt;e.kx*=.9;e.ky*=.9;continue}
+    let mx=ux,my=uy,sp=e.speed*(e.T.boss?bossCatchup(d):1);e.timer-=dt;
     switch(e.T.beh){
       case 'swarm':e.sw+=dt*6;mx=ux+Math.cos(e.sw)*.7*-uy;my=uy+Math.cos(e.sw)*.7*ux;break;
       case 'lunge':
@@ -127,3 +128,15 @@ function updateEnemies(dt){
     else if(PL)for(const q of PL)if(q!==P0&&Math.hypot(s.x-q.x,s.y-(q.y-10))<q.r&&q.invul<=0){damageAlly(q,s.dmg);s.life=0;break}
     if(s.life<=0)G.eshots.splice(i,1)}
 }
+
+// ===== boss presence: always pursue, catch up when far, telegraphed leap when lost (> ~1.5 screens) =====
+const bossDiag=()=>Math.hypot(viewW(),viewH());
+function bossCatchup(d){const n=bossDiag()*.55;return d<=n?1:1+Math.min(1.6,(d-n)/320)}
+function bossLeash(e,p,d,ux,uy,dt){
+  if(e.leap){e.leap.t-=dt;e.flash=Math.max(e.flash,(Math.floor(G.t*16)%2)?.03:0);
+    if(e.leap.t<=0){burst(e.x,e.y,e.T.col,24);e.x=e.leap.x;e.y=e.leap.y;e.kx=e.ky=0;e.st='move';e.timer=1.2;e.leap=null;
+      burst(e.x,e.y,'#ffe08a',30);ring(e.x,e.y,90,'#ffe08a');G.shake=Math.max(G.shake,9);sfx('boss')}
+    return true}
+  if(d>1.5*Math.max(viewW(),viewH())){const a=Math.atan2(-uy,-ux)+rnd(-.6,.6),R=Math.min(viewW(),viewH())*.42+40;
+    e.leap={t:1.1,max:1.1,x:p.x+Math.cos(a)*R,y:p.y+Math.sin(a)*R};toast(e.T.name+' leaps toward you!');return true}
+  return false}
