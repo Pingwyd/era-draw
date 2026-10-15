@@ -306,3 +306,5 @@ button.dot::after{content:'';position:absolute;top:4px;right:4px;width:7px;heigh
 .losave .lab{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
 .losave .btn{flex:0 0 auto}
 @media (max-height:500px){.losave{padding:5px 0}}
+#tut p b{font:inherit;color:#ffd34a;display:inline}
+@media (max-height:360px){#tut{top:44px;padding:4px 10px;max-width:60vw}#tut p{font-size:12px;margin:2px 0}}

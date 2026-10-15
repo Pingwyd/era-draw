@@ -33,6 +33,10 @@ let tgPrev=false,tgStickT=0;
 runHooks.push(G=>{G.lock=null});
 CAVE_TICK.push(()=>{if(G.lock&&(!tgAlive(G.lock)||Math.hypot(G.lock.x-G.player.x,G.lock.y-G.player.y)>950))G.lock=null});
 // reticle
-const _tgRP=renderPickups;renderPickups=function(){_tgRP();const t=G&&G.lock;if(!tgAlive(t)||!onScr(t.x,t.y,20))return;
-  const r=Math.max(6,Math.round(((t.r||10)+6)/Z))+(Math.floor(G.t*6)%2),cx=X(t.x),cy=Y(t.y)-Math.round((t.prop?8:(t.r||10)*.7)/Z),L=3;
-  bx.fillStyle='#ff5a4a';for(const [sx,sy] of [[-1,-1],[1,-1],[-1,1],[1,1]]){const x=cx+sx*r,y=cy+sy*r;bx.fillRect(sx<0?x:x-L+1,y,L,1);bx.fillRect(x,sy<0?y:y-L+1,1,L)}};
+// selection marker: pulsing white/gold ring + corner brackets + arrow above, dark-edged so it reads under colour-blind / high-contrast filters
+const _tgTop=drawLootTop;drawLootTop=function(){_tgTop();const t=G&&G.lock;if(!tgAlive(t)||!onScr(t.x,t.y,20))return;
+  const pu=.5+.5*Math.sin(G.t*8),r=Math.max(7,Math.round(((t.r||10)+7)/Z))+Math.round(pu),cx=X(t.x),cy=Y(t.y)-Math.round((t.prop?8:(t.r||10)*.7)/Z),L=4;
+  const col=pu>.5?'#ffffff':'#ffd34a';
+  bx.lineWidth=3;bx.strokeStyle='#1a0f0e';bx.beginPath();bx.arc(cx,cy,r,0,6.283);bx.stroke();bx.lineWidth=1;bx.strokeStyle=col;bx.globalAlpha=.85;bx.beginPath();bx.arc(cx,cy,r,0,6.283);bx.stroke();bx.globalAlpha=1;
+  const R=r+3;for(const [sx,sy] of [[-1,-1],[1,-1],[-1,1],[1,1]]){const x=cx+sx*R,y=cy+sy*R;bx.fillStyle='#1a0f0e';bx.fillRect((sx<0?x:x-L+1)-1,y-1,L+2,3);bx.fillRect(x-1,(sy<0?y:y-L+1)-1,3,L+2);bx.fillStyle=col;bx.fillRect(sx<0?x:x-L+1,y,L,1);bx.fillRect(x,sy<0?y:y-L+1,1,L)}
+  const ay=cy-R-4-Math.round(pu*2);bx.fillStyle='#1a0f0e';bx.beginPath();bx.moveTo(cx-4,ay-4);bx.lineTo(cx+4,ay-4);bx.lineTo(cx,ay+1);bx.fill();bx.fillStyle=col;bx.beginPath();bx.moveTo(cx-3,ay-3);bx.lineTo(cx+3,ay-3);bx.lineTo(cx,ay);bx.fill()};

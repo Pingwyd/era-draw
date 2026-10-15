@@ -24,7 +24,7 @@ function bindSet(kind,act,val){const map=kind==='pad'?save.padMap:save.keyMap,cu
   const clash=Object.keys(cur).find(a=>a!==act&&cur[a]===val);if(clash){map[clash]=cur[act];toast(ACT_NAMES[clash]+' swapped to '+(kind==='pad'?PAD_NAMES[cur[act]]:keyLabel(cur[act])))}
   map[act]=val;persist()}
 function controlsHtml(){const kb=keyBinds(),pb=padBinds();
-  return `<div class="lab rule">Controls &mdash; tap a binding, then press a key or button</div><div class="binds">${Object.keys(ACT_NAMES).map(a=>`<div class="bind"><span class="nm">${ACT_NAMES[a]}</span>${a in KEY_DEFAULT?`<button data-bk="${a}">${keyLabel(kb[a])}</button>`:'<i>&mdash;</i>'}${a in PAD_DEFAULT?`<button data-bp="${a}">${PAD_NAMES[pb[a]]||'#'+pb[a]}</button>`:'<i>stick</i>'}</div>`).join('')}</div>
+  return `<div class="lab rule">Controls &mdash; tap a binding, then press a key or button</div><div class="binds">${Object.keys(ACT_NAMES).map(a=>`<div class="bind"><span class="nm">${ACT_NAMES[a]}</span>${a in KEY_DEFAULT?`<button data-bk="${a}">${keyLabel(kb[a])}</button>`:'<i>&mdash;</i>'}${a in PAD_DEFAULT&&save.padDraw&&/^cast/.test(a)?'<i>pen</i>':a in PAD_DEFAULT?`<button data-bp="${a}">${PAD_NAMES[pb[a]]||'#'+pb[a]}</button>`:'<i>stick</i>'}</div>`).join('')}</div>
   <button id="bindReset" class="sk"><span class="nm">Reset controls to defaults</span></button><p class="sh">Keyboard and gamepad columns. Arrow keys always move. Menus: D-pad/stick, A select, B back.</p>`}
 function wireControls(box){box.innerHTML=controlsHtml();
   box.querySelectorAll('[data-bk]').forEach(b=>b.onclick=()=>{const a=b.dataset.bk;b.textContent='Press a key…';BINDING=true;
