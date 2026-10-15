@@ -3,8 +3,8 @@
 // provider: 'adsterra' (current network, sandboxed srcdoc banners + sponsored link) | 'adsense' (top-level AdSense + H5 Games Ads)
 const AD_CONFIG={provider:'adsense',
   adsense:{client:'ca-pub-2853919516364773',slots:{pause:'',results:'',home:''},// fill with AdSense display ad unit slot IDs
-    h5:true,interstitial:true,interstitialEvery:3,interstitialMinGap:180e3,rewardCap:5,rewardCooldown:120e3,rewardCoins:100,frequencyHint:'120s'}};
-AD_CONFIG.adcash={enabled:true,zoneId:'7h02lstdl5',minMenuVisits:2};// Adcash Autotag (top level; cannot be unloaded once loaded)
+    h5:true,interstitial:false,interstitialEvery:3,interstitialMinGap:180e3,rewardCap:5,rewardCooldown:120e3,rewardCoins:100,frequencyHint:'120s'}};
+AD_CONFIG.adcash={enabled:true,banner:'12319166',interstitial:'12319258'};// Adcash display 300x100 + interstitial (results only)
 const ADSENSE_CLIENT=AD_CONFIG.adsense.client;
 const AD_IS_SENSE=()=>AD_CONFIG.provider==='adsense'&&/^ca-pub-\d+$/.test(ADSENSE_CLIENT);
 window.AD_CONFIG=AD_CONFIG;
@@ -58,7 +58,7 @@ function senseLoad(){if(senseLoaded||!AD_IS_SENSE())return;senseLoaded=true;cons
   if(A.h5){s.setAttribute('data-ad-frequency-hint',A.frequencyHint);if(location.hostname==='localhost')s.setAttribute('data-adbreak-test','on')}
   document.head.appendChild(s);if(A.h5)adConfig({preloadAdBreaks:'on',sound:'on'})}
 if(AD_IS_SENSE()&&window.Consent)Consent.whenGranted('ads',()=>{if(navigator.onLine!==false)senseLoad()});
-function senseSlot(where){const id=AD_CONFIG.adsense.slots[where];if(!id)return null;senseLoad();
+function senseSlot(where){const id=AD_CONFIG.adsense.slots[where];if(!id)return acSlot(where);senseLoad();
   const box=document.createElement('div');box.className='adslot sense ad-'+where;box.setAttribute('aria-label','Advertisement');
   const ins=document.createElement('ins');ins.className='adsbygoogle';ins.style.display='block';ins.setAttribute('data-ad-client',ADSENSE_CLIENT);ins.setAttribute('data-ad-slot',id);
   ins.setAttribute('data-ad-format','horizontal');ins.setAttribute('data-full-width-responsive','true');box.appendChild(ins);
@@ -69,13 +69,13 @@ let senseRw=null;
 function senseReward(){const host=screenEl.querySelector('.sheet');if(!host||!window.Consent||!Consent.granted('ads')||navigator.onLine===false||!AD_CONFIG.adsense.h5)return;senseLoad();const A=AD_CONFIG.adsense,s=adDay();
   const left=A.rewardCap-s.n,cd=Math.max(0,A.rewardCooldown-(Date.now()-s.last));
   const el=document.createElement('div');el.className='adrw';el.innerHTML=`<div><b>Watch an ad for a reward</b><span class="sh">+${A.rewardCoins} coins (every ${AD_REWARD.gemEvery}th: +1 gem). ${left} left today.</span></div><button id="adGo" disabled>${left<=0?'Done for today':cd>0?'Wait '+Math.ceil(cd/60000)+' min':'Checking&hellip;'}</button>`;
-  host.appendChild(el);if(left<=0||cd>0||typeof adBreak!=='function')return;const b=el.querySelector('#adGo');
+  host.appendChild(el);if(left<=0||cd>0)return;if(typeof adBreak!=='function'){el.remove();adReward();return}const b=el.querySelector('#adGo');let fb=setTimeout(()=>{if(b.isConnected&&b.textContent.indexOf('Checking')===0){el.remove();adReward()}},6000);
   adBreak({type:'reward',name:'shop_reward',
     beforeAd:()=>{if(typeof sfx==='function')try{MUS&&(MUS.mute=true)}catch(e){}},afterAd:()=>{try{MUS&&(MUS.mute=false)}catch(e){}},
-    beforeReward:show=>{if(!b.isConnected)return;b.disabled=false;b.textContent='Watch ad';b.onclick=()=>{b.disabled=true;show()}},
+    beforeReward:show=>{clearTimeout(fb);if(!b.isConnected)return;b.disabled=false;b.textContent='Watch ad';b.onclick=()=>{b.disabled=true;show()}},
     adDismissed:()=>toast('Ad closed early: no reward'),
     adViewed:()=>{const d=adDay();if(d.n>=A.rewardCap)return;d.n++;d.last=Date.now();save.coins+=A.rewardCoins;let m='+'+A.rewardCoins+' coins';if(d.n%AD_REWARD.gemEvery===0){save.gems=(save.gems||0)+1;m+=' +1 gem'}persist();toast('Thanks! '+m)},
-    adBreakDone:i=>{if(b.isConnected&&b.textContent.indexOf('Checking')===0){b.textContent='No ad available';b.disabled=true}if(location.hash==='#/shop'&&i&&i.breakStatus==='viewed')shop()}})}
+    adBreakDone:i=>{if(b.isConnected&&b.textContent.indexOf('Checking')===0){el.remove();adReward()}if(location.hash==='#/shop'&&i&&i.breakStatus==='viewed')shop()}})}
 // interstitial between runs ('next' placement on the results screen), capped
 let senseRes=0,senseLastI=0;
 function senseNext(){const A=AD_CONFIG.adsense;if(!A.h5||!A.interstitial||!adsOk()||typeof adBreak!=='function')return;senseRes++;
@@ -86,16 +86,19 @@ function adPrivacyHtml(){if(AD_IS_SENSE())return '<p>Ads are served by <b>Google
   return "<p>Ads come from a <b>third-party ad network</b> (served from untimely-hello.com). Its code runs in a sandboxed frame that cannot read your save or control the game, but the network itself may set and read <b>cookies</b> or similar identifiers in its own frame, see your IP address and browser details, and use them to choose, measure and limit ads, under its own privacy policy. The Shop's <b>sponsored link reward</b> opens a sponsor's page (physicaldad.com) in a new tab; that site is outside Era Draw and has its own policies. Change your choice at any time in Settings &rarr; Privacy; reload the page to fully unload ad code after turning it off.</p>"}
 window.adPrivacyHtml=adPrivacyHtml;
 
-// ===================== Adcash Autotag (additional provider) =====================
-// Loaded at most once per session, only from a menu page (home/results), never on the first menu visit, only after consent.
-// Autotag cannot be unloaded: if it later shows a format while a run is open, that is accepted (documented in docs/ADS.md).
-function adcashTry(){const A=AD_CONFIG.adcash;if(!A||!A.enabled||!A.zoneId||window.aclibLoaded)return;
-  if(!window.Consent||!Consent.granted('ads')||navigator.onLine===false)return;if(typeof mode!=='undefined'&&mode==='run')return;
-  let n=0;try{n=+sessionStorage.getItem('eradraw.menuVisits')||0;n++;sessionStorage.setItem('eradraw.menuVisits',n);if(sessionStorage.getItem('eradraw.aclib'))return}catch(e){}
-  if(n<A.minMenuVisits)return;window.aclibLoaded=true;try{sessionStorage.setItem('eradraw.aclib','1')}catch(e){}
+// ===================== Adcash zones (display banner + interstitial). aclib loads once, after consent, top level =====================
+let acState=0;const acQ=[];
+function acLoad(cb){const A=AD_CONFIG.adcash;if(!A||!A.enabled||!window.Consent||!Consent.granted('ads')||navigator.onLine===false)return;
+  if(acState===2&&window.aclib){cb();return}acQ.push(cb);if(acState)return;acState=1;
   const s=document.createElement('script');s.id='aclib';s.async=true;s.src='https://acscdn.com/script/aclib.js';
-  s.onload=()=>{try{if(window.aclib&&!(typeof mode!=='undefined'&&mode==='run'))aclib.runAutoTag({zoneId:A.zoneId})}catch(e){}};document.head.appendChild(s)}
-(function(){const hm=home;home=function(){const r=hm.apply(this,arguments);setTimeout(adcashTry,800);return r};
-  const rs=results;results=function(){const r=rs.apply(this,arguments);setTimeout(adcashTry,800);return r}})();
-const _adPriv=adPrivacyHtml;adPrivacyHtml=function(){let h=_adPriv();if(AD_CONFIG.adcash&&AD_CONFIG.adcash.enabled)h+='<p>We also use <b>Adcash</b> (acscdn.com), a third-party ad network, after you allow ads. It loads on menu screens at most once per visit and may show ad formats (for example banners or pop-unders) and use cookies or similar identifiers to deliver and measure ads, under its own privacy policy.</p>';return h};
+  s.onload=()=>{acState=2;const q=acQ.splice(0);for(const f of q)try{f()}catch(e){}};s.onerror=()=>{acState=3;acQ.length=0};document.head.appendChild(s)}
+function acSlot(where){const A=AD_CONFIG.adcash;if(!A||!A.enabled||!A.banner)return null;const box=document.createElement('div');box.className='adslot ac ad-'+where;box.setAttribute('aria-label','Advertisement');
+  const c=document.createElement('div');c.className='ac-c';box.appendChild(c);
+  acLoad(()=>{if(!box.isConnected)return;const sc=document.createElement('script');sc.text="try{aclib.runBanner({zoneId:'"+A.banner+"'})}catch(e){}";c.appendChild(sc)});
+  setTimeout(()=>{if(c.querySelector('iframe,img,ins,a,canvas')&&c.scrollHeight>10)box.classList.add('on');else box.remove()},7000);return box}
+let acRuns=0,acLastI=0;
+function acInterstitial(){const A=AD_CONFIG.adcash;if(!A||!A.enabled||!A.interstitial)return;acRuns++;if(acRuns%3||Date.now()-acLastI<180e3)return;
+  if(typeof mode!=='undefined'&&mode!=='dead')return;acLastI=Date.now();acLoad(()=>{if(mode==='dead')try{aclib.runInterstitial({zoneId:A.interstitial})}catch(e){}})}
+(function(){const rs=results;results=function(){const r=rs.apply(this,arguments);if(mode==='dead')setTimeout(acInterstitial,1200);return r}})();
+const _adPriv=adPrivacyHtml;adPrivacyHtml=function(){let h=_adPriv();if(AD_CONFIG.adcash&&AD_CONFIG.adcash.enabled)h+='<p>We also use <b>Adcash</b> (acscdn.com), a third-party ad network, after you allow ads: a small banner on the pause, results and home screens, and occasionally a full-screen ad on the results screen between runs (at most every third run). Adcash may use cookies or similar identifiers to deliver and measure ads, under its own privacy policy.</p>';return h};
 window.adPrivacyHtml=adPrivacyHtml;

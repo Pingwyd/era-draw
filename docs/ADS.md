@@ -26,7 +26,9 @@ With AdSense, the Customize panel shows **Personalised ads**. Off (or Reject) â†
   `google.com, pub-2853919516364773, DIRECT, f08c47fec0942fa0`
 - On localhost, H5 ads run in test mode (`data-adbreak-test="on"`).
 
-## Adcash Autotag (additional provider, `AD_CONFIG.adcash`)
-- `{enabled:true, zoneId:'7h02lstdl5', minMenuVisits:2}`. Runs alongside AdSense (different network, no shared globals).
-- Loaded top level (`<script id="aclib" src="https://acscdn.com/script/aclib.js">` then `aclib.runAutoTag({zoneId})`) only after ads consent, online, from Home/Results, never on the first menu visit of a session, at most once per session.
-- **Known limitation:** Autotag cannot be unloaded. Once loaded, it may show formats (e.g. pop-unders/overlays) later in the session, including while a run is open. This is accepted. Set `enabled:false` to remove it.
+## Adcash zones (`AD_CONFIG.adcash`)
+- `{enabled:true, banner:'12319166', interstitial:'12319258'}`; `aclib.js` (`id="aclib"`) loads once, top level, only after ads consent and online.
+- Display 300x100 (`aclib.runBanner`) fills the pause / results / home slots whenever the AdSense slot ID for that placement is empty (an inline script is inserted inside the slot so it renders there). Collapses if nothing renders within 7 s.
+- Interstitial (`aclib.runInterstitial`) only on the results screen, at most every 3rd run and 3 min apart. AdSense `next` interstitial is off to avoid stacking.
+- Shop reward: AdSense H5 rewarded when an ad is offered; otherwise falls back to the sponsored-link reward.
+- Autotag (zone 7h02lstdl5) was removed.

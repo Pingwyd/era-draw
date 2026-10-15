@@ -341,3 +341,4 @@ body.pad .pg{display:inline-block}body.pad .pgA::after{content:'A'}body.pad .pgS
 .adrw{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-top:12px;padding:10px 12px;border:1px solid var(--rule)}
 .adrw .sh{display:block}.adrw button{flex:none}
 @media (max-height:420px){.adslot iframe{max-width:320px}.adslot{margin-top:6px}}
+.adslot.ac{height:auto;min-height:0}.adslot.ac .ac-c{width:300px;max-width:100%;min-height:0;overflow:hidden}.adslot.ac:not(.on) .ac-c{height:1px}
