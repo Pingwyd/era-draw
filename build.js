@@ -90,7 +90,7 @@ levelUp=function(fromChest){
    <h2 class="disp">${fromChest?'Treasure':'Level '+G.level}</h2><div class="picks">${picks.map(cardHtml).join('')}</div></div>`);
   const els=[...screenEl.querySelectorAll('.pick')];
   els.forEach(el=>el.onclick=()=>{const k=picks[+el.dataset.i];takeCard(k,!fromChest);sfx('pick');show('');G.paused=false;last=performance.now()});
-  setTimeout(()=>els[0]&&els[0].focus(),40)};
+  setTimeout(()=>els[0]&&els[0].focus({preventScroll:true}),40)};
 // chest roulette rewards: minis (+ an upgrade of an owned skill on boss chests)
 window.chestPool=()=>POWERUPS.filter(p=>p.kind==='mini');
 window.chestSkill=()=>{const s=skillsOwned().filter(p=>(G.picks[p.id]||0)<p.max);return s.length?s[Math.floor(Math.random()*s.length)]:null};
@@ -102,7 +102,7 @@ function buildInfo(id){const pu=PU(id);if(!pu)return;const own=G.picks[id]||0;le
   else rows=[0,1,2].map(r=>`<li><span>${RAR[r]}</span><em>${pu.desc(r)}</em></li>`).join('');
   let pop=$('bpop');if(!pop){pop=document.createElement('div');pop.id='bpop';screenEl.appendChild(pop)}
   pop.innerHTML=`<div class="bp-h"><img src="${ICON['pu_'+id]}" alt=""><b>${pu.name}</b><i>${pu.kind==='skill'?'Skill · level '+own+'/'+pu.max:'Mini power-up · taken '+own+'x'}</i></div><ul class="stats">${rows}</ul><button class="btn" id="bpx">Close</button>`;
-  pop.classList.add('show');$('bpx').onclick=()=>pop.remove();setTimeout(()=>$('bpx')&&$('bpx').focus(),20)}
+  pop.classList.add('show');$('bpx').onclick=()=>pop.remove();setTimeout(()=>$('bpx')&&$('bpx').focus({preventScroll:true}),20)}
 const _bsPause=pauseMenu;pauseMenu=function(){_bsPause();const ul=screenEl.querySelector('.build');if(!ul)return;
   const ids=Object.keys(G.picks).sort((a,b)=>(PU(a)&&PU(a).kind==='skill'?0:1)-(PU(b)&&PU(b).kind==='skill'?0:1));
   ul.innerHTML=ids.length?ids.map(id=>{const pu=PU(id);if(!pu)return '';return `<li><button class="bitem ${pu.kind}" data-b="${id}"><img src="${ICON['pu_'+id]}" alt=""><span>${pu.name}</span><em>${pu.kind==='skill'?'LV '+G.picks[id]+'/'+pu.max:'x'+G.picks[id]}</em></button></li>`}).join(''):'<li class="mute">No upgrades yet</li>';

@@ -1,7 +1,7 @@
 // ===== Menu navigation: spatial focus (keys + pad), B/Esc back for popups, controller drawing =====
 function navRoot(){return document.getElementById('bpop')||document.querySelector('.modal')||(screenEl.innerHTML?screenEl:null)}
 function navAll(){const r=navRoot();if(!r)return [];return [...r.querySelectorAll('button:not([disabled]),[data-m],[data-i],.pick,a[href],input[type=range]')].filter((b,i,a)=>b.offsetParent!==null&&a.indexOf(b)===i)}
-function navFocus(el){if(!el)return;if(!el.hasAttribute('tabindex')&&!/^(BUTTON|A|INPUT)$/.test(el.tagName))el.setAttribute('tabindex','0');el.focus();el.scrollIntoView&&el.scrollIntoView({block:'nearest'});document.body.classList.add('kbnav')}
+function navFocus(el,scroll){if(!el)return;if(!el.hasAttribute('tabindex')&&!/^(BUTTON|A|INPUT)$/.test(el.tagName))el.setAttribute('tabindex','0');try{el.focus({preventScroll:true})}catch(e){el.focus()}if(scroll!==false&&el.scrollIntoView)el.scrollIntoView({block:'nearest'})}
 // move focus to the nearest element in direction (dx,dy); returns true if handled
 function navSpatial(dx,dy){const t=navAll();if(!t.length)return false;const a=document.activeElement;
   if(!a||!t.includes(a)){navFocus(t[0]);return true}
@@ -17,10 +17,15 @@ navTargets=navAll;
 addEventListener('keydown',e=>{if(e.key!=='Escape'||e.repeat)return;
   const bp=document.getElementById('bpop');if(bp){e.preventDefault();e.stopImmediatePropagation();bp.remove();return}
   const no=document.getElementById('cfNo');if(no){e.preventDefault();e.stopImmediatePropagation();no.click()}},true);
-addEventListener('pointerdown',()=>document.body.classList.remove('kbnav'),{passive:true});
-// auto-focus the first control when a new screen opens and a pad/keyboard is in use
-new MutationObserver(()=>{if(!document.body.classList.contains('pad')&&!document.body.classList.contains('kbnav'))return;
-  const t=navAll(),a=document.activeElement;if(t.length&&!t.includes(a))navFocus(t[0])}).observe(screenEl,{childList:true});
+// last input decides whether menus get auto-focus; pointer/touch/wheel never trigger it
+let navLast='pointer',navRoute='';
+const navPtr=()=>{navLast='pointer';document.body.classList.remove('kbnav','pad')};
+for(const ev of ['pointerdown','touchstart','wheel','mousedown'])addEventListener(ev,navPtr,{passive:true,capture:true});
+addEventListener('keydown',e=>{if(/^(Arrow|Tab|Enter|Escape)/.test(e.key)){navLast='key';document.body.classList.add('kbnav')}},true);
+setInterval(()=>{if(document.body.classList.contains('pad'))navLast='pad'},250);
+// auto-focus only when a NEW page opens (route change), only for keyboard/controller users, without scrolling
+new MutationObserver(()=>{const r=location.hash;if(r===navRoute)return;navRoute=r;if(navLast==='pointer')return;
+  const t=navAll(),a=document.activeElement;if(t.length&&!t.includes(a))navFocus(t.find(b=>b.id!=='back')||t[0],false)}).observe(screenEl,{childList:true});
 
 // ---- Controller drawing: right stick moves a cursor, hold RT to trace ----
 if(save.padDraw==null)save.padDraw=false;

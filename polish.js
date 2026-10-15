@@ -17,7 +17,7 @@ function padNavMove(d){const t=navTargets();if(!t.length)return;let i=t.indexOf(
 function padPoll(){requestAnimationFrame(padPoll);const g=p1Pad();if(!g){if(padMoving){stick.active=false;padMoving=false}return}
   const was=padPrev,now={};for(const k in PADB)now[k]=pressed(g,PADB[k]);padPrev=now;const hit=k=>now[k]&&!was[k];
   const lx=g.axes[0]||0,ly=g.axes[1]||0,rx=g.axes[2]||0,ry=g.axes[3]||0,lm=Math.hypot(lx,ly);
-  document.body.classList.add('pad');
+  if(lm>.5||Math.hypot(rx,ry)>.5||g.buttons.some(b=>b&&b.pressed))document.body.classList.add('pad');
   const inRun=mode==='run'&&G&&!G.paused&&!screenEl.innerHTML;
   if(inRun){
     if(stick.id===null){if(lm>.2){const k=Math.min(1,(lm-.2)/.7);stick.active=true;stick.ox=0;stick.oy=0;stick.x=lx/lm*55*k;stick.y=ly/lm*55*k;padMoving=true}else if(padMoving){stick.active=false;padMoving=false}}

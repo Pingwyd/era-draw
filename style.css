@@ -300,3 +300,9 @@ button.dot::after{content:'';position:absolute;top:4px;right:4px;width:7px;heigh
 @media (max-height:360px){#consent{padding:6px 8px;font-size:11px}#consent b{font-size:16px}}
 .boot{position:fixed;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;color:var(--mute)}
 .boot b{font-family:'Instrument Serif',serif;font-weight:400;font-size:40px;color:var(--paper,#efe6d2)}.boot span{font:10px Silkscreen,monospace;letter-spacing:.2em;text-transform:uppercase}
+/* ===== loadout v2 ===== */
+.lotabs{margin:2px 0 8px}.lotabs small{color:var(--ember,#ff9a3c);margin-left:3px}
+.losave{position:sticky;bottom:0;z-index:3;display:flex;align-items:center;gap:10px;justify-content:space-between;padding:8px 0 calc(env(safe-area-inset-bottom,0px) + 6px);margin-top:8px;background:linear-gradient(to top,#140b0c 75%,rgba(20,11,12,0));border-top:1px solid var(--rule)}
+.losave .lab{overflow:hidden;text-overflow:ellipsis;white-space:nowrap;flex:1;min-width:0}
+.losave .btn{flex:0 0 auto}
+@media (max-height:500px){.losave{padding:5px 0}}
