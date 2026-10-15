@@ -151,7 +151,7 @@ function openChest(c){
     else if(t===stop){el.firstChild.src=ICON['pu_'+k.pu.id];el.className='reel done r-'+RAR[k.r];sfx('pick');
       $('rlist').insertAdjacentHTML('beforeend',`<span class="rr r-${RAR[k.r]}">${k.pu.name} <i>${RAR[k.r]}</i></span>`)}});
     if(t>=10+(n-1)*5){clearInterval(spin);const ok=$('rok');if(ok)ok.disabled=false}},90);
-  $('rok').onclick=()=>{for(const k of rewards){k.pu.apply(G.player,k.r);G.picks[k.pu.id]=(G.picks[k.pu.id]||0)+1}show('');G.paused=false;last=performance.now()};
+  $('rok').onclick=()=>{for(const k of rewards){k.pu.apply(G.player,k.r);if(window.noteCardPick)noteCardPick(k.pu.id,false);G.picks[k.pu.id]=(G.picks[k.pu.id]||0)+1}show('');G.paused=false;last=performance.now()};
 }
 
 
@@ -190,7 +190,7 @@ SPR.prop={};for(const k in PROP_ART)SPR.prop[k]=outline(grid(PROP_ART[k],{...PAL
 const ERA_PROPS={stone:['torch','bush','bush'],bronze:['torch','urn','urn']};
 runHooks.push(G=>{G.props=[];G.propT=2});
 function hitProp(k){k.hp--;k.flash=.12;k.shk=.22;burst(k.x,k.y-8,k.type==='bush'?'#5f8f3c':k.type==='urn'?'#d08a52':'#ff8a2a',10);sfx('hit');
-  if(k.hp<=0){k.dead=true;burst(k.x,k.y-8,'#d9c27a',14);if(Math.random()<.3)dropPickup(k.x,k.y);else{G.orbs.push({x:k.x,y:k.y,v:3,t:0});G.bonus=(G.bonus||0)+2;floatText(k.x,k.y-24,'+2','#d9c27a',.8)}}}
+  if(k.hp<=0){k.dead=true;burst(k.x,k.y-8,'#d9c27a',14);if(Math.random()<.3)dropPickup(k.x,k.y);else{G.orbs.push({x:k.x,y:k.y,v:3*(ERA_XP[CURRENT_ERA]||1),t:0});G.bonus=(G.bonus||0)+2;floatText(k.x,k.y-24,'+2','#d9c27a',.8)}}}
 const _updP=updatePickups;updatePickups=function(dt){_updP(dt);if(mode!=='run'||!G.props)return;const p=G.player;
   G.propT-=dt;if(G.propT<=0&&G.props.length<14){G.propT=5+Math.random()*5;const a=Math.random()*6.283,d=220+Math.random()*220,ts=ERA_PROPS[CURRENT_ERA]||ERA_PROPS.stone;
     G.props.push({x:p.x+Math.cos(a)*d,y:p.y+Math.sin(a)*d,type:ts[Math.floor(Math.random()*ts.length)],hp:3,maxHp:3,cd:0})}
