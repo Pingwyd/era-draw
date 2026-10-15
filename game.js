@@ -148,7 +148,7 @@ cv.addEventListener('pointerdown',e=>{
   const isMouse=e.pointerType==='mouse';
   if(isMouse&&e.button===2){mouse.walk=true;mouse.x=e.clientX;mouse.y=e.clientY;e.preventDefault();return}
   if(isMouse&&e.button!==0)return;
-  if(!isMouse&&e.clientX<W*0.5&&stick.id===null){const now=performance.now();if(now-(stick.lastTap||0)<280)tryDash();stick.lastTap=now;Object.assign(stick,{id:e.pointerId,ox:e.clientX,oy:e.clientY,x:e.clientX,y:e.clientY,active:true});return}
+  if(!isMouse&&e.clientX<W*0.5&&stick.id===null){Object.assign(stick,{id:e.pointerId,ox:e.clientX,oy:e.clientY,x:e.clientX,y:e.clientY,active:true});return}
   if(!G.drawing&&(isMouse||e.clientX>=W*0.5)){G.drawing={id:e.pointerId,t0:performance.now(),pts:[{x:e.clientX,y:e.clientY}]};sfx('draw');}
 });
 cv.addEventListener('pointermove',e=>{
@@ -491,7 +491,7 @@ function renderInner(dt){
   {const k=HUDK,P_=G.player,mx_=P_.dashMax||2,ch=P_.dashCharges==null?mx_:P_.dashCharges,cdF=ch<mx_?1-Math.max(0,P_.dashCd)/(DASH.cd*(P_.dashCdMul||1)):0,gap=3*k,pw=Math.floor((fw*.5-gap*(mx_-1))/mx_);
    for(let i=0;i<mx_;i++){const x0=fx+i*(pw+gap);ctx.fillStyle='#1a0f0e';ctx.fillRect(x0-1,fy-20*k,pw+2,6*k);ctx.fillStyle='#3a2e28';ctx.fillRect(x0,fy-19*k,pw,4*k);
      if(i<ch){ctx.fillStyle='#e9dcc3';ctx.fillRect(x0,fy-19*k,pw,4*k)}else if(i===ch){ctx.fillStyle='#7a6656';ctx.fillRect(x0,fy-19*k,Math.round(pw*cdF),4*k)}}
-   ctx.fillStyle='#e9dcc3';ctx.font=Math.round(8*k)+'px Silkscreen, monospace';ctx.textAlign='left';ctx.fillText(isTouch?'DASH: DOUBLE-TAP':'DASH: SPACE',fx,fy-24*k)}
+   ctx.fillStyle='#e9dcc3';ctx.font=Math.round(8*k)+'px Silkscreen, monospace';ctx.textAlign='left';ctx.fillText(isTouch?'DASH':'DASH: SPACE',fx,fy-24*k)}
   if(stick.active){ctx.strokeStyle='#e9dcc355';ctx.lineWidth=2;ctx.beginPath();ctx.arc(stick.ox,stick.oy,55,0,6.283);ctx.stroke();const dx=stick.x-stick.ox,dy=stick.y-stick.oy,d=Math.min(55,Math.hypot(dx,dy)),a=Math.atan2(dy,dx);ctx.fillStyle='#e9dcc388';ctx.beginPath();ctx.arc(stick.ox+Math.cos(a)*d,stick.oy+Math.sin(a)*d,22,0,6.283);ctx.fill()}
   else if(G.t<8){ctx.fillStyle='#e9dcc377';ctx.font='12px Silkscreen, monospace';ctx.textAlign='center';if(isTouch){ctx.fillText('< MOVE',W*.25,H-56);ctx.fillText('DRAW >',W*.75,H-56);ctx.fillStyle='#e9dcc322';ctx.fillRect(W/2-1,H*.3,2,H*.5)}else ctx.fillText(controlsHint().toUpperCase(),W/2,H-56)}
 }

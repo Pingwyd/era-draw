@@ -10,6 +10,8 @@ const _uiSettings=settings;settings=function(inRun){_uiSettings(inRun);const sh=
   // data
   const dt=document.createElement('div');
   dt.innerHTML=`<div class="lab rule">Save data</div><nav class="menu"><button id="dExp"><b>EX</b>Export save<span>.json</span><i>&rarr;</i></button><button id="dImp"><b>IM</b>Import save<i>&rarr;</i></button><button id="dLog"><b>CL</b>Changelog<i>&rarr;</i></button></nav><input type="file" id="dFile" accept="application/json,.json" hidden aria-label="Choose a save file"><p class="sh">Your progress lives only in this browser (local storage). Export a backup before clearing site data or switching devices. Save format v${SAVE_VER}.</p>`;
+  const gp=document.createElement('nav');gp.className='menu';if(isTouch)gp.innerHTML=`<button id="flBtn" role="switch" aria-checked="${save.flickDash!==false}"><b>FL</b>Flick joystick to dash<span>${save.flickDash!==false?'On':'Off'}</span><i>&rarr;</i></button><p class="sh">Snap the movement stick hard in one direction to dash that way. The dash button (right side) always works.</p>`;
+  secs.game=(secs.game||[]).concat(gp);
   secs.privacy=[pv];secs.data=[dt];
   const tab=SET_TABS.some(t=>t[0]===save.setTab)?save.setTab:'game';
   const bar=document.createElement('div');bar.className='htabs stabs';bar.setAttribute('role','tablist');
@@ -20,6 +22,7 @@ const _uiSettings=settings;settings=function(inRun){_uiSettings(inRun);const sh=
   bar.querySelectorAll('[data-st]').forEach(b=>b.onclick=()=>{save.setTab=b.dataset.st;persist();bar.querySelectorAll('[data-st]').forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-selected',x===b)});body.querySelectorAll('.spanel').forEach(p=>p.hidden=p.dataset.sp!==b.dataset.st)});
   const tog=(id,c)=>{$(id).onclick=()=>{const cur=Consent.get()||{analytics:false,ads:false};cur[c]=!cur[c];const r=Consent.set(cur);if(r.revoked)toast('Saved. Reload the page to fully unload anything already loaded.');settings(inRun)}};
   if(window.Consent){tog('pvA','analytics');tog('pvD','ads')}
+  if($('flBtn'))$('flBtn').onclick=()=>{save.flickDash=save.flickDash===false;persist();settings(inRun)};
   $('pvP').onclick=privacy;$('dLog').onclick=changelog;
   $('dExp').onclick=exportSave;$('dImp').onclick=()=>$('dFile').click();$('dFile').onchange=e=>importSave(e.target.files[0],inRun)};
 function exportSave(){const t=JSON.stringify(save,null,1),name='era-draw-save-'+new Date().toISOString().slice(0,10)+'.json';
@@ -81,3 +84,22 @@ loadout=function(){leaveRun();setRoute('loadout');const sel=save.loadout.slice()
 // shop: hovering no longer rebuilds the page (it reset the scroll); swap the detail pane in place
 const _uiShop=shop;shop=function(){_uiShop();screenEl.querySelectorAll('.li').forEach(el=>{const b=el.querySelector('.buy');if(!b)return;el.onmouseenter=()=>{const id=b.dataset.id;if(shop.focus===id)return;shop.focus=id;
   const f=SHOP.find(s=>s.id===id);const old=screenEl.querySelector('.split > .pane, .split > aside');if(f&&f.type==='creation'&&old){const t=document.createElement('div');t.innerHTML=detailPane(id);old.replaceWith(t.firstElementChild)}}})};
+// ===== Mobile dash: dedicated button (shows charges) + optional joystick flick =====
+if(isTouch){const db=document.createElement('button');db.id='dashBtn';db.setAttribute('aria-label','Dash');db.innerHTML='<b>DASH</b><span class="dc"></span>';$('hud').appendChild(db);
+  const fire=e=>{e.preventDefault();e.stopPropagation();tryDash();db.classList.remove('hit');void db.offsetWidth;db.classList.add('hit')};
+  db.addEventListener('pointerdown',fire);db.addEventListener('touchstart',e=>e.stopPropagation(),{passive:true});
+  setInterval(()=>{if(!G||!G.player||mode!=='run')return;const p=G.player,mx=p.dashMax||2,ch=p.dashCharges==null?mx:p.dashCharges;const h=Array.from({length:mx},(_,i)=>`<i class="${i<ch?'on':''}"></i>`).join('');const dc=db.querySelector('.dc');if(dc.innerHTML!==h)dc.innerHTML=h;db.classList.toggle('empty',ch<=0)},120);
+  // flick: stick must travel >=60px from its origin within 110ms of leaving the 14px dead zone, once per touch
+  let fl={id:null,t0:0,done:false};
+  $('c').addEventListener('pointermove',e=>{if(save.flickDash===false||mode!=='run'||e.pointerId!==stick.id)return;const d=Math.hypot(stick.x-stick.ox,stick.y-stick.oy),now=performance.now();
+    if(fl.id!==e.pointerId){fl={id:e.pointerId,t0:0,done:false}}if(fl.done)return;if(d>14&&!fl.t0)fl.t0=now;
+    if(fl.t0&&d>=60){if(now-fl.t0<=110){fl.done=true;tryDash()}else fl.done=true}});}
+// ===== Enemy readability: small sprites scaled 2x (min on-screen size) + light rim outside the dark outline =====
+function enhSprite(c,k){const p=1,cw=Math.round(c.width*k),ch=Math.round(c.height*k),[o,x]=mk(cw+p*2,ch+p*2);
+  const [s,sx]=mk(cw,ch);sx.drawImage(c,0,0,cw,ch);
+  const [l,lx]=mk(s.width,s.height);lx.drawImage(s,0,0);lx.globalCompositeOperation='source-in';lx.fillStyle='rgba(255,240,214,.45)';lx.fillRect(0,0,l.width,l.height);
+  for(const [dx,dy] of [[-1,0],[1,0],[0,-1],[0,1]])x.drawImage(l,p+dx,p+dy);x.drawImage(s,p,p);return o}
+(function(){const done=new Set();for(const key in SPR.en){const st=SPR.en[key];if(!st||done.has(st))continue;done.add(st);const m=Math.max(st.w,st.h),k=m<=9?2:st.w*st.h<=110?1.5:1;
+  const fix=f=>{for(const n of ['r','l'])if(f[n]&&f[n].width)f[n]=enhSprite(f[n],k);for(const n of ['wr','wl'])if(f[n]&&f[n].width)f[n]=enhW(f[n],k);f.w=f.r.width;f.h=f.r.height};
+  if(st.frames)st.frames.forEach(fix);fix(st);if(k>1)st.big=true}})();
+function enhW(c,k){const cw=Math.round(c.width*k),ch=Math.round(c.height*k),[s,sx]=mk(cw+2,ch+2);sx.drawImage(c,1,1,cw,ch);return s}
