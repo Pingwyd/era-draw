@@ -1,7 +1,7 @@
 'use strict';
 // ===== Provider config. Switch providers here (see docs/ADS.md). =====
 // provider: 'adsterra' (current network, sandboxed srcdoc banners + sponsored link) | 'adsense' (top-level AdSense + H5 Games Ads)
-const AD_CONFIG={provider:'adsterra',
+const AD_CONFIG={provider:'adsense',
   adsense:{client:'ca-pub-2853919516364773',slots:{pause:'',results:'',home:''},// fill with AdSense display ad unit slot IDs
     h5:true,interstitial:true,interstitialEvery:3,interstitialMinGap:180e3,rewardCap:5,rewardCooldown:120e3,rewardCoins:100,frequencyHint:'120s'}};
 const ADSENSE_CLIENT=AD_CONFIG.adsense.client;
