@@ -46,5 +46,5 @@ let pdHeld=false,pdX=0,pdY=0,pdLast=0;
 const _navSettings=settings;settings=function(inRun){_navSettings(inRun);const box=screenEl.querySelector('.menu.a11y');if(!box)return;
   const b=document.createElement('button');b.id='pdBtn';b.innerHTML=`<b>RT</b>Controller drawing<span>${save.padDraw?'On':'Off'}</span><i>&rarr;</i>`;
   const p=box.querySelector('.sh');box.insertBefore(b,p);
-  if(p)p.insertAdjacentHTML('afterend','<p class="sh">Controller drawing: right stick moves a pen cursor, hold RT to trace a shape, release to cast. Menus: stick / D-pad move, A select, B back.</p>');
-  b.onclick=()=>{save.padDraw=!save.padDraw;persist();b.querySelector('span').textContent=save.padDraw?'On':'Off'}};
+  if(p)p.insertAdjacentHTML('afterend','<p class="sh">Controller drawing: right stick moves a pen cursor, hold RT to trace a shape, release to cast. While on, the controller quick-cast buttons are off: every weapon must be traced with the pen. Menus: stick / D-pad move, A select, B back.</p>');
+  b.onclick=()=>{save.padDraw=!save.padDraw;persist();settings(inRun)}};
