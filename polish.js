@@ -25,7 +25,7 @@ function padPoll(){requestAnimationFrame(padPoll);const g=p1Pad();if(!g){if(padM
     // in-run buttons come from the (remappable) binding table: PAD_BIND[action] = button index
     const B=padBinds(),hb=i=>pressed(g,i)&&!padRaw[i];
     if(hb(B.dash))tryDash();if(!save.padDraw){if(hb(B.cast1))padCast(0);if(hb(B.cast2))padCast(1);if(hb(B.cast3))padCast(2);if(hb(B.cast4))padCast(3)}
-    if(hb(B.pause))key('Escape');padRaw=g.buttons.map((_,i)=>pressed(g,i));return}
+    if(hb(B.pause))key('Escape');if(B.shot!=null&&hb(B.shot)&&window.takeShot)takeShot();padRaw=g.buttons.map((_,i)=>pressed(g,i));return}
   padRaw=g.buttons.map((_,i)=>pressed(g,i));
   if(padMoving){stick.active=false;padMoving=false}
   const t=performance.now();const vx=hit('RIGHT')?1:hit('LEFT')?-1:0,vy=hit('DOWN')?1:hit('UP')?-1:0;

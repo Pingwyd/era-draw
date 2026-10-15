@@ -11,7 +11,7 @@ const BOSS_SETS={
 };
 const MOVE_ALL=['slam','ring','fan','charge','leap'],SPEC_ALL=['spiral','summon','hazard','charge','leap'];
 function bossSet(e){if(BOSS_SETS[e.type])return BOSS_SETS[e.type];let h=0;for(const c of e.type)h=(h*31+c.charCodeAt(0))>>>0;return {reg:[MOVE_ALL[h%5],MOVE_ALL[(h>>3)%5]],sp:[SPEC_ALL[(h>>5)%5],SPEC_ALL[(h>>7)%5]]}}
-const BOSS_HP_MUL=2.2,ERA_BOSS={stone:1,bronze:1.15,iron:1.3,mythic:1.45},BOSS_ADD_CAP=12;
+const BOSS_HP_MUL=2.2,ERA_BOSS={stone:1,bronze:1.15,iron:1.3,mythic:1.45},BOSS_ADD_CAP=25;
 const _bfSpawn=spawnEnemy;spawnEnemy=function(type,scale,at){const e=_bfSpawn.apply(this,arguments);
   if(e&&e.T&&e.T.boss&&!G.netClient&&!e.bf){const party=G.party||1,m=BOSS_HP_MUL*(ERA_BOSS[CURRENT_ERA]||1)*(1+.6*(party-1));e.hp*=m;e.maxHp*=m;e.baseHp=e.maxHp;e.baseDmg=e.dmg;
     e.bf={reg:2.5,sp:6,busy:0,ph:0,eat:0,set:bossSet(e)};G.bfSpfx=G.bfSpfx||[];bossIntro(e);setTimeout(()=>{if(G&&e.hp>0)devour(e)},700)}return e};
