@@ -13,8 +13,7 @@ function spellOf(id){for(const b in SPELLS)if(id===b||id.indexOf(b+'_')===0)retu
 const SPELL_SPR={};
 for(const b in SPELLS){const S2=SPELLS[b];const paper=['wwwwwwwww','wWWWWWWWw'];const body=S2.g.map(r=>'w'+r.replace(/\./g,'w')+'w');
   const rows=['.wwwwwww.',...body,'wWWwWwWWw','.w.w.w.w.'];
-  const c=outline(grid(rows,SP_PAL),'#1a0f0e',S2.col);SELL_ICON(b,c)}
-function SELL_ICON(b,c){SELL_ICON.m=SELL_ICON.m||{};SPELL_SPR[b]={r:c,w:c.width,h:c.height}}
+  const c=outline(grid(rows,SP_PAL),'#1a0f0e',S2.col);SPELL_SPR[b]={r:c,w:c.width,h:c.height}}
 for(const id in CREATIONS){const b=spellOf(id);if(!b||CREATIONS[id].era!=='mythic')continue;const d=CREATIONS[id];d.spell=SPELLS[b].sp;d.proj=undefined;
   if(id===b){d.name=SPELLS[b].name;SKETCH_LORE[b]=SPELLS[b].lore}ICON[id]=iconURL(SPELL_SPR[b].r,3)}
 CREATIONS.lance.speed=undefined;

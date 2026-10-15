@@ -53,7 +53,7 @@ achievements=function(){
 };
 ROUTES.achievements=achievements;
 const _a2Home=home;home=function(){_a2Home.apply(this,arguments);achDot()};
-function achDot(){const b=screenEl.querySelector('[data-hub="achievements"]');if(!b)return;const n=achClaimable();b.classList.toggle('dot',n>0);if(n)b.setAttribute('aria-label','Achievements, '+n+' to claim')}
+function achDot(){const b=screenEl.querySelector('[data-hub="achievements"]');if(!b)return;const n=achClaimable();const tb=screenEl.querySelector('[data-tab="prog"]');if(tb)tb.classList.toggle('dot',n>0);b.classList.toggle('dot',n>0);if(n)b.setAttribute('aria-label','Achievements, '+n+' to claim')}
 const _a2Chest=openChest;openChest=function(){save.stats.chests=(save.stats.chests||0)+1;return _a2Chest.apply(this,arguments)};
 killHooks.push(e=>{if(e.vetChest&&G)G.vetKills=(G.vetKills||0)+1});
 const _a2Dmg=damagePlayer;damagePlayer=function(d){if(G&&G.player&&G.player.invul<=0&&d>0)G.hurt=true;return _a2Dmg.apply(this,arguments)};

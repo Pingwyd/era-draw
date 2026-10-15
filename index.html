@@ -19,7 +19,7 @@
 <link rel="stylesheet" href="fonts/fonts.css">
 <link rel="stylesheet" href="style.css">
 </head><body>
-<canvas id="c"></canvas>
+<canvas id="c" role="img" aria-label="Era Draw game field"></canvas>
 <div id="hud" class="hidden">
   <div id="xptop"><i id="xpb"></i></div><span id="lvt">LV 1</span>
   <div id="hudL"><b>HEALTH</b><div class="hbar"><i id="hpb"></i></div><span id="hpt"></span></div>
@@ -29,9 +29,10 @@
   <button id="pauseBtn" aria-label="Pause">II</button>
 </div>
 <div id="bossbar" class="hidden"><div class="bb-name"><span id="bbName"></span><small id="bbTitle"></small></div><div class="bb-frame"><i id="bbFill"></i><span id="bbHp"></span></div></div>
-<div id="toast"></div>
-<div id="screen"></div>
+<div id="toast" role="status" aria-live="polite"></div>
+<div id="screen" role="main"><div class="boot" aria-busy="true"><b>Era Draw</b><span>Loading&hellip;</span><noscript>Era Draw needs JavaScript to run.</noscript></div></div>
 <div id="rotate" class="hidden"><div class="rot-ic"><svg width="44" height="72" viewBox="0 0 11 18" shape-rendering="crispEdges"><rect x="0" y="0" width="11" height="18" fill="#1a0f0e"/><rect x="1" y="1" width="9" height="16" fill="#e9dcc3"/><rect x="2" y="2" width="7" height="12" fill="#2f5d62"/><rect x="5" y="15" width="1" height="1" fill="#1a0f0e"/></svg></div><h2>Rotate your phone</h2><div class="sub">Era Draw plays in landscape</div></div>
+<script src="consent.js"></script>
 <script src="audio.js"></script>
 <script src="sprites.js"></script>
 <script src="enemies.js"></script>
@@ -61,6 +62,7 @@
 <script src="targeting.js"></script>
 <script src="nav.js"></script>
 <script src="waves.js"></script>
+<script src="ui.js"></script>
 <script src="dev.js"></script>
 <script src="main.js"></script>
 </body></html>

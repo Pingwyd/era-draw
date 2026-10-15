@@ -50,14 +50,27 @@ const SHOP = [
 ];
 
 // ================= SAVE =================
-const SAVE_KEY='eradraw.save.v1';
+const SAVE_KEY='eradraw.save.v1';const SAVE_VER=2;
 let save=loadSave();
 function loadSave(){
   const d={hudScale:1,zoom:1,uiScale:1,autoMove:false,coins:0,gems:0,owned:['club','spear','rock'],loadout:['club','spear','rock'],slots:3,best:0,runs:0};
-  try{const s=JSON.parse(localStorage.getItem(SAVE_KEY));if(s)return Object.assign(d,s)}catch(e){}
-  return d;
+  let raw=null;try{raw=localStorage.getItem(SAVE_KEY)}catch(e){}
+  const parse=t=>{try{const o=JSON.parse(t);return o&&typeof o==='object'&&!Array.isArray(o)?o:null}catch(e){return null}};
+  let s=raw?parse(raw):null;
+  if(raw&&!s){// corrupt: keep the bad copy for recovery, fall back to the last good backup
+    try{localStorage.setItem(SAVE_KEY+'.corrupt',raw)}catch(e){}s=parse(localStorage.getItem(SAVE_KEY+'.bak'));window.SAVE_RECOVERED=s?'backup':'reset'}
+  if(!s)return Object.assign(d,{v:SAVE_VER});
+  return migrateSave(Object.assign(d,s));
 }
-function persist(){try{localStorage.setItem(SAVE_KEY,JSON.stringify(save))}catch(e){}}
+// save-data versioning: bump SAVE_VER and add a step when the shape changes
+function migrateSave(s){const v=s.v|0;
+  if(v<2){// v1 -> v2: sanitise types that older builds could leave broken
+    for(const k of ['owned','loadout','eras','mages'])if(k in s&&!Array.isArray(s[k]))delete s[k];
+    if(!Array.isArray(s.owned))s.owned=['club','spear','rock'];if(!Array.isArray(s.loadout)||!s.loadout.length)s.loadout=s.owned.slice(0,3);}
+  for(const k of ['coins','gems','best','runs','slots'])if(k in s&&!(Number.isFinite(+s[k])&&+s[k]>=0))s[k]=k==='slots'?3:0;
+  s.v=SAVE_VER;return s}
+var lastBak=0;
+function persist(){try{const t=JSON.stringify(save);localStorage.setItem(SAVE_KEY,t);const n=Date.now();if(n-lastBak>60000){lastBak=n;localStorage.setItem(SAVE_KEY+'.bak',t)}}catch(e){}}
 
 // ================= CANVAS =================
 const cv=document.getElementById('c'),ctx=cv.getContext('2d');
@@ -320,22 +333,7 @@ function rollRarity(epicOk){
   const minutes=G.t/60;let we=minutes>=2?14:4;if(!epicOk)we=0;
   const r=Math.random()*(60+30+we);return r<60?0:r<90?1:2;
 }
-function rollPicks(){
-  const out=[];let epicUsed=false;let tries=0;
-  while(out.length<3&&tries++<60){
-    const pu=POWERUPS[Math.floor(Math.random()*POWERUPS.length)];
-    if(out.find(o=>o.pu===pu))continue;
-    if(pu.once&&G.picks[pu.id])continue;
-    const owned=G.picks[pu.id]||0;
-    let r=pu.base==='epic'?2:Math.max(RAR.indexOf(pu.base),rollRarity(!epicUsed));
-    if(owned>=2&&pu.base!=='epic')r=Math.max(r,1); // repeat picks upgrade rarity
-    if(r===2&&epicUsed){if(pu.base==='epic')continue;r=1}
-    if(r===2&&pu.base==='epic'&&G.t<120&&Math.random()<0.7)continue;
-    if(r===2)epicUsed=true;
-    out.push({pu,r});
-  }
-  return out;
-}
+function rollPicks(){return []} // replaced by build.js
 function levelUp(fromChest){
   G.paused=true;stick.id=null;stick.active=false;G.drawing=null;
   const picks=rollPicks();sfx(fromChest?'chest':'lvl');haptic([20,40,20]);
