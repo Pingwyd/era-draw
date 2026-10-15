@@ -1,6 +1,6 @@
 // ===== Menu navigation: spatial focus (keys + pad), B/Esc back for popups, controller drawing =====
 function navRoot(){return document.getElementById('bpop')||document.querySelector('.modal')||(screenEl.innerHTML?screenEl:null)}
-function navAll(){const r=navRoot();if(!r)return [];return [...r.querySelectorAll('button:not([disabled]),[data-m],[data-i],.pick,a[href],input[type=range]')].filter((b,i,a)=>b.offsetParent!==null&&a.indexOf(b)===i)}
+function navAll(){const r=navRoot();if(!r)return [];const u=document.getElementById('updBar');return (u&&!document.getElementById('bpop')?[...u.querySelectorAll('button')]:[]).concat([...r.querySelectorAll('button:not([disabled]),[data-m],[data-i],.pick,a[href],input[type=range]')].filter((b,i,a)=>b.offsetParent!==null&&a.indexOf(b)===i))}
 function navFocus(el,scroll){if(!el)return;if(!el.hasAttribute('tabindex')&&!/^(BUTTON|A|INPUT)$/.test(el.tagName))el.setAttribute('tabindex','0');try{el.focus({preventScroll:true})}catch(e){el.focus()}if(scroll!==false&&el.scrollIntoView)el.scrollIntoView({block:'nearest'})}
 // move focus to the nearest element in direction (dx,dy); returns true if handled
 function navSpatial(dx,dy){const t=navAll();if(!t.length)return false;const a=document.activeElement;
@@ -40,7 +40,7 @@ let pdHeld=false,pdX=0,pdY=0,pdLast=0;
   const sp=Math.min(W,H)*1.6;pdX=Math.max(6,Math.min(W-6,pdX+rx*sp*dt));pdY=Math.max(6,Math.min(H-6,pdY+ry*sp*dt));
   PADCUR.style.transform=`translate(${pdX}px,${pdY}px)`;
   const rt=g.buttons[7]&&(g.buttons[7].pressed||g.buttons[7].value>.4);PADCUR.classList.toggle('on',!!rt);
-  if(rt&&!pdHeld){pdHeld=true;if(!G.drawing){G.drawing={id:'pad',t0:performance.now(),pts:[{x:pdX,y:pdY}]};sfx('draw')}}
+  if(rt&&!pdHeld){pdHeld=true;pdX=W/2;pdY=H/2;PADCUR.style.transform=`translate(${pdX}px,${pdY}px)`;if(!G.drawing){G.drawing={id:'pad',t0:performance.now(),pts:[{x:pdX,y:pdY}]};sfx('draw')}}
   else if(rt&&G.drawing&&G.drawing.id==='pad'){const pts=G.drawing.pts,l=pts[pts.length-1];if(Math.hypot(pdX-l.x,pdY-l.y)>3)pts.push({x:pdX,y:pdY})}
   else if(!rt&&pdHeld){pdHeld=false;if(G.drawing&&G.drawing.id==='pad')finishDraw()}})(performance.now());
 const _navSettings=settings;settings=function(inRun){_navSettings(inRun);const box=screenEl.querySelector('.menu.a11y');if(!box)return;
