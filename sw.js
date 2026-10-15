@@ -1,7 +1,7 @@
 // Era Draw service worker: cache-first, versioned. Bump VERSION on every release.
-const VERSION='eradraw-20261015213419';
+const VERSION='eradraw-20261015215339';
 const ASSETS=['./','index.html','style.css','fonts/fonts.css','manifest.webmanifest','icon.svg','icons/icon-180.png','icons/icon-192.png','fonts/Silkscreen-400.woff2','fonts/Silkscreen-700.woff2','fonts/VT323-400.woff2','fonts/InstrumentSerif-400.woff2',
- 'audio.js','sprites.js','enemies.js','forge.js','game.js','eras.js','meta.js','platform.js','progression.js','cave.js','ink.js','iron.js','bosses.js','social.js','coop.js','mythic.js','spells.js','cards.js','build.js','polish.js','minimap.js','remap.js','vendor/qrcode.js','lan.js','content.js','ach2.js','targeting.js','nav.js','waves.js','spacing.js','tutorial2.js','bossfight.js','update.js','feedback.js','shot.js','ui.js','consent.js','dev.js','main.js'];
+ 'audio.js','sprites.js','enemies.js','forge.js','game.js','eras.js','meta.js','platform.js','progression.js','cave.js','ink.js','iron.js','bosses.js','social.js','coop.js','mythic.js','spells.js','cards.js','build.js','polish.js','minimap.js','remap.js','vendor/qrcode.js','lan.js','content.js','ach2.js','targeting.js','nav.js','waves.js','spacing.js','tutorial2.js','bossfight.js','update.js','feedback.js','shot.js','deathx.js','ui.js','consent.js','dev.js','main.js'];
 self.addEventListener('install',e=>{e.waitUntil(caches.open(VERSION).then(c=>c.addAll(ASSETS)))});
 // a new version waits until the page asks for it (update prompt), so a run is never swapped mid-play
 self.addEventListener('message',e=>{if(e.data&&e.data.type==='SKIP_WAITING')self.skipWaiting()});
