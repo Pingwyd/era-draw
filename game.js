@@ -290,8 +290,8 @@ function orbSprite(o){const v=o.v/(ERA_XP[CURRENT_ERA]||1);if((o.n||1)>1)return 
 function onScr(x,y,m){const sx=X(x),sy=Y(y);return sx>-m&&sx<BW+m&&sy>-m&&sy<BH+m}
 function finalBoss(){const b=(G.era.bosses||[]).find(x=>x.t===ERA_CLEAR_T);return b&&b.type}
 // pacing target (sims): ~level 15 at 5:00 and ~25 at 10:00 in every era; gem XP is normalized per era via ERA_XP
-function xpFor(l){return Math.round(1.25*(5+3.2*Math.pow(l,1.45))*(1+.25*Math.floor(l/10)))}
-const ERA_XP={stone:3.8,bronze:3.3,iron:7.5,mythic:2};
+function xpFor(l){return Math.round(1.25*(14+3.2*Math.pow(l,1.45))*(1+.1*Math.floor(l/10)))}
+const ERA_XP={stone:1,bronze:1,iron:2.1,mythic:.52};
 function damagePlayer(d){
   if(!G||G.dead)return;const p=G.player;p.hp-=d;p.invul=0.5;sfx('hurt');haptic(35);G.shake=8;burst(p.x,p.y,'#ff6b6b',10);
   if(p.hp<=0){
