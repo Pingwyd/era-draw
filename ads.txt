@@ -1,0 +1,2 @@
+# ads.txt for Era Draw (Authorized Digital Sellers). AdSense publisher below; the root-domain copy at https://pingwyd.github.io/ads.txt is the one crawlers check.
+google.com, pub-2853919516364773, DIRECT, f08c47fec0942fa0
