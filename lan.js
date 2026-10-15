@@ -27,7 +27,7 @@ function lanSend(dc,m){try{if(dc&&dc.readyState==='open')dc.send(JSON.stringify(
 async function hostInvite(){if(LAN.peers.length>=3){toast('Up to 4 players');return null}
   const pc=newPC(),dc=pc.createDataChannel('ed',{ordered:false,maxRetransmits:0}),peer={pc,dc,slot:LAN.peers.length+1,ok:false,name:'P'+(LAN.peers.length+2)};
   dc.onopen=()=>{peer.ok=true;lanSend(dc,{k:'hello',slot:peer.slot});toast(peer.name+' connected');lanRefresh()};
-  dc.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(_){return}if(m.k==='in')NET_IN['net'+peer.slot]={mx:+m.mx||0,my:+m.my||0,dash:!!m.dash}};
+  dc.onmessage=e=>{let m;try{m=JSON.parse(e.data)}catch(_){return}if(m.k==='in')NET_IN['net'+peer.slot]={mx:+m.mx||0,my:+m.my||0,dash:!!m.dash};else if(m.k==='em'&&window.lanEmoteIn)lanEmoteIn(peer.slot,m)};
   dc.onclose=()=>{peer.ok=false;peer.gone=true;toast(peer.name+' disconnected');const q=G&&G.allies&&G.allies.find(a=>a.ctrl==='net'+peer.slot);if(q){q.down=true;q.hp=0;q.gone=true}lanRefresh()};
   LAN.role='host';LAN.peers.push(peer);
   await pc.setLocalDescription(await pc.createOffer());await gathered(pc);peer.offer=sdpPack(pc.localDescription);return peer}
@@ -65,6 +65,7 @@ function clientMsg(m){
     G.puppets=new Map();document.body.classList.add('netc');toast('Joined the host run');return}
   if(!G||!G.netClient)return;
   if(m.k==='end'){G.netClient=false;G.t=m.t;G.victory=m.victory;G.dead=false;try{endRun()}catch(e){home()}return}
+  if(m.k==='em'&&window.lanEmoteClient){lanEmoteClient(m);return}
   if(m.k==='s')applySnap(m)}
 function applySnap(m){G.t=m.t;G.wave=m.w;G.kills=m.kl;G.level=m.lv;G.xp=m.xp;G.xpNext=m.xn;G.hostPaused=m.pz;
   const P=G.player,mine=m.a.find(a=>a[0]==='net'+G.lan.slot);
