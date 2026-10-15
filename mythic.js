@@ -48,10 +48,10 @@ MAT_NAMES.bone=MAT_NAMES.bone||'Bone';
 function nearestEnemy(x,y,r){let b=null,bd=r*r;for(const e of G.enemies){const d=(e.x-x)**2+(e.y-y)**2;if(d<bd){bd=d;b=e}}return b}
 Object.assign(CREATIONS,{
   arcblade:{name:'Arcane Blade',era:'mythic',shape:'short line',shapeKey:'short',kind:'melee',dmg:44,life:10,uses:50,rate:.36,range:80,knock:200,orbitSpeed:3.2,cost:900,arcane:true},
-  lance:   {name:'Lightning Lance',era:'mythic',shape:'long line',shapeKey:'long',kind:'ranged',dmg:52,life:11,uses:18,rate:.75,speed:1100,pierce:12,proj:'spear',cost:950,shock:true},
+  lance:   {name:'Lightning Lance',era:'mythic',shape:'long line',shapeKey:'long',kind:'ranged',dmg:52,life:11,uses:18,rate:.75,speed:1100,pierce:9,proj:'spear',cost:950,shock:true},
   emberorb:{name:'Ember Orb',era:'mythic',shape:'circle',shapeKey:'circle',kind:'ranged',dmg:48,life:10,uses:14,rate:1.0,speed:420,aoe:110,proj:'rock',fire:true,cost:1000,burnHit:true},
-  frostfan:{name:'Frost Fan',era:'mythic',shape:'V shape',shapeKey:'v',kind:'ranged',dmg:20,life:11,uses:44,rate:.3,speed:760,pierce:2,proj:'sling',multishot:3,cost:950,frost:true},
-  chainspark:{name:'Chain Spark',era:'mythic',shape:'zigzag',shapeKey:'zig',kind:'melee',dmg:22,life:10,uses:70,rate:.2,range:58,knock:60,orbitSpeed:6,cost:950,chain:true},
+  frostfan:{name:'Frost Fan',era:'mythic',shape:'V shape',shapeKey:'v',kind:'ranged',dmg:17,life:11,uses:44,rate:.3,speed:760,pierce:2,proj:'sling',multishot:3,cost:950,frost:true},
+  chainspark:{name:'Chain Spark',era:'mythic',shape:'zigzag',shapeKey:'zig',kind:'melee',dmg:24,life:10,uses:70,rate:.2,range:58,knock:60,orbitSpeed:6,cost:950,chain:true},
 });
 SHAPE_KEY.arcblade='short';SHAPE_KEY.chainspark='zig';SHAPE_KEY.frostfan='v';
 const MY='#e0b0ff';
@@ -75,14 +75,14 @@ DMG_MODS.push((e,d,src,from)=>{const df=from&&from.def;if(!df||!d)return d;const
   return d});
 // evolutions + combos for the spell set
 Object.assign(EVOLUTIONS,{
-  arcblade:{id:'arcblade_astral',name:'Astral Blade',needs:'ink',lv:2,mods:{dmg:1.6,range:1.25},glow:'#ffffff'},
-  lance:{id:'lance_storm',name:'Storm Lance',needs:'homing',lv:1,mods:{dmg:1.4,pierce:2,rate:.8},glow:'#fff0a0'},
-  emberorb:{id:'emberorb_sun',name:'Little Sun',needs:'echo',lv:1,mods:{dmg:1.5,aoe:1.5},glow:'#ffd34a'},
-  frostfan:{id:'frostfan_blizzard',name:'Blizzard Fan',needs:'quick',lv:2,mods:{rate:.6,dmg:1.3},glow:'#c8f0ff'},
-  chainspark:{id:'chainspark_tempest',name:'Tempest Spark',needs:'swift',lv:2,mods:{dmg:1.5,orbitSpeed:1.4,range:1.3},glow:'#ffffff'},
+  arcblade:{id:'arcblade_astral',name:'Astral Blade',needs:'ink',lv:2,mods:{dmg:1.45,range:1.2},glow:'#ffffff'},
+  lance:{id:'lance_storm',name:'Storm Lance',needs:'homing',lv:1,mods:{dmg:1.4,pierce:1.6,rate:.8},glow:'#fff0a0'},
+  emberorb:{id:'emberorb_sun',name:'Little Sun',needs:'echo',lv:1,mods:{dmg:1.3,aoe:1.35},glow:'#ffd34a'},
+  frostfan:{id:'frostfan_blizzard',name:'Blizzard Fan',needs:'quick',lv:2,mods:{rate:.6,dmg:1.2},glow:'#c8f0ff'},
+  chainspark:{id:'chainspark_tempest',name:'Tempest Spark',needs:'swift',lv:2,mods:{dmg:1.4,orbitSpeed:1.3,range:1.25},glow:'#ffffff'},
 });
 Object.assign(COMBOS,{
-  'emberorb+lance':{id:'lance_plasma',name:'Plasma Lance',from:'lance',glow:'#ff6aff',mods:{dmg:1.4},extra:{aoe:44,fire:true,burnHit:true,kind:'ranged'}},
+  'emberorb+lance':{id:'lance_plasma',name:'Plasma Lance',from:'lance',glow:'#ff6aff',mods:{dmg:1.3},extra:{aoe:44,fire:true,burnHit:true,kind:'ranged'}},
   'arcblade+frostfan':{id:'arcblade_rime',name:'Rime Blade',from:'arcblade',glow:'#9fe0ff',mods:{dmg:1.3,range:1.3},extra:{frost:true}},
   'chainspark+emberorb':{id:'chainspark_wild',name:'Wildfire Spark',from:'chainspark',glow:'#ff8a3a',mods:{dmg:1.3},extra:{burnHit:true}},
 });
