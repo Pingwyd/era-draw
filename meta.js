@@ -57,7 +57,7 @@ home=function(){
     ${HUB.filter(h=>h.extra==='primary').map((h,i)=>`<button data-hub="${h.id}"><b>0${i+2}</b>${h.label}<i>&rarr;</i></button>`).join('')}
    </nav><nav class="subgrid">
     <button id="lo"><b>Loadout</b><span>${save.loadout.length}/${save.slots}</span></button><button data-hub="eras"><b>Eras</b><span>${E.no}</span></button>
-    ${HUB.filter(h=>h.extra!=='primary'&&h.id!=='eras').map(h=>`<button data-hub="${h.id}"><b>${h.label}</b></button>`).join('')}
+    ${HUB.filter(h=>h.extra!=='primary'&&h.id!=='eras'&&!(h.extra&&h.extra.hidden)).map(h=>`<button data-hub="${h.id}"><b>${h.label}</b></button>`).join('')}
     <button id="shop"><b>Shop</b></button><button id="set"><b>Settings</b></button><button id="how"><b>How to play</b></button></nav></div></div>`);startDiorama();
   $('play').onclick=()=>{goLandscape();startRun()};$('lo').onclick=loadout;$('shop').onclick=shop;$('how').onclick=how;$('set').onclick=settings;
   screenEl.querySelectorAll('[data-hub]').forEach(el=>el.onclick=()=>ROUTES[el.dataset.hub]());
