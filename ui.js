@@ -51,3 +51,30 @@ if(window.SAVE_RECOVERED)setTimeout(()=>toast(SAVE_RECOVERED==='backup'?'Your sa
 // global error state: tell the player once, keep the game usable
 (function(){let shown=0;const onErr=()=>{const n=Date.now();if(n-shown<30000)return;shown=n;try{persist()}catch(e){}if(typeof toast==='function')toast('Something went wrong. Your progress is saved; reload if the game misbehaves.')};
   addEventListener('error',e=>{if(e&&e.filename&&e.filename.indexOf(location.origin)!==0)return;onErr()});addEventListener('unhandledrejection',onErr)})();
+// ===== Loadout v2: era tabs, in-place updates (no re-render on hover/click, scroll is kept), sticky save =====
+const LO_ERAS=[['stone','Stone'],['bronze','Bronze'],['iron','Iron'],['mythic','Mythic']];
+loadout=function(){leaveRun();setRoute('loadout');const sel=save.loadout.slice();
+  const ids=Object.keys(CREATIONS).filter(k=>!CREATIONS[k].hidden);
+  const eraOf=id=>CREATIONS[id].era||'stone';const eras=LO_ERAS.filter(([e])=>ids.some(id=>eraOf(id)===e));
+  let tab=loadout.tab&&eras.some(e=>e[0]===loadout.tab)?loadout.tab:eraOf(sel[0]||ids[0]),focus=sel[0]||ids[0];
+  const cell=(id,i)=>{const d=CREATIONS[id],own=save.owned.includes(id),on=sel.includes(id);
+    return `<button class="cell ${on?'on':''} ${own?'':'lock'}" data-id="${id}" aria-pressed="${on}" aria-label="${d.name}${own?'':', locked'}${on?', equipped':''}"><span class="cell-h"><b>${String(i+1).padStart(2,'0')}</b><i class="chk">${on?'&#9632; Equipped':''}</i></span><img src="${ICON[id]}" alt=""><span class="nm">${d.name}</span><span class="sh">Draw a ${d.shape}</span><span class="st">${own?wStats(d):'Locked &middot; '+d.cost+' coins'}</span></button>`};
+  const pane=id=>detailPane(id,save.owned.includes(id)?'':`<p class="note">Unlock in the shop for ${CREATIONS[id].cost} coins.</p>`);
+  show(sheet('Loadout',`02 &mdash; Choose up to ${save.slots} &middot; <span id="loN">${sel.length}</span> selected`,`<div class="htabs lotabs" role="tablist">${eras.map(([e,n])=>`<button role="tab" data-era="${e}" aria-selected="${e===tab}" class="${e===tab?'on':''}">${n} <small>${ids.filter(id=>eraOf(id)===e&&sel.includes(id)).length||''}</small></button>`).join('')}</div>
+    <div class="split"><div class="lolist"><div class="tbl" id="loGrid" role="tabpanel"></div></div><div id="loPane">${pane(focus)}</div></div>
+    <div class="losave"><span class="lab" id="loSel"></span><button id="ok" class="btn pri">Save loadout</button></div>`));
+  const grid=$('loGrid');
+  const summary=()=>{$('loN').textContent=sel.length;$('loSel').textContent=sel.map(id=>CREATIONS[id].name).join(' · ')||'Nothing equipped';$('ok').disabled=!sel.length;
+    screenEl.querySelectorAll('[data-era]').forEach(b=>{const n=ids.filter(id=>eraOf(id)===b.dataset.era&&sel.includes(id)).length;b.querySelector('small').textContent=n||''})};
+  const setPane=id=>{if(focus===id)return;focus=id;$('loPane').innerHTML=pane(id)};
+  const fill=()=>{grid.innerHTML=ids.filter(id=>eraOf(id)===tab).map(cell).join('');grid.scrollTop=0;
+    grid.querySelectorAll('.cell').forEach(el=>{const id=el.dataset.id;
+      el.onmouseenter=()=>setPane(id);el.onfocus=()=>setPane(id);
+      el.onclick=()=>{setPane(id);if(!save.owned.includes(id)){toast('Unlock it in the shop');return}const i=sel.indexOf(id);if(i>=0)sel.splice(i,1);else if(sel.length<save.slots)sel.push(id);else{toast('Slots full');return}
+        const on=sel.includes(id);el.classList.toggle('on',on);el.setAttribute('aria-pressed',on);el.querySelector('.chk').innerHTML=on?'&#9632; Equipped':'';summary()}})};
+  screenEl.querySelectorAll('[data-era]').forEach(b=>b.onclick=()=>{tab=loadout.tab=b.dataset.era;screenEl.querySelectorAll('[data-era]').forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-selected',x===b)});fill()});
+  fill();summary();
+  $('ok').onclick=()=>{if(!sel.length)return;save.loadout=sel.slice();persist();toast('Loadout saved');home()};$('back').onclick=home};
+// shop: hovering no longer rebuilds the page (it reset the scroll); swap the detail pane in place
+const _uiShop=shop;shop=function(){_uiShop();screenEl.querySelectorAll('.li').forEach(el=>{const b=el.querySelector('.buy');if(!b)return;el.onmouseenter=()=>{const id=b.dataset.id;if(shop.focus===id)return;shop.focus=id;
+  const f=SHOP.find(s=>s.id===id);const old=screenEl.querySelector('.split > .pane, .split > aside');if(f&&f.type==='creation'&&old){const t=document.createElement('div');t.innerHTML=detailPane(id);old.replaceWith(t.firstElementChild)}}})};
