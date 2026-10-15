@@ -268,7 +268,7 @@ function killEnemy(e){
   G.kills++;sfx('kill');burst(e.x,e.y,e.T.col,e.T.boss?50:7);burst(e.x,e.y,'#1a0f0e',e.T.boss?20:3);if(e.T.boss||e.T.elite)ring(e.x,e.y,e.T.boss?120:50,'#ffe08a');
   G.ink.push({x:e.x,y:e.y,r:e.r*rnd(.8,1.4),a:.35});if(G.ink.length>120)G.ink.shift();
   G.orbs.push({x:e.x,y:e.y,v:e.T.xp,t:0});
-  if(e.T.boss||(chestOk()&&((e.T.elite&&Math.random()<.12)||e.champ))){G.chests.push({x:e.x,y:e.y,boss:!!e.T.boss});if(e.T.boss){toast(e.T.name+' falls!');G.shake=14}}
+  if(e.T.boss||(chestOk()&&((e.T.elite&&Math.random()<.07)||e.champ))){G.chests.push({x:e.x,y:e.y,boss:!!e.T.boss});if(e.T.boss){toast(e.T.name+' falls!');G.shake=14}}
 }
 // balance: at most CHEST_CAP non-boss chests on the map at once; boss chests always drop
 const CHEST_CAP=2;function chestOk(){return !G||G.chests.filter(c=>!c.boss).length<CHEST_CAP}

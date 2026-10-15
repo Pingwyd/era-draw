@@ -137,12 +137,12 @@ hub('daily','Daily',daily);
 // ================= CHEST ROULETTE =================
 function openChest(c){
   G.paused=true;stick.id=null;stick.active=false;G.drawing=null;
-  const r=Math.random(),n=c.boss?(r<.35?5:3):(r<.12?5:r<.35?3:1);
+  const r=Math.random(),n=c.boss?(r<.6?3:1):(r<.15?3:1); // max 3 rewards: outcomes are 1 or 3
   const pool=POWERUPS.filter(pu=>!pu.max||(G.picks[pu.id]||0)<pu.max);const rewards=[];
-  for(let i=0;i<n;i++){const pu=pool[Math.floor(Math.random()*pool.length)];rewards.push({pu,r:Math.random()<.06*n?2:Math.random()<.4?1:0})}
+  for(let i=0;i<n;i++){const pu=pool[Math.floor(Math.random()*pool.length)];rewards.push({pu,r:Math.random()<.05*n?2:Math.random()<.4?1:0})}
   sfx('chest');haptic([20,40,20,40,60]);
   show(`<div class="sheet lv chestr"><header class="row"><span class="lab">${c.boss?'Boss chest':'Chest'} &middot; +25 coins</span><span class="lab">${n} reward${n>1?'s':''}</span></header>
-   <h2 class="disp">${n===5?'Jackpot':n===3?'Treasure trove':'Treasure'}</h2>
+   <h2 class="disp">${n===3?'Jackpot':'Treasure'}</h2>
    <div class="reels">${rewards.map((_,i)=>`<div class="reel" id="reel${i}"><img alt=""></div>`).join('')}</div>
    <div class="rlist" id="rlist"></div><button class="btn pri" id="rok" disabled>Collect</button></div>`);
   const ids=POWERUPS.map(p=>p.id);let t=0;
@@ -171,7 +171,7 @@ const PICKUPS={
 };
 function dropPickup(x,y,type){if(!type){const tot=Object.values(PICKUPS).reduce((a,b)=>a+b.w,0);let r=Math.random()*tot;for(const k in PICKUPS){r-=PICKUPS[k].w;if(r<=0){type=k;break}}}
   (G.pickups||(G.pickups=[])).push({x,y,type,t:0})}
-runHooks.push(G=>{G.pickups=[];G.pickT=30;G.mapChestT=75});
+runHooks.push(G=>{G.pickups=[];G.pickT=30;G.mapChestT=110});
 function updatePickups(dt){const p=G.player;if(!G.pickups)G.pickups=[];
   G.pickT-=dt;if(G.pickT<=0){G.pickT=24+Math.random()*12;const a=Math.random()*6.283,d=170+Math.random()*130;dropPickup(p.x+Math.cos(a)*d,p.y+Math.sin(a)*d)}
   for(let i=G.pickups.length-1;i>=0;i--){const k=G.pickups[i];k.t+=dt;if(k.t>60){G.pickups.splice(i,1);continue}
@@ -295,10 +295,10 @@ const LOOT_COL={chest:'#ffd34a',magnet:'#ff6a5a',meat:'#8fe07a',bomb:'#ffb13a'};
 const HI={};function hiSpr(key,src,col){return HI[key]||(HI[key]=outline(src,col))}
 // timed map chests + champions (glowing elites that always drop a chest)
 const _updL=updatePickups;updatePickups=function(dt){_updL(dt);if(mode!=='run'||!G)return;const p=G.player;
-  G.mapChestT-=dt;if(G.mapChestT<=0){G.mapChestT=100+Math.random()*25;if(!chestOk())return;const a=Math.random()*6.283,d=200+Math.random()*120;G.chests.push({x:p.x+Math.cos(a)*d,y:p.y+Math.sin(a)*d});toast('A chest appeared nearby')}
+  G.mapChestT-=dt;if(G.mapChestT<=0){G.mapChestT=150+Math.random()*40;if(!chestOk())return;const a=Math.random()*6.283,d=200+Math.random()*120;G.chests.push({x:p.x+Math.cos(a)*d,y:p.y+Math.sin(a)*d});toast('A chest appeared nearby')}
   G.lootFx=(G.lootFx||0)-dt;if(G.lootFx<=0){G.lootFx=.12;const all=[...G.chests,...G.pickups];if(all.length){const o=all[Math.floor(Math.random()*all.length)];G.fx.push({x:o.x+rnd(-10,10),y:o.y-rnd(4,22),vx:0,vy:-20,life:.6,max:.6,col:'#fff6c8',r:1.5})}}};
 const _spE=spawnEnemy;spawnEnemy=function(){const e=_spE.apply(this,arguments);
-  if(e&&e.T&&!e.T.boss&&!e.T.elite&&G.t>60&&Math.random()<.004){e.champ=true;e.hp*=6;if(e.maxHp)e.maxHp*=6;if(e.hpMax)e.hpMax*=6}return e};
+  if(e&&e.T&&!e.T.boss&&!e.T.elite&&G.t>90&&Math.random()<.0025){e.champ=true;e.hp*=6;if(e.maxHp)e.maxHp*=6;if(e.hpMax)e.hpMax*=6}return e};
 function drawLootTop(){if(!G)return;const t=G.t,pulse=.5+.5*Math.sin(t*5);
   const items=[...G.chests.map(c=>({o:c,k:'chest',spr:SPR.chest})),...(G.pickups||[]).map(k=>({o:k,k:k.type,spr:SPR.pick[k.type]}))];
   for(const it of items){const o=it.o,col=LOOT_COL[it.k];if(it.k!=='chest'&&o.t>54&&(Math.floor(o.t*8)&1))continue;
