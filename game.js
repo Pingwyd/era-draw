@@ -267,7 +267,7 @@ function killEnemy(e){
   const i=G.enemies.indexOf(e);if(i>=0)G.enemies.splice(i,1);
   G.kills++;sfx('kill');burst(e.x,e.y,e.T.col,e.T.boss?50:7);burst(e.x,e.y,'#1a0f0e',e.T.boss?20:3);if(e.T.boss||e.T.elite)ring(e.x,e.y,e.T.boss?120:50,'#ffe08a');
   G.ink.push({x:e.x,y:e.y,r:e.r*rnd(.8,1.4),a:.35});if(G.ink.length>120)G.ink.shift();
-  G.orbs.push({x:e.x,y:e.y,v:e.T.xp*(ERA_XP[CURRENT_ERA]||1),t:0});
+  G.orbs.push({x:e.x,y:e.y,v:e.T.xp*(ERA_XP[CURRENT_ERA]||1)*(1+Math.max(0,G.t-240)/300),t:0});
   if(e.T.boss||(chestOk()&&((e.T.elite&&Math.random()<.07)||e.champ))){G.chests.push({x:e.x,y:e.y,boss:!!e.T.boss});if(e.T.boss){toast(e.T.name+' falls!');G.shake=14}}
 }
 // balance: at most CHEST_CAP non-boss chests on the map at once; boss chests always drop
@@ -295,7 +295,7 @@ function eraBossesDone(){const need=(G.era.bosses||[]).filter(b=>b.t<=ERA_CLEAR_
 function finalBoss(){const b=(G.era.bosses||[]).find(x=>x.t===ERA_CLEAR_T);return b&&b.type}
 // pacing (sims): ~L9 at 5:00, ~L14-15 at 10:00 in every era; gem XP normalized per era via ERA_XP
 function xpFor(l){return Math.round(1.25*(14+3.2*Math.pow(l,1.45))*(1+.1*Math.floor(l/10)))}
-const ERA_XP={stone:1,bronze:1,iron:2.1,mythic:.52};
+const ERA_XP={stone:1,bronze:1,iron:2.1,mythic:.68};
 function damagePlayer(d){
   if(!G||G.dead)return;const p=G.player;p.hp-=d;p.invul=0.5;sfx('hurt');haptic(35);G.shake=8;burst(p.x,p.y,'#ff6b6b',10);
   if(p.hp<=0){
