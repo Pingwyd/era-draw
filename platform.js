@@ -12,7 +12,7 @@ persist();
 if(SMALL_SCREEN)document.documentElement.classList.add('small');
 if(IS_IOS)document.documentElement.classList.add('ios');
 // service worker (offline play)
-if('serviceWorker' in navigator&&location.protocol!=='file:')addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+if('serviceWorker' in navigator&&location.protocol!=='file:')addEventListener('load',()=>navigator.serviceWorker.register('sw.js').then(r=>{if(window.swWatch)swWatch(r)}).catch(()=>{}));
 // install prompts
 let deferredPrompt=null;
 addEventListener('beforeinstallprompt',e=>{e.preventDefault();deferredPrompt=e;showInstall()});

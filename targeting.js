@@ -21,9 +21,7 @@ function lockToward(ang){const p=G.player;let best=null,bs=-1e9;for(const t of t
 // tap / click an enemy to lock it (a tiny stroke that isn't a shape)
 const _tgFinish=finishDraw;finishDraw=function(){const d=G&&G.drawing;
   if(d&&d.pts.length){let x0=1e9,x1=-1e9,y0=1e9,y1=-1e9;for(const q of d.pts){x0=Math.min(x0,q.x);x1=Math.max(x1,q.x);y0=Math.min(y0,q.y);y1=Math.max(y1,q.y)}
-    if(x1-x0<16&&y1-y0<16&&performance.now()-d.t0<400){G.drawing=null;const q=d.pts[0],wx=(q.x-W/2)/S*Z+cam.x,wy=(q.y-H/2)/S*Z+cam.y;
-      let best=null,bd=1e9;for(const t of targetables()){const dd=Math.hypot(t.x-wx,(t.y-(t.prop?8:t.r*.6))-wy)-(t.r||10);if(dd<bd){bd=dd;best=t}}
-      if(best&&bd<34){setLock(best);floatText(best.x,best.y-(best.r||10)-24,'LOCKED','#ff6a5a',.6,9)}else if(G.lock){setLock(null);floatText(G.player.x,G.player.y-40,'lock off','#cfc3a8',.5,9)}return}}
+    if(x1-x0<16&&y1-y0<16&&performance.now()-d.t0<400){G.drawing=null;tgTapAt(d.pts[0].x,d.pts[0].y,true);return}}
   return _tgFinish()};
 addEventListener('keydown',e=>{if(mode!=='run'||!G||BINDING)return;const k=e.key.length===1?e.key.toLowerCase():e.key.toLowerCase();if(keyAction(k)==='target'||(k==='tab'&&keyBinds().target==='tab')){e.preventDefault();if(!e.repeat)cycleTarget()}});
 let tgPrev=false,tgStickT=0;
@@ -40,3 +38,15 @@ const _tgTop=drawLootTop;drawLootTop=function(){_tgTop();const t=G&&G.lock;if(!t
   bx.lineWidth=3;bx.strokeStyle='#1a0f0e';bx.beginPath();bx.arc(cx,cy,r,0,6.283);bx.stroke();bx.lineWidth=1;bx.strokeStyle=col;bx.globalAlpha=.85;bx.beginPath();bx.arc(cx,cy,r,0,6.283);bx.stroke();bx.globalAlpha=1;
   const R=r+3;for(const [sx,sy] of [[-1,-1],[1,-1],[-1,1],[1,1]]){const x=cx+sx*R,y=cy+sy*R;bx.fillStyle='#1a0f0e';bx.fillRect((sx<0?x:x-L+1)-1,y-1,L+2,3);bx.fillRect(x-1,(sy<0?y:y-L+1)-1,3,L+2);bx.fillStyle=col;bx.fillRect(sx<0?x:x-L+1,y,L,1);bx.fillRect(x,sy<0?y:y-L+1,1,L)}
   const ay=cy-R-4-Math.round(pu*2);bx.fillStyle='#1a0f0e';bx.beginPath();bx.moveTo(cx-4,ay-4);bx.lineTo(cx+4,ay-4);bx.lineTo(cx,ay+1);bx.fill();bx.fillStyle=col;bx.beginPath();bx.moveTo(cx-3,ay-3);bx.lineTo(cx+3,ay-3);bx.lineTo(cx,ay);bx.fill()};
+
+// screen (CSS px) -> world, exact inverse of X()/Y()
+function tgScreenToWorld(cx,cy){const c=document.getElementById('c'),r=c.getBoundingClientRect(),bxp=(cx-r.left)/S,byp=(cy-r.top)/S;return {x:(bxp-BW/2-ox)*Z+cam.x,y:(byp-BH/2-oy)*Z+cam.y}}
+function tgTapAt(cx,cy,canUnlock){const w=tgScreenToWorld(cx,cy);let best=null,bd=1e9;
+  for(const t of targetables()){const dd=Math.hypot(t.x-w.x,(t.y-(t.prop?8:(t.r||10)*.6))-w.y)-(t.r||10);if(dd<bd){bd=dd;best=t}}
+  if(best&&bd<34*Math.max(1,Z)){setLock(best);floatText(best.x,best.y-(best.r||10)-24,'LOCKED','#ffd34a',.6,9);return true}
+  if(canUnlock&&G.lock){setLock(null);floatText(G.player.x,G.player.y-40,'lock off','#cfc3a8',.5,9)}return false}
+// touch: a quick tap on the movement (left) side can also lock an enemy, without unlocking on misses
+(function(){let t0=null;const cv=document.getElementById('c');
+  cv.addEventListener('pointerdown',e=>{if(e.pointerType!=='mouse'&&mode==='run'&&e.clientX<W*.5)t0={id:e.pointerId,x:e.clientX,y:e.clientY,t:performance.now(),moved:false}},true);
+  cv.addEventListener('pointermove',e=>{if(t0&&e.pointerId===t0.id&&Math.hypot(e.clientX-t0.x,e.clientY-t0.y)>12)t0.moved=true},true);
+  cv.addEventListener('pointerup',e=>{if(!t0||e.pointerId!==t0.id)return;const ok=!t0.moved&&performance.now()-t0.t<260;const q=t0;t0=null;if(ok&&G&&!G.paused)tgTapAt(q.x,q.y,false)},true)})();
