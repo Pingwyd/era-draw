@@ -99,7 +99,7 @@ function enhSprite(c,k){const p=1,cw=Math.round(c.width*k),ch=Math.round(c.heigh
   const [s,sx]=mk(cw,ch);sx.drawImage(c,0,0,cw,ch);
   const [l,lx]=mk(s.width,s.height);lx.drawImage(s,0,0);lx.globalCompositeOperation='source-in';lx.fillStyle='rgba(255,240,214,.45)';lx.fillRect(0,0,l.width,l.height);
   for(const [dx,dy] of [[-1,0],[1,0],[0,-1],[0,1]])x.drawImage(l,p+dx,p+dy);x.drawImage(s,p,p);return o}
-(function(){const done=new Set();for(const key in SPR.en){const st=SPR.en[key];if(!st||done.has(st))continue;done.add(st);const m=Math.max(st.w,st.h),k=m<=9?2:st.w*st.h<=110?1.5:1;
+(function(){const done=new Set();for(const key in SPR.en){const st=SPR.en[key];if(!st||done.has(st))continue;done.add(st);const m=Math.max(st.w,st.h),k=(key==='insect'||key==='pgnat')?1.5:m<=9?2:st.w*st.h<=110?1.5:1;
   const fix=f=>{for(const n of ['r','l'])if(f[n]&&f[n].width)f[n]=enhSprite(f[n],k);for(const n of ['wr','wl'])if(f[n]&&f[n].width)f[n]=enhW(f[n],k);f.w=f.r.width;f.h=f.r.height};
   if(st.frames)st.frames.forEach(fix);fix(st);if(k>1)st.big=true}})();
 function enhW(c,k){const cw=Math.round(c.width*k),ch=Math.round(c.height*k),[s,sx]=mk(cw+2,ch+2);sx.drawImage(c,1,1,cw,ch);return s}
