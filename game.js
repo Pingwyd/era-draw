@@ -446,6 +446,7 @@ function renderInner(dt){
   for(const o of G.orbs){if(!onScr(o.x,o.y,12))continue;const im=orbSprite(o);bx.drawImage(im,X(o.x)-(im.width>>1),Y(o.y)-(im.height>>1)-((Math.floor(G.t*3+o.x*.1)&1)))}
   if(G.chests)for(const c of G.chests){shadow(c.x,c.y,6);blit(SPR.chest,c.x,c.y-((Math.floor(G.t*4)&1)))}
   if(window.renderPickups)renderPickups();
+  drawBossGround();
   // y-sorted actors
   const actors=[];for(const e of G.enemies)if(onScr(e.x,e.y,48))actors.push(e);actors.push(p);for(const c of G.creations)if(c.def.kind==='melee')actors.push(c);
   actors.sort((a,b)=>a.y-b.y);
@@ -536,13 +537,27 @@ function drawPlayer(p){
   // hp bar under player
   const w=16,sx=X(p.x)-8,sy=Y(p.y)+3;bx.fillStyle='#1a0f0e';bx.fillRect(sx-1,sy-1,w+2,4);bx.fillStyle='#4a1a1e';bx.fillRect(sx,sy,w,2);bx.fillStyle='#e0504e';bx.fillRect(sx,sy,Math.round(w*clamp(p.hp/p.maxHp,0,1)),2);
 }
+function drawBossGround(){for(const e of G.enemies){if(!e.T.boss)continue;
+    if(e.leap&&onScr(e.leap.x,e.leap.y,120)){const k=1-e.leap.t/e.leap.max,r=Math.round((10+e.r*1.6)/Z*(.4+.6*k));const sx=X(e.leap.x),sy=Y(e.leap.y);
+      bx.strokeStyle=(Math.floor(G.t*12)%2)?'#ff5a4a':'#ffe08a';bx.lineWidth=1;bx.beginPath();bx.ellipse(sx+.5,sy+.5,r,Math.max(2,r*.5),0,0,6.283);bx.stroke();
+      bx.fillStyle='rgba(255,70,50,.22)';bx.beginPath();bx.ellipse(sx,sy,r*k,Math.max(1,r*.5*k),0,0,6.283);bx.fill();SCREEN_LABELS.push({txt:'!',x:sx-1,y:sy-r*.5-3,col:'#ff5a4a',size:7})}
+    if(!onScr(e.x,e.y,90))continue;const pr=(e.r*1.25+6+Math.sin(G.t*4)*3)/Z,sx=X(e.x),sy=Y(e.y);
+    bx.strokeStyle=e.type===finalBoss()?'#ff5a4a':'#ffe08a';bx.globalAlpha=.55+.3*Math.sin(G.t*4);bx.lineWidth=1;bx.beginPath();bx.ellipse(sx+.5,sy+.5,pr,Math.max(2,pr*.45),0,0,6.283);bx.stroke();
+    bx.globalAlpha=.18;bx.fillStyle=bx.strokeStyle;bx.beginPath();bx.ellipse(sx,sy,pr*.8,Math.max(1,pr*.36),0,0,6.283);bx.fill();bx.globalAlpha=1}}
+const MARK_CROWN=['g.g.g','ggggg','gyggy'.replace(/y/g,'g'),'ggggg'],MARK_SKULL=['.www.','wwwww','wkwkw','.www.','.w.w.'];
+function drawBossMark(e,top){const fin=e.type===finalBoss(),art=fin?MARK_SKULL:MARK_CROWN,c={g:'#ffd23a',w:'#f4ead2',k:'#1a0f0e'},bob=Math.round(Math.sin(G.t*3));
+  const sx=X(e.x)-2,sy=top-art.length+bob;bx.fillStyle='#1a0f0e';bx.fillRect(sx-1,sy-1,7,art.length+2);
+  art.forEach((row,j)=>{for(let i=0;i<row.length;i++){const ch=row[i];if(ch==='.')continue;bx.fillStyle=c[ch];bx.fillRect(sx+i,sy+j,1,1)}})}
 function drawEnemy(e){
   const st=e.T.spr?SPR.en[e.T.spr]:blobSprite(e.T);
   const left=G.player.x<e.x;shadow(e.x,e.y,Math.max(3,Math.round(st.w/3)));
   const frame=st.frames?st.frames[Math.floor((G.t*6+e.wob))%st.frames.length]:st;
   const im=e.flash>0?(left?frame.wl:frame.wr):(left?frame.l:frame.r);
   const hop=(Math.floor(G.t*6+e.wob)&1)&&!st.frames?1:0;
+  if(e.T.boss){const wim=left?frame.wl:frame.wr,ix=X(e.x)-(im.width>>1),iy=Y(e.y)-im.height+2-hop;bx.globalAlpha=.7+.3*Math.sin(G.t*6);
+    for(const [dx,dy] of [[-1,0],[1,0],[0,-1],[0,1]])bx.drawImage(wim,ix+dx,iy+dy);bx.globalAlpha=1}
   bx.drawImage(im,X(e.x)-(im.width>>1),Y(e.y)-im.height+2-hop);
+  if(e.T.boss)drawBossMark(e,Y(e.y)-im.height-9-hop);
   if(e.T.boss||e.T.elite){const w=Math.max(16,st.w),sx=X(e.x)-(w>>1),sy=Y(e.y)-im.height-3;bx.fillStyle='#1a0f0e';bx.fillRect(sx-1,sy-1,w+2,4);bx.fillStyle='#e0504e';bx.fillRect(sx,sy,Math.round(w*clamp(e.hp/e.maxHp,0,1)),2)}
 }
 function drawCreation(c){
