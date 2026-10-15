@@ -19,7 +19,7 @@ Object.assign(ERAS.iron,{date:'c. 800 BC',no:'III',locked:true,lore:'Coming soon
 // ---- Bronze Age creations (same shapes, stronger, more durable) ----
 Object.assign(CREATIONS,{
   sword:  { name:'Bronze Sword', era:'bronze', shape:'short line', shapeKey:'short', kind:'melee', dmg:25, life:9, uses:36, rate:0.45, range:76, knock:220, cost:300 },
-  javelin:{ name:'Javelin', era:'bronze', shape:'long line', shapeKey:'long', kind:'ranged', dmg:23, life:10, uses:16, rate:0.7, speed:700, pierce:5, proj:'spear', cost:350 },
+  javelin:{ name:'Javelin', era:'bronze', shape:'long line', shapeKey:'long', kind:'ranged', dmg:21, life:10, uses:16, rate:0.7, speed:700, pierce:5, proj:'spear', cost:350 },
   discus: { name:'Discus', era:'bronze', shape:'circle', shapeKey:'circle', kind:'ranged', dmg:28, life:10, uses:12, rate:1.0, speed:460, aoe:80, proj:'rock', cost:350 },
 });
 SHOP.splice(2,0,{id:'sword',type:'creation',cost:300,cur:'coins',era:'bronze'},{id:'javelin',type:'creation',cost:350,cur:'coins',era:'bronze'},{id:'discus',type:'creation',cost:350,cur:'coins',era:'bronze'});

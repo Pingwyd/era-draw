@@ -51,7 +51,7 @@ Object.assign(CREATIONS,{
   lance:   {name:'Lightning Lance',era:'mythic',shape:'long line',shapeKey:'long',kind:'ranged',dmg:52,life:11,uses:18,rate:.75,speed:1100,pierce:9,proj:'spear',cost:950,shock:true},
   emberorb:{name:'Ember Orb',era:'mythic',shape:'circle',shapeKey:'circle',kind:'ranged',dmg:48,life:10,uses:14,rate:1.0,speed:420,aoe:110,proj:'rock',fire:true,cost:1000,burnHit:true},
   frostfan:{name:'Frost Fan',era:'mythic',shape:'V shape',shapeKey:'v',kind:'ranged',dmg:17,life:11,uses:44,rate:.3,speed:760,pierce:2,proj:'sling',multishot:3,cost:950,frost:true},
-  chainspark:{name:'Chain Spark',era:'mythic',shape:'zigzag',shapeKey:'zig',kind:'melee',dmg:24,life:10,uses:70,rate:.2,range:58,knock:60,orbitSpeed:6,cost:950,chain:true},
+  chainspark:{name:'Chain Spark',era:'mythic',shape:'zigzag',shapeKey:'zig',kind:'melee',dmg:26,life:10,uses:70,rate:.2,range:58,knock:60,orbitSpeed:6,cost:950,chain:true},
 });
 SHAPE_KEY.arcblade='short';SHAPE_KEY.chainspark='zig';SHAPE_KEY.frostfan='v';
 const MY='#e0b0ff';
