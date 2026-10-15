@@ -250,3 +250,17 @@ body.hud-parch #hudL b,body.hud-parch #hpt,body.hud-parch #timer,body.hud-parch 
 body.hud-parch .hbar{background:#3a2a16;border-color:#d8c49a}body.hud-parch #hpb{background:#a8652e}body.hud-parch #xptop{background:#3a2a16}body.hud-parch #xpb{background:#d8c49a}
 body.hud-neon #hudL b,body.hud-neon #hpt,body.hud-neon #timer,body.hud-neon #wave,body.hud-neon #lvt,body.hud-neon #hudR{color:#7ff6ff;text-shadow:0 0 6px #ff4ad8}
 body.hud-neon .hbar{border-color:#ff4ad8;box-shadow:0 0 6px #ff4ad8}body.hud-neon #hpb{background:#ff4ad8}body.hud-neon #xpb{background:#7ff6ff;box-shadow:0 0 6px #7ff6ff}
+/* ===== build system ===== */
+.pick.skill{border-color:#ffd34a;box-shadow:inset 0 0 0 1px rgba(255,211,74,.35);background:linear-gradient(180deg,rgba(255,211,74,.08),transparent 55%)}
+.pick.skill .pk-rar,.pick.skill .lvtag{color:#ffd34a}
+.rr small{display:block;font:11px VT323,monospace;color:var(--mute);margin-top:2px;max-width:150px}
+.build .bitem{display:flex;align-items:center;gap:6px;width:100%;background:none;border:0;color:inherit;font:inherit;padding:2px 0;cursor:pointer;text-align:left}
+.build .bitem:hover span,.build .bitem:focus span{text-decoration:underline}
+.build .bitem.skill span{color:#ffd34a}
+.build .bitem em{margin-left:auto}
+#bpop{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%);z-index:30;background:#1a0f10;border:1px solid #ffd34a;padding:12px 14px;min-width:240px;max-width:min(92vw,420px);max-height:86vh;overflow:auto;box-shadow:0 10px 40px rgba(0,0,0,.6)}
+#bpop .bp-h{display:flex;align-items:center;gap:8px;margin-bottom:8px}#bpop .bp-h img{width:28px;height:28px;image-rendering:pixelated}
+#bpop .bp-h b{font-family:'Instrument Serif',serif;font-size:22px;font-weight:400}#bpop .bp-h i{margin-left:auto;font:9px Silkscreen,monospace;color:var(--mute)}
+#bpop li.on span{color:#ffd34a}#bpop .btn{margin-top:8px}
+#tbuffs{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 74px);transform:translateX(-50%);display:flex;gap:4px;z-index:5;pointer-events:none}
+#tbuffs span{font:9px Silkscreen,monospace;border:1px solid;padding:2px 5px;background:rgba(20,11,12,.8)}
