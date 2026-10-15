@@ -24,9 +24,11 @@ function padPoll(){requestAnimationFrame(padPoll);const g=p1Pad();if(!g){if(padM
     padAimHeld=Math.hypot(rx,ry)>.35;if(padAimHeld)padAim=Math.atan2(ry,rx);
     // in-run buttons come from the (remappable) binding table: PAD_BIND[action] = button index
     const B=padBinds(),hb=i=>pressed(g,i)&&!padRaw[i];
+    if(window.tutFrozen&&tutFrozen()){if(hb(0))tutAck();if(hb(B.skip)){const k=document.querySelector('[data-skip]');k&&k.click()}padRaw=g.buttons.map((_,i)=>pressed(g,i));return}
+    if(hb(B.skip)){const k=document.querySelector('[data-skip]');if(k){k.click();padRaw=g.buttons.map((_,i)=>pressed(g,i));return}}
     if(hb(B.dash))tryDash();if(!save.padDraw){if(hb(B.cast1))padCast(0);if(hb(B.cast2))padCast(1);if(hb(B.cast3))padCast(2);if(hb(B.cast4))padCast(3)}
     if(hb(B.pause))key('Escape');if(B.shot!=null&&hb(B.shot)&&window.takeShot)takeShot();padRaw=g.buttons.map((_,i)=>pressed(g,i));return}
-  padRaw=g.buttons.map((_,i)=>pressed(g,i));
+  {const B=padBinds(),k=document.querySelector('[data-skip]');if(k&&pressed(g,B.skip)&&!padRaw[B.skip])k.click()}padRaw=g.buttons.map((_,i)=>pressed(g,i));
   if(padMoving){stick.active=false;padMoving=false}
   const t=performance.now();const vx=hit('RIGHT')?1:hit('LEFT')?-1:0,vy=hit('DOWN')?1:hit('UP')?-1:0;
   if(vx||vy)padNavMove(vx+vy,vx,vy);else if(lm>.6&&t-padNav>220){padNav=t;const h=Math.abs(lx)>Math.abs(ly);padNavMove((h?lx:ly)>0?1:-1,h?Math.sign(lx):0,h?0:Math.sign(ly))}
