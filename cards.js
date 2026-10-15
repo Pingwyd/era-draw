@@ -12,14 +12,14 @@ const NEW_CARDS=[
   art:['m.......m','mm.....mm','.mm...mm.','..mbbbm..','...bBb...','...bBb...','...bBb...','...bBb...','...w.w...']},
  {id:'hide',  name:'Thick Hide',  base:'common',desc:r=>`-${pct([.05,.08,.12],r)}% damage taken`,apply:(p,r)=>p.armor=Math.max(.5,(p.armor||1)*(1-[.05,.08,.12][r])),
   art:['.ffffff..','fFffffFf.','fffFFfff.','ffFffFff.','fffFFfff.','.fffffff.','..fffff..','...fff...','....f....']},
- {id:'regrow',name:'Regrowth',    base:'common',desc:r=>`Regenerate ${[.4,.6,1][r]} HP per second`,apply:(p,r)=>p.regen=(p.regen||0)+[.4,.6,1][r],
+ {id:'regrow',name:'Regrowth',    base:'common',desc:r=>`Regenerate ${[.2,.3,.5][r]} HP per second`,apply:(p,r)=>p.regen=(p.regen||0)+[.2,.3,.5][r],
   art:['....n....','...nnn...','..nNnNn..','.nnNnNnn.','..nNNNn..','....N....','....N....','...NNN...','..N.N.N..']},
  {id:'longshot',name:'Long Shot', base:'common',desc:r=>`+${pct([.1,.15,.22],r)}% projectile speed & reach`,apply:(p,r)=>p.reach=(p.reach||1)*(1+[.1,.15,.22][r]),
   art:['.........','.......y.','......yyk','yyyyyyyyy','yyyyyyyyy','......yyk','.......y.','.........','.........']},
  {id:'hunger',name:'Gem Hunger',  base:'common',desc:r=>`+${pct([.06,.09,.14],r)}% XP from gems`,apply:(p,r)=>p.xpMul=(p.xpMul||1)*(1+[.06,.09,.14][r]),
   art:['....e....','...eEe...','..eeEee..','.eeeEeee.','eeeeEeeee','.eeeEeee.','..eeEee..','...eEe...','....e....']},
  // ---- rare: behaviour ----
- {id:'vamp',  name:'Vampiric Ink',base:'rare',desc:r=>`Heal ${[1,1.5,2.5][r]}% of damage dealt (max 4 HP/s)`,apply:(p,r)=>p.vamp=(p.vamp||0)+[.01,.015,.025][r],
+ {id:'vamp',  name:'Vampiric Ink',base:'rare',desc:r=>`Heal ${[.4,.6,1][r]}% of damage dealt (max 1.5 HP/s)`,apply:(p,r)=>p.vamp=(p.vamp||0)+[.004,.006,.01][r],
   art:['..m...m..','.mMm.mMm.','.mmmmmmm.','.mmmmmmm.','..mmmmm..','...mmm...','....m....','....M....','.........']},
  {id:'exec',  name:'Executioner', base:'rare',desc:r=>`+${pct([.2,.3,.45],r)}% damage to enemies under 30% HP`,apply:(p,r)=>p.exec=(p.exec||0)+[.2,.3,.45][r],
   art:['..ttttt..','.tTTTTTt.','..ttttt..','....b....','....b....','....b....','....b....','....B....','....B....']},
@@ -54,7 +54,7 @@ const NERF={ink:[.08,.12,.18],quick:[.07,.11,.16],swift:[.06,.09,.14],iron:[.08,
 for(const pu of POWERUPS){const v=NERF[pu.id];if(!v)continue;const P=n=>Math.round(n*100);
   const D={ink:r=>`+${P(v[r])}% creation damage`,quick:r=>`-${P(v[r])}% cast cooldown`,swift:r=>`+${P(v[r])}% move speed`,iron:r=>`+${P(v[r])}% max HP & heal`,magnet:r=>`+${P(v[r])}% pickup range`,
    heavy:r=>`+${P(v[r])}% creation durability`,focus:r=>`+${v[r]}s slow-mo (cap ${MAX_FOCUS}s)`,homing:r=>`Projectiles home ${['slightly','well','fiercely'][r]}`,echo:r=>`${P(v[r])}% chance a creation spawns twice (cap 45%)`,coin:r=>`+${P(v[r])}% coins this run`}[pu.id];
-  const A={ink:(p,r)=>p.dmgMul*=1+v[r],quick:(p,r)=>p.cdMul*=1-v[r],swift:(p,r)=>p.speed*=1+v[r],iron:(p,r)=>{const m=1+v[r];p.maxHp*=m;p.hp=Math.min(p.maxHp,p.hp*m+10)},magnet:(p,r)=>p.magnet*=1+v[r],
+  const A={ink:(p,r)=>p.dmgMul*=1+v[r],quick:(p,r)=>p.cdMul*=1-v[r],swift:(p,r)=>p.speed*=1+v[r],iron:(p,r)=>{const m=1+v[r];p.maxHp*=m;p.hp=Math.min(p.maxHp,p.hp*m+4)},magnet:(p,r)=>p.magnet*=1+v[r],
    heavy:(p,r)=>p.durMul*=1+v[r],focus:(p,r)=>p.focus=Math.min(MAX_FOCUS,p.focus+v[r]),homing:(p,r)=>p.homing+=v[r],echo:(p,r)=>p.echo=Math.min(.45,p.echo+v[r]),coin:(p,r)=>p.coinMul*=1+v[r]}[pu.id];
   pu.desc=D;pu.apply=A}
 for(const c of NEW_CARDS){const {art,...pu}=c;POWERUPS.push(pu);SPR.pu[c.id]=outline(grid(art));ICON['pu_'+c.id]=iconURL(SPR.pu[c.id],4)}
@@ -93,7 +93,7 @@ DMG_MODS.push((e,d,src,from)=>{const p=G.player;if(!p)return d;
   if(p.crit&&Math.random()<p.crit){d*=2;if(Math.random()<.3)floatText(e.x,e.y-28,'CRIT','#ffe08a',.5,11)}
   if(p.vamp&&G.vampBudget>0){const h=Math.min(G.vampBudget,d*p.vamp);G.vampBudget-=h;p.hp=Math.min(p.maxHp,p.hp+h)}
   return d});
-CAVE_TICK.push(dt=>{const p=G.player;if(p.regen&&p.hp>0)p.hp=Math.min(p.maxHp,p.hp+p.regen*dt);G.vampBudget=Math.min(4,(G.vampBudget||0)+4*dt);
+CAVE_TICK.push(dt=>{const p=G.player;if(p.regen&&p.hp>0)p.hp=Math.min(p.maxHp,p.hp+p.regen*dt);G.vampBudget=Math.min(1.5,(G.vampBudget||0)+1.5*dt);
   if(G.rushT>0)G.rushT-=dt;
   const want=(G.rushT>0?1+p.rush:1)*(p.lastStand&&p.hp<p.maxHp*.35?1+.2*p.lastStand:1);if(p._spdBoost!==want){p.speed*=want/(p._spdBoost||1);p._spdBoost=want}});
 const _dpC=damagePlayer;damagePlayer=function(d){const p=G&&G.player;if(p&&p.invul<=0){if(p.armor)d*=p.armor;

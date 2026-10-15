@@ -288,8 +288,12 @@ function mergeOrbs(dt){G.orbMergeT=(G.orbMergeT||0)-dt;if(G.orbMergeT>0)return;G
 function orbSprite(o){const v=o.v/(ERA_XP[CURRENT_ERA]||1);if((o.n||1)>1)return v>=60?SPR.clump3:v>=20?SPR.clump2:SPR.clump1;return v>=10?SPR.gem3:v>=3?SPR.gem2:SPR.gem1}
 // ---- render culling: only draw what is on screen (plus a margin) ----
 function onScr(x,y,m){const sx=X(x),sy=Y(y);return sx>-m&&sx<BW+m&&sy>-m&&sy<BH+m}
+function confirmBox(title,body,yes,no,onYes,onNo){show(`<div class="sheet lv cfm"><header class="row"><span class="lab">Confirm</span></header><h2 class="disp">${title}</h2><p class="sh">${body}</p>
+  <nav class="menu"><button id="cfNo"><b>01</b>${no}<i>&larr;</i></button><button id="cfYes"><b>02</b>${yes}<i>&rarr;</i></button></nav></div>`);
+  $('cfNo').onclick=()=>{show('');onNo&&onNo()};$('cfYes').onclick=()=>{onYes()};setTimeout(()=>$('cfNo')&&$('cfNo').focus(),30)}
+function eraBossesDone(){const need=(G.era.bosses||[]).filter(b=>b.t<=ERA_CLEAR_T);return need.every(b=>(G.bossKills||{})[b.type+'@'+b.t])}
 function finalBoss(){const b=(G.era.bosses||[]).find(x=>x.t===ERA_CLEAR_T);return b&&b.type}
-// pacing target (sims): ~level 15 at 5:00 and ~25 at 10:00 in every era; gem XP is normalized per era via ERA_XP
+// pacing (sims): ~L9 at 5:00, ~L14-15 at 10:00 in every era; gem XP normalized per era via ERA_XP
 function xpFor(l){return Math.round(1.25*(14+3.2*Math.pow(l,1.45))*(1+.1*Math.floor(l/10)))}
 const ERA_XP={stone:1,bronze:1,iron:2.1,mythic:.52};
 function damagePlayer(d){
@@ -395,7 +399,7 @@ function step(dt,realDt){
   const spd=p.dashT>0?p.speed*DASH.mult:p.speed;
   p.x+=mx*spd*dt;p.y+=my*spd*dt;if(m>0.1)p.face=Math.atan2(my,mx);p.moving=m>0.1;
   updateSpawns(dt);updateEnemies(dt);if(G.dead){updateHud();endRun();return}if(mode!=='run')return;updateCreations(dt);updateShots(dt);updateOrbs(dt);if(window.updatePickups)updatePickups(dt);if(!G||mode!=='run')return;updateFx(dt);if(G.dead){endRun();return}
-  if(G.t>=ERA_CLEAR_T+1&&!G.cleared&&(G.t>=ERA_CLEAR_T+60||!G.enemies.some(e=>e.T.boss&&e.type===finalBoss()))){G.cleared=true;eraCleared();return}
+  if(G.t>=ERA_CLEAR_T+1&&!G.cleared&&eraBossesDone()){G.cleared=true;eraCleared();return}
   G.coins=calcCoins();updateHud();
 }
 // Auto-move (kite): steer away from nearby enemies, drift toward nearby XP
@@ -626,7 +630,7 @@ function pauseMenu(){
    <div class="cols"><div><div class="lab rule">Build</div><ul class="build">${build}</ul></div>
    <div><div class="lab rule">Stats</div><ul class="stats"><li>Damage<em>x${G.player.dmgMul.toFixed(2)}</em></li><li>Cast cooldown<em>x${G.player.cdMul.toFixed(2)}</em></li><li>Durability<em>x${(G.player.durMul*G.era.durability).toFixed(2)}</em></li><li>Focus<em>${G.player.focus.toFixed(1)}s</em></li><li>Move<em>${Math.round(G.player.speed)}</em></li></ul></div></div>
    <nav class="menu"><button id="resume"><b>01</b>Resume<i>&rarr;</i></button><button id="pset"><b>02</b>Settings<i>&rarr;</i></button><button id="quit"><b>03</b>Give up and keep coins<i>&rarr;</i></button></nav></div>`);
-  $('resume').onclick=togglePause;$('pset').onclick=()=>settings(true);$('quit').onclick=()=>{show('');endRun()};
+  $('resume').onclick=togglePause;$('pset').onclick=()=>settings(true);$('quit').onclick=()=>confirmBox('End this run?','You keep the coins earned so far, but the run is over.','End run','Keep playing',()=>{show('');endRun()},()=>{togglePause();togglePause()});
 }
 
 $('pauseBtn').onclick=togglePause;
@@ -792,7 +796,7 @@ function leaveRun(){screenEl.classList.remove('live');if(mode==='run'&&G){saveRu
 function saveRun(){
   if(mode!=='run'||!G||G.dead||G.player.hp<=0)return;
   const p=G.player;
-  const d={t:G.t,wave:G.wave,kills:G.kills,level:G.level,xp:G.xp,xpNext:G.xpNext,bonus:G.bonus||0,evT:G.evT||0,spawnT:G.spawnT,bossNext:G.bossNext,loadout:G.loadout,picks:G.picks,
+  const d={t:G.t,wave:G.wave,kills:G.kills,level:G.level,xp:G.xp,xpNext:G.xpNext,bonus:G.bonus||0,evT:G.evT||0,spawnT:G.spawnT,bossNext:G.bossNext,loadout:G.loadout,picks:G.picks,bossKills:G.bossKills||{},
     player:{...p},focusLeft:G.focusLeft,
     creations:G.creations.map(c=>({id:c.id,life:c.life,max:c.max,uses:c.uses,maxUses:c.maxUses,ang:c.ang,dir:c.dir})),
     enemies:G.enemies.map(e=>({type:e.type,x:e.x,y:e.y,hp:e.hp,maxHp:e.maxHp,speed:e.speed,dmg:e.dmg})),
@@ -802,7 +806,7 @@ function saveRun(){
 function restoreRun(){
   let d=null;try{d=JSON.parse(sessionStorage.getItem(RUN_KEY))}catch(e){}
   if(!d||!d.player||d.player.hp<=0){sessionStorage.removeItem(RUN_KEY);return false}
-  newRun();Object.assign(G,{t:d.t,wave:d.wave,kills:d.kills,level:d.level,xp:d.xp,xpNext:d.xpNext,bonus:d.bonus,evT:d.evT,spawnT:d.spawnT,bossNext:d.bossNext,loadout:d.loadout,picks:d.picks,focusLeft:d.focusLeft});
+  newRun();Object.assign(G,{t:d.t,wave:d.wave,kills:d.kills,level:d.level,xp:d.xp,xpNext:d.xpNext,bonus:d.bonus,evT:d.evT,spawnT:d.spawnT,bossNext:d.bossNext,loadout:d.loadout,bossKills:d.bossKills||{},picks:d.picks,focusLeft:d.focusLeft});
   Object.assign(G.player,d.player);G.player.invul=1.5;
   G.creations=d.creations.map(c=>({...c,def:CREATIONS[c.id],cd:.2,x:G.player.x,y:G.player.y,swing:0}));
   G.enemies=d.enemies.map(e=>({...e,T:ENEMY_TYPES[e.type],r:ENEMY_TYPES[e.type].r*(EN_SCALE[ENEMY_TYPES[e.type].spr]||1),kx:0,ky:0,flash:0,wob:Math.random()*6,st:'move',timer:rnd(1,3),vx:0,vy:0,sw:0}));

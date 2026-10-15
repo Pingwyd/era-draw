@@ -23,11 +23,11 @@ CAVE_TICK.push(dt=>{if(G.frenzy&&G.frenzy.t>0){G.frenzy.t-=dt;if(Math.random()<.
 
 // ---- relics: bosses drop a rule-changing relic (choose 1 of 3) ----
 const RELICS={
-  bloodstone:{name:'Bloodstone',desc:'Every kill heals 1 HP.'},
+  bloodstone:{name:'Bloodstone',desc:'Every 4th kill heals 1 HP.'},
   ember:{name:'Ember Heart',desc:'Kills have a 25% chance to burst into flame (AoE).'},
   twin:{name:'Twin Quill',desc:'30% chance each draw also sketches a free copy.'},
-  heavy:{name:'Heavy Ink',desc:'+50% damage, but -20% move speed.',apply:G=>{G.player.dmgMul*=1.5;G.player.speed*=.8}},
-  glass:{name:'Glass Nib',desc:'+80% damage, but max HP is cut to 60%.',apply:G=>{G.player.maxHp=Math.round(G.player.maxHp*.6);G.player.hp=Math.min(G.player.hp,G.player.maxHp)},dmg:1.8},
+  heavy:{name:'Heavy Ink',desc:'+35% damage, but -20% move speed.',apply:G=>{G.player.dmgMul*=1.35;G.player.speed*=.8}},
+  glass:{name:'Glass Nib',desc:'+60% damage, but max HP is cut to 60%.',apply:G=>{G.player.maxHp=Math.round(G.player.maxHp*.6);G.player.hp=Math.min(G.player.hp,G.player.maxHp)},dmg:1.6},
   lodestone:{name:'Lodestone',desc:'Double pickup magnet; gems always drift to you.',apply:G=>{G.player.magnet*=2}},
   hourglass:{name:'Hourglass',desc:'+1.0s slow-mo focus, and focus refills twice as fast.',apply:G=>{G.player.focus+=1}},
   bone:{name:'Ancestor Bone',desc:'Weapons last 50% longer; your first death each boss fight is cheated.',apply:G=>{G.player.durMul*=1.5}},
@@ -36,7 +36,7 @@ const RELIC_ART=['..kkkk..','.kyyyyk.','kyYyyYyk','kyyYYyyk','kyyYYyyk','kyYyyYy
 SPR.relic=outline(grid(RELIC_ART,{...PAL,k:'#1a0f0e',y:'#c48cff',Y:'#fff0ff'}));ICON.relic=iconURL(SPR.relic,4);
 DMG_MODS.push((e,d)=>G.relics&&G.relics.glass?d*RELICS.glass.dmg:d);
 killHooks.push(e=>{if(!G)return;const p=G.player;
-  if(G.relics&&G.relics.bloodstone)p.hp=Math.min(p.maxHp,p.hp+1);
+  if(G.relics&&G.relics.bloodstone&&(G.bsN=(G.bsN||0)+1)%4===0)p.hp=Math.min(p.maxHp,p.hp+1);
   if(G.relics&&G.relics.ember&&Math.random()<.25){ring(e.x,e.y,50,'#ff6a2a');burst(e.x,e.y,'#ff9a3a',8);const near=queryGrid(e.x,e.y,50);setTimeout(()=>{if(G)for(const o of near)if(o!==e&&o.hp>0&&Math.hypot(o.x-e.x,o.y-e.y)<50)hurtEnemy(o,12*p.dmgMul,'fire')},0)}
   if(e.T.boss)G.relicPending=(G.relicPending||0)+1});
 function offerRelic(){const own=G.relics||(G.relics={});const pool=Object.keys(RELICS).filter(k=>!own[k]);if(!pool.length)return;
@@ -51,15 +51,15 @@ const _cvDmgP=damagePlayer;damagePlayer=function(d){if(G&&G.relics&&G.relics.bon
 const SHRINES={
   fury:{name:'Shrine of Fury',col:'#ff6a3c',desc:'+35% damage for 20s',fn:G=>addBuff('fury',20)},
   wind:{name:'Shrine of Wind',col:'#9fe0ff',desc:'+30% speed for 20s',fn:G=>{if(!hasBuff('wind'))G.player.speed*=1.3;addBuff('wind',20)}},
-  mend:{name:'Shrine of Mending',col:'#8fe07a',desc:'Heal 50%',fn:G=>{const p=G.player;p.hp=Math.min(p.maxHp,p.hp+p.maxHp*.5)}},
+  mend:{name:'Shrine of Mending',col:'#8fe07a',desc:'Heal 30%',fn:G=>{const p=G.player;p.hp=Math.min(p.maxHp,p.hp+p.maxHp*.3)}},
   gather:{name:'Shrine of Gathering',col:'#ffd34a',desc:'All gems fly to you',fn:G=>{for(const o of G.orbs)o.pull=true}},
 };
 BUFF_END.wind=G=>{G.player.speed/=1.3};
 DMG_MODS.push((e,d)=>hasBuff('fury')?d*1.35:d);
 SPR.shrine=outline(grid(['..kkkk..','.kssssk.','.ksSSsk.','..kssk..','..ksSk..','..kssk..','..ksSk..','.kssssk.','kssSSssk','kkkkkkkk'],{...PAL,k:'#1a0f0e',s:'#8a8178',S:'#c8bfb2'}));
-runHooks.push(G=>{G.clouds=[];G.shrines=[];G.shrineT=40;G.buffs={};G.quest=null;G.questT=25;G.relics={};G.relicPending=0;G.frenzy=null;G.boneUsed=false});
+runHooks.push(G=>{G.clouds=[];G.shrines=[];G.shrineT=70;G.buffs={};G.quest=null;G.questT=25;G.relics={};G.relicPending=0;G.frenzy=null;G.boneUsed=false});
 CAVE_TICK.push(dt=>{const p=G.player;G.shrineT-=dt;
-  if(G.shrineT<=0&&G.shrines.length<2){G.shrineT=55+Math.random()*20;const ks=Object.keys(SHRINES),k=ks[Math.floor(Math.random()*ks.length)],a=Math.random()*6.283,d=180+Math.random()*120;G.shrines.push({x:p.x+Math.cos(a)*d,y:p.y+Math.sin(a)*d,k,prog:0,t:0});toast(SHRINES[k].name+' nearby')}
+  if(G.shrineT<=0&&G.shrines.length<2){G.shrineT=100+Math.random()*40;const ks=Object.keys(SHRINES),k=ks[Math.floor(Math.random()*ks.length)],a=Math.random()*6.283,d=180+Math.random()*120;G.shrines.push({x:p.x+Math.cos(a)*d,y:p.y+Math.sin(a)*d,k,prog:0,t:0});toast(SHRINES[k].name+' nearby')}
   for(let i=G.shrines.length-1;i>=0;i--){const s=G.shrines[i];s.t+=dt;const inR=Math.hypot(s.x-p.x,s.y-p.y)<42;s.prog=inR?s.prog+dt:Math.max(0,s.prog-dt*.5);
     if(s.prog>=2.5){SHRINES[s.k].fn(G);toast(SHRINES[s.k].name+': '+SHRINES[s.k].desc);ring(s.x,s.y,90,SHRINES[s.k].col);burst(s.x,s.y,SHRINES[s.k].col,30);sfx('chest');haptic([20,20,40]);G.shrines.splice(i,1);continue}
     if(s.t>75)G.shrines.splice(i,1)}});
