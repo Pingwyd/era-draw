@@ -25,3 +25,8 @@ With AdSense, the Customize panel shows **Personalised ads**. Off (or Reject) â†
 - `ads.txt` (this repo) and, more importantly, the root-domain one at https://pingwyd.github.io/ads.txt (repo `Pingwyd/pingwyd.github.io`) contain:
   `google.com, pub-2853919516364773, DIRECT, f08c47fec0942fa0`
 - On localhost, H5 ads run in test mode (`data-adbreak-test="on"`).
+
+## Adcash Autotag (additional provider, `AD_CONFIG.adcash`)
+- `{enabled:true, zoneId:'7h02lstdl5', minMenuVisits:2}`. Runs alongside AdSense (different network, no shared globals).
+- Loaded top level (`<script id="aclib" src="https://acscdn.com/script/aclib.js">` then `aclib.runAutoTag({zoneId})`) only after ads consent, online, from Home/Results, never on the first menu visit of a session, at most once per session.
+- **Known limitation:** Autotag cannot be unloaded. Once loaded, it may show formats (e.g. pop-unders/overlays) later in the session, including while a run is open. This is accepted. Set `enabled:false` to remove it.
