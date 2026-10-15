@@ -264,3 +264,8 @@ body.hud-neon .hbar{border-color:#ff4ad8;box-shadow:0 0 6px #ff4ad8}body.hud-neo
 #bpop li.on span{color:#ffd34a}#bpop .btn{margin-top:8px}
 #tbuffs{position:fixed;left:50%;top:calc(env(safe-area-inset-top,0px) + 74px);transform:translateX(-50%);display:flex;gap:4px;z-index:5;pointer-events:none}
 #tbuffs span{font:9px Silkscreen,monospace;border:1px solid;padding:2px 5px;background:rgba(20,11,12,.8)}
+/* ===== nav focus + pad cursor ===== */
+body.pad #screen :focus,body.kbnav #screen :focus,body.pad #bpop :focus,body.kbnav #bpop :focus{outline:2px solid #ffd34a!important;outline-offset:2px;box-shadow:0 0 0 4px rgba(255,211,74,.18)}
+.pick:focus{outline:2px solid #ffd34a;outline-offset:2px}
+#padCur{position:fixed;left:-9px;top:-9px;width:18px;height:18px;border:2px solid #fff1d0;border-radius:50%;pointer-events:none;z-index:6;display:none;box-shadow:0 0 6px rgba(0,0,0,.7)}
+#padCur.on{border-color:#ffd34a;background:rgba(255,211,74,.25)}
