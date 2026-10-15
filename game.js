@@ -267,7 +267,7 @@ function killEnemy(e){
   const i=G.enemies.indexOf(e);if(i>=0)G.enemies.splice(i,1);
   G.kills++;sfx('kill');burst(e.x,e.y,e.T.col,e.T.boss?50:7);burst(e.x,e.y,'#1a0f0e',e.T.boss?20:3);if(e.T.boss||e.T.elite)ring(e.x,e.y,e.T.boss?120:50,'#ffe08a');
   G.ink.push({x:e.x,y:e.y,r:e.r*rnd(.8,1.4),a:.35});if(G.ink.length>120)G.ink.shift();
-  G.orbs.push({x:e.x,y:e.y,v:e.T.xp,t:0});
+  G.orbs.push({x:e.x,y:e.y,v:e.T.xp*(ERA_XP[CURRENT_ERA]||1),t:0});
   if(e.T.boss||(chestOk()&&((e.T.elite&&Math.random()<.07)||e.champ))){G.chests.push({x:e.x,y:e.y,boss:!!e.T.boss});if(e.T.boss){toast(e.T.name+' falls!');G.shake=14}}
 }
 // balance: at most CHEST_CAP non-boss chests on the map at once; boss chests always drop
@@ -285,11 +285,13 @@ function mergeOrbs(dt){G.orbMergeT=(G.orbMergeT||0)-dt;if(G.orbMergeT>0)return;G
     if(hit){const tv=hit.v+o.v;hit.x=(hit.x*hit.v+o.x*o.v)/tv;hit.y=(hit.y*hit.v+o.y*o.v)/tv;hit.v=tv;hit.n=(hit.n||1)+(o.n||1);hit.t=Math.min(hit.t,o.t)}
     else{(cells.get(k)||cells.set(k,[]).get(k)).push(o);out.push(o)}}
   G.orbs=out}
-function orbSprite(o){if((o.n||1)>1)return o.v>=60?SPR.clump3:o.v>=20?SPR.clump2:SPR.clump1;return o.v>=10?SPR.gem3:o.v>=3?SPR.gem2:SPR.gem1}
+function orbSprite(o){const v=o.v/(ERA_XP[CURRENT_ERA]||1);if((o.n||1)>1)return v>=60?SPR.clump3:v>=20?SPR.clump2:SPR.clump1;return v>=10?SPR.gem3:v>=3?SPR.gem2:SPR.gem1}
 // ---- render culling: only draw what is on screen (plus a margin) ----
 function onScr(x,y,m){const sx=X(x),sy=Y(y);return sx>-m&&sx<BW+m&&sy>-m&&sy<BH+m}
 function finalBoss(){const b=(G.era.bosses||[]).find(x=>x.t===ERA_CLEAR_T);return b&&b.type}
-function xpFor(l){return Math.round((5+3.2*Math.pow(l,1.45))*(1+.25*Math.floor(l/10)))}
+// pacing target (sims): ~level 15 at 5:00 and ~25 at 10:00 in every era; gem XP is normalized per era via ERA_XP
+function xpFor(l){return Math.round(1.25*(5+3.2*Math.pow(l,1.45))*(1+.25*Math.floor(l/10)))}
+const ERA_XP={stone:3.8,bronze:3.3,iron:7.5,mythic:2};
 function damagePlayer(d){
   if(!G||G.dead)return;const p=G.player;p.hp-=d;p.invul=0.5;sfx('hurt');haptic(35);G.shake=8;burst(p.x,p.y,'#ff6b6b',10);
   if(p.hp<=0){
@@ -303,7 +305,7 @@ function updateOrbs(dt){
   const p=G.player;
   for(let i=G.orbs.length-1;i>=0;i--){const o=G.orbs[i];o.t+=dt;const d=Math.hypot(p.x-o.x,p.y-o.y);
     if(d<p.magnet||o.pull){o.pull=true;const a=Math.atan2(p.y-o.y,p.x-o.x),sp=300+o.t*200;o.x+=Math.cos(a)*sp*dt;o.y+=Math.sin(a)*sp*dt}
-    if(d<p.r+6){G.orbs.splice(i,1);G.xp+=o.v;G.gemsPicked=(G.gemsPicked||0)+(o.n||1);if(G.xp>=G.xpNext){G.xp-=G.xpNext;G.level++;G.xpNext=xpFor(G.level);levelUp()}}}
+    if(d<p.r+6){G.orbs.splice(i,1);G.xp+=o.v*(p.xpMul||1);G.gemsPicked=(G.gemsPicked||0)+(o.n||1);if(G.xp>=G.xpNext){G.xp-=G.xpNext;G.level++;G.xpNext=xpFor(G.level);levelUp()}}}
   // a merged clump can carry more than one level: spend the overflow on the next free frame
   if(G.xp>=G.xpNext&&!G.paused&&mode==='run'){G.xp-=G.xpNext;G.level++;G.xpNext=xpFor(G.level);levelUp()}
   mergeOrbs(dt);
