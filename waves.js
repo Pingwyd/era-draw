@@ -17,8 +17,8 @@ updateSpawns=function(dt){
   G.wave=1+Math.floor(G.t/30);const scale=1+G.t/300;
   const bossUp=G.enemies.some(e=>e.T.boss);G.bossUp=bossUp;
   G.spawnT+=dt*1.35*(1.05+G.t/65)*(bossUp?.3:1);
-  const cap=Math.round(Math.min((typeof save!=='undefined'&&save.perf)?140:ENEMY_CAP,40+G.wave*7)*(bossUp?.45:1));
-  let guard=0;while(G.spawnT>=1&&guard++<40){if(G.enemies.length>=cap){G.spawnT=Math.min(G.spawnT,2);break}
+  const cap=Math.round(Math.min((typeof save!=='undefined'&&save.perf)?140:ENEMY_CAP,40+G.wave*7)*(bossUp?.45:1));const capB=bossUp?Math.min(cap,BOSS_ADD_CAP+G.enemies.filter(e=>e.T.boss).length):cap;
+  let guard=0;while(G.spawnT>=1&&guard++<40){if(G.enemies.length>=capB){G.spawnT=Math.min(G.spawnT,2);break}
     const type=G.spNext||pickSpawn(),c=spawnCost(type);if(G.spawnT<c){G.spNext=type;break}G.spNext=null;G.spawnT-=c;rollAffix(spawnEnemy(type,scale))}
   // events
   if(G.evNext==null){G.evNext=50;G.evI=0}

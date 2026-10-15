@@ -308,3 +308,11 @@ button.dot::after{content:'';position:absolute;top:4px;right:4px;width:7px;heigh
 @media (max-height:500px){.losave{padding:5px 0}}
 #tut p b{font:inherit;color:#ffd34a;display:inline}
 @media (max-height:360px){#tut{top:44px;padding:4px 10px;max-width:60vw}#tut p{font-size:12px;margin:2px 0}}
+.cell.repl{animation:lorepl .9s ease-out}.cell.pop{animation:lopop .25s ease-out}
+@keyframes lorepl{0%{box-shadow:inset 0 0 0 2px #e0504e;background:rgba(224,80,78,.25)}100%{box-shadow:none;background:transparent}}
+@keyframes lopop{0%{transform:scale(.96)}100%{transform:none}}
+#bossIntro{position:fixed;left:0;right:0;top:30%;z-index:20;text-align:center;pointer-events:none;background:linear-gradient(90deg,transparent,rgba(20,11,12,.85) 20%,rgba(20,11,12,.85) 80%,transparent);padding:8px 0;border-top:1px solid #5a0f12;border-bottom:1px solid #5a0f12;animation:bin .35s ease-out;transition:opacity .5s}
+#bossIntro .lab{color:#e0504e;letter-spacing:.4em}#bossIntro b{display:block;font-family:'Instrument Serif',serif;font-weight:400;font-size:40px;line-height:1.05;color:#fff1d0}#bossIntro i{font:11px VT323,monospace;color:var(--mute)}
+#bossIntro.out{opacity:0}@keyframes bin{0%{transform:scaleY(0)}100%{transform:none}}
+@media (max-height:360px){#bossIntro b{font-size:28px}#bossIntro{top:24%}}
+.bb-frame{position:relative}.bb-frame::before,.bb-frame::after{content:'';position:absolute;top:0;bottom:0;width:1px;background:rgba(255,241,208,.6);z-index:2}.bb-frame::before{left:50%}.bb-frame::after{left:25%}
