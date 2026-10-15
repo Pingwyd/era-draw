@@ -4,6 +4,7 @@
 const AD_CONFIG={provider:'adsense',
   adsense:{client:'ca-pub-2853919516364773',slots:{pause:'',results:'',home:''},// fill with AdSense display ad unit slot IDs
     h5:true,interstitial:true,interstitialEvery:3,interstitialMinGap:180e3,rewardCap:5,rewardCooldown:120e3,rewardCoins:100,frequencyHint:'120s'}};
+AD_CONFIG.adcash={enabled:true,zoneId:'7h02lstdl5',minMenuVisits:2};// Adcash Autotag (top level; cannot be unloaded once loaded)
 const ADSENSE_CLIENT=AD_CONFIG.adsense.client;
 const AD_IS_SENSE=()=>AD_CONFIG.provider==='adsense'&&/^ca-pub-\d+$/.test(ADSENSE_CLIENT);
 window.AD_CONFIG=AD_CONFIG;
@@ -83,4 +84,18 @@ function senseNext(){const A=AD_CONFIG.adsense;if(!A.h5||!A.interstitial||!adsOk
 // privacy page text follows the active provider
 function adPrivacyHtml(){if(AD_IS_SENSE())return '<p>Ads are served by <b>Google AdSense</b> (including Google\'s H5 Games Ads for optional rewarded and between-run ads). Google and its partners may use cookies or similar identifiers to serve, measure and limit ads, and, only if you allow ad personalisation, to personalise them. If you turn personalisation off, we ask Google for non-personalised ads. Rewarded ads are optional: you choose to watch one in the Shop for coins. See Google\'s policy: <a href="https://policies.google.com/technologies/ads" target="_blank" rel="noopener">How Google uses information from sites that use its services</a>. Change your choice at any time in Settings &rarr; Privacy.</p>';
   return "<p>Ads come from a <b>third-party ad network</b> (served from untimely-hello.com). Its code runs in a sandboxed frame that cannot read your save or control the game, but the network itself may set and read <b>cookies</b> or similar identifiers in its own frame, see your IP address and browser details, and use them to choose, measure and limit ads, under its own privacy policy. The Shop's <b>sponsored link reward</b> opens a sponsor's page (physicaldad.com) in a new tab; that site is outside Era Draw and has its own policies. Change your choice at any time in Settings &rarr; Privacy; reload the page to fully unload ad code after turning it off.</p>"}
+window.adPrivacyHtml=adPrivacyHtml;
+
+// ===================== Adcash Autotag (additional provider) =====================
+// Loaded at most once per session, only from a menu page (home/results), never on the first menu visit, only after consent.
+// Autotag cannot be unloaded: if it later shows a format while a run is open, that is accepted (documented in docs/ADS.md).
+function adcashTry(){const A=AD_CONFIG.adcash;if(!A||!A.enabled||!A.zoneId||window.aclibLoaded)return;
+  if(!window.Consent||!Consent.granted('ads')||navigator.onLine===false)return;if(typeof mode!=='undefined'&&mode==='run')return;
+  let n=0;try{n=+sessionStorage.getItem('eradraw.menuVisits')||0;n++;sessionStorage.setItem('eradraw.menuVisits',n);if(sessionStorage.getItem('eradraw.aclib'))return}catch(e){}
+  if(n<A.minMenuVisits)return;window.aclibLoaded=true;try{sessionStorage.setItem('eradraw.aclib','1')}catch(e){}
+  const s=document.createElement('script');s.id='aclib';s.async=true;s.src='https://acscdn.com/script/aclib.js';
+  s.onload=()=>{try{if(window.aclib&&!(typeof mode!=='undefined'&&mode==='run'))aclib.runAutoTag({zoneId:A.zoneId})}catch(e){}};document.head.appendChild(s)}
+(function(){const hm=home;home=function(){const r=hm.apply(this,arguments);setTimeout(adcashTry,800);return r};
+  const rs=results;results=function(){const r=rs.apply(this,arguments);setTimeout(adcashTry,800);return r}})();
+const _adPriv=adPrivacyHtml;adPrivacyHtml=function(){let h=_adPriv();if(AD_CONFIG.adcash&&AD_CONFIG.adcash.enabled)h+='<p>We also use <b>Adcash</b> (acscdn.com), a third-party ad network, after you allow ads. It loads on menu screens at most once per visit and may show ad formats (for example banners or pop-unders) and use cookies or similar identifiers to deliver and measure ads, under its own privacy policy.</p>';return h};
 window.adPrivacyHtml=adPrivacyHtml;
