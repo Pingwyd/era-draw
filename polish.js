@@ -28,8 +28,8 @@ function padPoll(){requestAnimationFrame(padPoll);const g=p1Pad();if(!g){if(padM
     if(hb(B.pause))key('Escape');padRaw=g.buttons.map((_,i)=>pressed(g,i));return}
   padRaw=g.buttons.map((_,i)=>pressed(g,i));
   if(padMoving){stick.active=false;padMoving=false}
-  const t=performance.now();const dy=hit('DOWN')||hit('RIGHT')?1:hit('UP')||hit('LEFT')?-1:0;
-  if(dy)padNavMove(dy);else if(lm>.6&&t-padNav>220){padNav=t;padNavMove((Math.abs(ly)>Math.abs(lx)?ly:lx)>0?1:-1)}
+  const t=performance.now();const vx=hit('RIGHT')?1:hit('LEFT')?-1:0,vy=hit('DOWN')?1:hit('UP')?-1:0;
+  if(vx||vy)padNavMove(vx+vy,vx,vy);else if(lm>.6&&t-padNav>220){padNav=t;const h=Math.abs(lx)>Math.abs(ly);padNavMove((h?lx:ly)>0?1:-1,h?Math.sign(lx):0,h?0:Math.sign(ly))}
   if(hit('A')){const a=document.activeElement;if(a&&a!==document.body&&navTargets().includes(a))a.click();else padNavMove(0)}
   if(hit('B'))key('Escape');if(hit('START')){if(mode==='run'&&G)key('Escape');else{const b=$('play')||document.querySelector('[data-route="play"]');b&&b.click()}}}
 addEventListener('gamepadconnected',e=>{toast('Controller connected: '+(e.gamepad.id||'gamepad').split('(')[0].trim().slice(0,32))});

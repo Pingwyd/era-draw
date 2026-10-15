@@ -283,11 +283,11 @@ addEventListener('keydown',e=>{
   // number keys pick level-up cards
   if(/^[1-9]$/.test(k)&&inRun){const c=screenEl.querySelector(`.pick[data-i="${+k-1}"]`);if(c){e.preventDefault();c.click();return}}
   if(!screenEl.innerHTML)return;
-  const act=document.activeElement,btns=navButtons();if(!btns.length)return;
+  const act=document.activeElement,btns=window.navAll?navAll():navButtons();if(!btns.length)return;
   if(k==='Enter'&&(!act||!screenEl.contains(act))){const pri=$('rok')&&!$('rok').disabled?$('rok'):screenEl.querySelector('.btn.pri,#resume,#play,#retry,.menu button');if(pri){e.preventDefault();pri.click()}return}
   const isRange=act&&act.type==='range';
   const dir={ArrowDown:1,ArrowRight:1,ArrowUp:-1,ArrowLeft:-1}[k];
-  if(dir&&!(isRange&&(k==='ArrowLeft'||k==='ArrowRight'))){e.preventDefault();let i=btns.indexOf(act);i=i<0?(dir>0?0:btns.length-1):(i+dir+btns.length)%btns.length;btns[i].focus()}
+  if(dir&&!(isRange&&(k==='ArrowLeft'||k==='ArrowRight'))){e.preventDefault();if(window.navSpatial&&navSpatial(k==='ArrowRight'?1:k==='ArrowLeft'?-1:0,k==='ArrowDown'?1:k==='ArrowUp'?-1:0))return;let i=btns.indexOf(act);i=i<0?(dir>0?0:btns.length-1):(i+dir+btns.length)%btns.length;btns[i].focus()}
 });
 
 
