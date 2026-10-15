@@ -9,9 +9,9 @@ Object.assign(ERAS.iron,{date:'c. 800 BC',no:'III',ink:'#b8d0ff',enemyHp:2.2,ene
 // ---- iron weapons ----
 Object.assign(CREATIONS,{
   longsword:{name:'Iron Longsword',era:'iron',shape:'short line',shapeKey:'short',kind:'melee',dmg:34,life:10,uses:44,rate:.42,range:84,knock:240,cost:600},
-  crossbow:{name:'Crossbow',era:'iron',shape:'long line',shapeKey:'long',kind:'ranged',dmg:40,life:11,uses:18,rate:.8,speed:900,pierce:8,proj:'spear',cost:650},
-  hammer:{name:'War Hammer',era:'iron',shape:'circle',shapeKey:'circle',kind:'melee',dmg:52,life:10,uses:26,rate:.9,range:74,knock:420,cost:700},
-  flail:{name:'Flail',era:'iron',shape:'zigzag',shapeKey:'zig',kind:'melee',dmg:20,life:11,uses:70,rate:.2,range:56,knock:120,orbitSpeed:6,cost:650},
+  crossbow:{name:'Crossbow',era:'iron',shape:'long line',shapeKey:'long',kind:'ranged',dmg:33,life:11,uses:18,rate:.8,speed:900,pierce:5,proj:'spear',cost:650},
+  hammer:{name:'War Hammer',era:'iron',shape:'circle',shapeKey:'circle',kind:'melee',dmg:60,life:10,uses:26,rate:.8,range:74,knock:420,cost:700},
+  flail:{name:'Flail',era:'iron',shape:'zigzag',shapeKey:'zig',kind:'melee',dmg:23,life:11,uses:70,rate:.2,range:56,knock:120,orbitSpeed:6,cost:650},
 });
 SHOP.push({id:'longsword',type:'creation',cost:600,cur:'coins',era:'iron'},{id:'crossbow',type:'creation',cost:650,cur:'coins',era:'iron'},{id:'hammer',type:'creation',cost:700,cur:'coins',era:'iron'},{id:'flail',type:'creation',cost:650,cur:'coins',era:'iron'});
 const GL='#b8d0ff';
