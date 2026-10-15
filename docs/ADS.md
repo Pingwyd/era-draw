@@ -30,7 +30,7 @@ With AdSense, the Customize panel shows **Personalised ads**. Off (or Reject) â†
 - `AD_CONFIG.provider='hilltop'`: sandboxed srcdoc banners (desktop+mobile code on wide screens, mobile-only code on small/touch) in pause / results / home (home ~1 in 3, max once a minute).
 - AdSense stays configured (`ca-pub-2853919516364773`); its banners only appear for a placement whose `AD_CONFIG.adsense.slots[...]` ID is filled.
 - **Shop reward priority: VAST video > AdSense H5 rewarded > direct link.**
-  - VAST: set `AD_CONFIG.hilltop.vastUrl` to a VAST tag (HilltopAds "VAST" zone). A built-in minimal VAST 2/3/4 client follows up to 4 wrappers, picks an MP4/WebM MediaFile, plays it full-screen in-game, fires Impression/start/quartile/complete/close pixels and grants `hilltop.rewardCoins` only when the video ends. Any failure falls back to the direct link. The tag server must allow CORS.
+  - VAST (active, HilltopAds tag set; CORS ok, MP4/WebM, no skip offset): `AD_CONFIG.hilltop.vastUrl` is a VAST tag (HilltopAds "VAST" zone). A built-in minimal VAST 2/3/4 client follows up to 4 wrappers, picks an MP4/WebM MediaFile, plays it full-screen in-game, fires Impression/start/quartile/complete/close pixels and grants `hilltop.rewardCoins` only when the video ends. Any failure falls back to the direct link. The tag server must allow CORS.
   - AdSense H5 `adBreak({type:'reward'})` is tried when no VAST tag is set; if it offers no ad within ~6 s, the direct link is shown.
   - Direct link (physicaldad): opens in a new tab, reward after returning with >= 15 s away, 5/day, 3 min cooldown.
 - Adcash: **disabled** (`AD_CONFIG.adcash.enabled=false`, aclib never loads). Autotag removed.
