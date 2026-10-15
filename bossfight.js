@@ -11,11 +11,16 @@ const BOSS_SETS={
 };
 const MOVE_ALL=['slam','ring','fan','charge','leap'],SPEC_ALL=['spiral','summon','hazard','charge','leap'];
 function bossSet(e){if(BOSS_SETS[e.type])return BOSS_SETS[e.type];let h=0;for(const c of e.type)h=(h*31+c.charCodeAt(0))>>>0;return {reg:[MOVE_ALL[h%5],MOVE_ALL[(h>>3)%5]],sp:[SPEC_ALL[(h>>5)%5],SPEC_ALL[(h>>7)%5]]}}
-const BOSS_HP_MUL=2.2,ERA_BOSS={stone:1,bronze:1.15,iron:1.3,mythic:1.45},BOSS_ADD_CAP=25;
+const BOSS_ADD_CAP=25;
+// Boss HP by era + slot, tuned from sims so a typical build at that time kills each in ~45-60s (later slots scale up).
+// Repeat spawns after the era clear time get +40% each. Party scaling unchanged.
+const BOSS_HP={stone:[1850,1900,2000,2300],bronze:[1250,1300,1350,1150],iron:[900,1150,950,1700],mythic:[1100,1200,1300,1450]};
+function bossHpFor(type){const L=(G.era&&G.era.bosses)||[];const order=[];for(const b of L)if(!order.includes(b.type))order.push(b.type);
+  const i=Math.max(0,order.indexOf(type)),tab=BOSS_HP[CURRENT_ERA]||BOSS_HP.stone;const n=(G.bossSpawns=G.bossSpawns||{})[type]=(G.bossSpawns[type]||0)+1;
+  return tab[Math.min(i,tab.length-1)]*Math.pow(1.4,n-1)}
 const _bfSpawn=spawnEnemy;spawnEnemy=function(type,scale,at){const e=_bfSpawn.apply(this,arguments);
-  if(e&&e.T&&e.T.boss&&!G.netClient&&!e.bf){const party=G.party||1,m=BOSS_HP_MUL*(ERA_BOSS[CURRENT_ERA]||1)*(1+.6*(party-1));e.hp*=m;e.maxHp*=m;e.baseHp=e.maxHp;e.baseDmg=e.dmg;
+  if(e&&e.T&&e.T.boss&&!G.netClient&&!e.bf){const party=G.party||1,hp=Math.round(bossHpFor(e.type)*(1+.6*(party-1)));e.hp=e.maxHp=hp;e.baseHp=e.maxHp;e.baseDmg=e.dmg;
     e.bf={reg:2.5,sp:6,busy:0,ph:0,eat:0,set:bossSet(e)};G.bfSpfx=G.bfSpfx||[];bossIntro(e);setTimeout(()=>{if(G&&e.hp>0)devour(e)},700)}return e};
-DMG_MODS.push((e,d)=>e.bf?d*.8:d); // boss defense
 function bossIntro(e){const el=document.createElement('div');el.id='bossIntro';el.innerHTML=`<span class="lab">Boss</span><b>${e.T.name}</b><i>${e.T.title||''}</i>`;
   const o=$('bossIntro');if(o)o.remove();document.body.appendChild(el);setTimeout(()=>el.classList.add('out'),2000);setTimeout(()=>el.remove(),2600);sfx('boss');setTimeout(()=>sfx('boss'),350);haptic([40,60,40])}
 function devour(b){const R=Math.hypot(viewW(),viewH())/2,p=G.player;const near=G.enemies.filter(e=>!e.T.boss&&!e.eat&&Math.hypot(e.x-p.x,e.y-p.y)<R);
@@ -41,7 +46,7 @@ CAVE_TICK.push(dt=>{if(G.netClient)return;const p=G.player;
   // devour animation
   for(const e of G.enemies){const E=e.eat;if(!E)continue;E.t+=dt;const b=E.b,k=Math.min(1,E.t/E.d);if(b.hp<=0){e.eat=null;continue}
     const sw=(1-k)*2.2;const dx=E.x0-b.x,dy=E.y0-b.y;const c=Math.cos(sw),s=Math.sin(sw);e.x=b.x+(dx*c-dy*s)*(1-k*k);e.y=b.y+(dx*s+dy*c)*(1-k*k);e.frozen=.05;
-    if(k>=1){e.hp=0;e.gone=true;burst(b.x,b.y-8,'#5a0f12',3);if(b.bf.eat<30){b.bf.eat++;const add=b.baseHp*.015;b.maxHp+=add;b.hp+=add;b.dmg=b.baseDmg*(1+.01*b.bf.eat)}}}
+    if(k>=1){e.hp=0;e.gone=true;burst(b.x,b.y-8,'#5a0f12',3);if(b.bf.eat<20){b.bf.eat++;const add=b.baseHp*.005;b.maxHp+=add;b.hp+=add;b.dmg=b.baseDmg*(1+.005*b.bf.eat)}}}
   for(const b of G.enemies){if(!b.bf||b.hp<=0)continue;const f=b.bf,frac=b.hp/b.maxHp;
     if(f.ph<1&&frac<.5){f.ph=1;b.speed*=1.15;toast(b.T.name+' is enraged!');sfx('boss');ring(b.x,b.y,90,'#ff5a4e');G.shake=10}
     if(f.ph<2&&frac<.25){f.ph=2;b.speed*=1.1;toast(b.T.name+': final fury!');sfx('boss');ring(b.x,b.y,120,'#ffd34a');G.shake=12}
