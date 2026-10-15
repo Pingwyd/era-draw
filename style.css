@@ -335,3 +335,9 @@ button.dot::after{content:'';position:absolute;top:4px;right:4px;width:7px;heigh
 body.pad .pg{display:inline-block}body.pad .pgA::after{content:'A'}body.pad .pgS::after{content:var(--skipg,'LB')}
 #screen.dthIn{animation:dthIn .6s ease-out}@keyframes dthIn{from{opacity:0}to{opacity:1}}
 @media (prefers-reduced-motion:reduce){#screen.dthIn{animation-duration:.2s}}
+.adslot{display:flex;justify-content:center;margin:10px auto 0;max-width:100%;overflow:hidden;height:1px}
+.adslot.on{height:auto}.adslot iframe{border:0;width:100%;max-width:728px;height:1px;display:block;background:transparent}
+.adslot.on iframe{height:50px}.ad-home{margin-top:14px}
+.adrw{display:flex;gap:12px;align-items:center;justify-content:space-between;margin-top:12px;padding:10px 12px;border:1px solid var(--rule)}
+.adrw .sh{display:block}.adrw button{flex:none}
+@media (max-height:420px){.adslot iframe{max-width:320px}.adslot{margin-top:6px}}
