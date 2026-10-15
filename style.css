@@ -329,3 +329,7 @@ button.dot::after{content:'';position:absolute;top:4px;right:4px;width:7px;heigh
 .fb textarea,.fb input:not([type=radio]){font:15px VT323,monospace;background:#1a0f10;color:#efe6d2;border:1px solid var(--rule);padding:6px;width:100%;box-sizing:border-box}
 .fb-d pre{font:11px VT323,monospace;white-space:pre-wrap;word-break:break-all;color:var(--mute);margin:4px 0}.fb-d summary{font:9px Silkscreen,monospace;color:var(--mute);cursor:pointer}
 .fb-b{display:flex;gap:6px;flex-wrap:wrap}.fb-b .btn{text-decoration:none}
+
+#tut #tutGo{margin:.4em .5em 0 0}#tut.frozen{box-shadow:0 0 0 2px #ffd34a}
+.pg{display:none;margin-left:.4em;padding:0 .3em;border:1px solid currentColor;border-radius:.3em;font-size:.8em;line-height:1.3}
+body.pad .pg{display:inline-block}body.pad .pgA::after{content:'A'}body.pad .pgS::after{content:var(--skipg,'LB')}
