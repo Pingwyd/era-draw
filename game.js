@@ -630,7 +630,7 @@ function pauseMenu(){
    <div class="cols"><div><div class="lab rule">Build</div><ul class="build">${build}</ul></div>
    <div><div class="lab rule">Stats</div><ul class="stats"><li>Damage<em>x${G.player.dmgMul.toFixed(2)}</em></li><li>Cast cooldown<em>x${G.player.cdMul.toFixed(2)}</em></li><li>Durability<em>x${(G.player.durMul*G.era.durability).toFixed(2)}</em></li><li>Focus<em>${G.player.focus.toFixed(1)}s</em></li><li>Move<em>${Math.round(G.player.speed)}</em></li></ul></div></div>
    <nav class="menu"><button id="resume"><b>01</b>Resume<i>&rarr;</i></button><button id="pset"><b>02</b>Settings<i>&rarr;</i></button><button id="quit"><b>03</b>Give up and keep coins<i>&rarr;</i></button></nav></div>`);
-  $('resume').onclick=togglePause;$('pset').onclick=()=>settings(true);$('quit').onclick=()=>confirmBox('End this run?','You keep the coins earned so far, but the run is over.','End run','Keep playing',()=>{show('');endRun()},()=>{togglePause();togglePause()});
+  $('resume').onclick=togglePause;$('pset').onclick=()=>settings(true);$('quit').onclick=()=>confirmBox('End this run?','You keep the coins earned so far, but the run is over.','End run','Keep playing',()=>{show('');endRun()},()=>pauseMenu());
 }
 
 $('pauseBtn').onclick=togglePause;
