@@ -59,31 +59,10 @@ for(const pu of POWERUPS){const v=NERF[pu.id];if(!v)continue;const P=n=>Math.rou
   pu.desc=D;pu.apply=A}
 for(const c of NEW_CARDS){const {art,...pu}=c;POWERUPS.push(pu);SPR.pu[c.id]=outline(grid(art));ICON['pu_'+c.id]=iconURL(SPR.pu[c.id],4)}
 for(const pu of POWERUPS)if(!pu.once&&!pu.max)pu.max=CARD_MAX;
-const cardMaxed=pu=>(pu.once&&G.picks[pu.id])||(pu.max&&(G.picks[pu.id]||0)>=pu.max);
 
 // ---- weighted offers with repeat-dampening ----
 runHooks.push(G=>{G.cardW={};G.cardBlock=null});
-const cardWeight=pu=>(G.cardW&&G.cardW[pu.id]!=null?G.cardW[pu.id]:1)*(pu.base==='epic'?.55:pu.base==='rare'?.85:1);
-rollPicks=function(){
-  const out=[];let epicUsed=false,tries=0;
-  const pool=POWERUPS.filter(pu=>!cardMaxed(pu)&&pu.id!==G.cardBlock);
-  while(out.length<3&&tries++<80){
-    const cand=pool.filter(pu=>!out.some(o=>o.pu===pu));if(!cand.length)break;
-    let tot=0;for(const pu of cand)tot+=cardWeight(pu);let x=Math.random()*tot,pu=cand[0];for(const c of cand){x-=cardWeight(c);if(x<=0){pu=c;break}}
-    const owned=G.picks[pu.id]||0;
-    let r=pu.base==='epic'?2:Math.max(RAR.indexOf(pu.base),rollRarity(!epicUsed));
-    if(owned>=3&&pu.base!=='epic')r=Math.max(r,1);
-    if(r===2&&epicUsed){if(pu.base==='epic')continue;r=1}
-    if(r===2&&pu.base==='epic'&&G.t<120&&Math.random()<.7)continue;
-    if(r===2)epicUsed=true;out.push({pu,r})}
-  return out};
-window.noteCardPick=noteCardPick;function noteCardPick(id,fromLevel){if(!G.cardW)G.cardW={};G.cardW[id]=Math.max(.15,(G.cardW[id]!=null?G.cardW[id]:1)*.5);if(fromLevel)G.cardBlock=id}
-const _lvUp=levelUp;levelUp=function(fromChest){G.cardBlockNow=G.cardBlock;_lvUp(fromChest);
-  // after this offer is shown the block is spent; the picked card becomes the new block
-  G.cardBlock=null;
-  screenEl.querySelectorAll('.pick').forEach(el=>{const old=el.onclick;const id=el.querySelector('.pk-name')&&el.querySelector('.pk-name').textContent;
-    const pu=POWERUPS.find(p=>p.name===id);const own=pu?(G.picks[pu.id]||0):0;const tag=el.querySelector('.lvtag');if(pu&&tag)tag.textContent=own?`LV ${own+1}/${pu.max||1}`:'NEW';
-    el.onclick=()=>{if(pu)noteCardPick(pu.id,!fromChest);old()}})};
+// (offer weighting and the level-up screen now live in build.js)
 
 // ---- card effects ----
 DMG_MODS.push((e,d,src,from)=>{const p=G.player;if(!p)return d;

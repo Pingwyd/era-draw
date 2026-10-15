@@ -44,6 +44,15 @@ function eras(){
 const HUB=[]; // {id,label,fn,extra} — later systems register pages here
 function hub(id,label,fn,extra){HUB.push({id,label,fn,extra});ROUTES[id]=fn}
 const ROUTES={};
+const HOME_GROUPS=[['play','Play',['lo','daily','challenges','custom','tutorial']],['coll','Collection',['sketchbook','inks','cosmetics','mages','bestiary']],['prog','Progress',['upgrades','skills','eras','achievements']],['social','Social',['coop','lan','leaderboard']]];
+function homeGroups(E){const known=new Set(HOME_GROUPS.flatMap(g=>g[2]));const extra=HUB.filter(h=>!known.has(h.id)&&!(h.extra&&h.extra.hidden)&&h.id!=='privacy'&&h.id!=='changelog').map(h=>h.id);
+  const lab=id=>id==='lo'?'Loadout':(HUB.find(h=>h.id===id)||{}).label;const tab=save.homeTab||'play';
+  const btn=id=>id==='lo'?`<button id="lo"><b>Loadout</b><span>${save.loadout.length}/${save.slots}</span></button>`:id==='eras'?`<button data-hub="eras"><b>Eras</b><span>${E.no}</span></button>`:lab(id)?`<button data-hub="${id}"><b>${lab(id)}</b></button>`:'';
+  return `<div class="htabs" role="tablist">${HOME_GROUPS.map(g=>`<button role="tab" data-tab="${g[0]}" aria-selected="${g[0]===tab}" class="${g[0]===tab?'on':''}">${g[1]}</button>`).join('')}</div>`+
+   HOME_GROUPS.map((g,i)=>`<nav class="subgrid hpanel" role="tabpanel" data-panel="${g[0]}" ${g[0]===tab?'':'hidden'}>${(i===1?[...g[2],...extra]:g[2]).map(btn).join('')}</nav>`).join('')}
+function wireHomeTabs(){screenEl.querySelectorAll('[data-tab]').forEach(t=>t.onclick=()=>{save.homeTab=t.dataset.tab;persist();
+  screenEl.querySelectorAll('[data-tab]').forEach(x=>{const on=x===t;x.classList.toggle('on',on);x.setAttribute('aria-selected',on)});
+  screenEl.querySelectorAll('[data-panel]').forEach(p=>p.hidden=p.dataset.panel!==t.dataset.tab)})}
 home=function(){
   leaveRun();setRoute('home');mode='home';G=null;$('hud').classList.add('hidden');const E=ERAS[save.era]||ERAS.stone;const D=DIFFS[save.diff];
   const mats=save.mats?Object.entries(save.mats).filter(([k,v])=>v>0).map(([k,v])=>`<img class="pi" src="${ICON['mat_'+k]||''}" alt="${k}"><b>${v}</b>`).join(''):'';
@@ -52,15 +61,12 @@ home=function(){
     <h1 class="mast">Era<br>Draw</h1>
     <p class="tag">Draw weapons from the age you are trapped in. Hold the line until the ink runs dry.</p>
     <div class="wallet">${coinI()}<b>${save.coins}</b>${gemI()}<b>${save.gems}</b>${mats}<span class="lab">Best ${save.best?fmt(save.best):'&mdash;'} &middot; Runs ${save.runs}</span></div></div>
-   <div class="home-r"><div class="plate"><canvas id="diorama" width="160" height="48"></canvas><div class="cap"><span class="lab">Fig. 1 &mdash; The mage</span><span class="lab">Era ${E.no}</span></div></div><nav class="menu">
-    <button id="play" class="prim"><b>01</b>Enter the ${E.name}<i>&rarr;</i></button>
-    ${HUB.filter(h=>h.extra==='primary').map((h,i)=>`<button data-hub="${h.id}"><b>0${i+2}</b>${h.label}<i>&rarr;</i></button>`).join('')}
-   </nav><nav class="subgrid">
-    <button id="lo"><b>Loadout</b><span>${save.loadout.length}/${save.slots}</span></button><button data-hub="eras"><b>Eras</b><span>${E.no}</span></button>
-    ${HUB.filter(h=>h.extra!=='primary'&&h.id!=='eras'&&!(h.extra&&h.extra.hidden)).map(h=>`<button data-hub="${h.id}"><b>${h.label}</b></button>`).join('')}
-    <button id="shop"><b>Shop</b></button><button id="set"><b>Settings</b></button><button id="how"><b>How to play</b></button></nav></div></div>`);startDiorama();
+   <div class="home-r"><div class="plate"><canvas id="diorama" width="160" height="48"></canvas><div class="cap"><span class="lab">Fig. 1 &mdash; The mage</span><span class="lab">Era ${E.no}</span></div></div><nav class="menu"><button id="play" class="prim"><b>&#9654;</b>Enter the ${E.name}<i>&rarr;</i></button></nav>
+    ${homeGroups(E)}
+    <nav class="hfoot"><button id="shop">Shop</button><button id="set">Settings</button><button id="how">How to play</button><button data-hub="privacy" id="prv">Privacy</button></nav></div></div>`);startDiorama();
   $('play').onclick=()=>{goLandscape();startRun()};$('lo').onclick=loadout;$('shop').onclick=shop;$('how').onclick=how;$('set').onclick=settings;
-  screenEl.querySelectorAll('[data-hub]').forEach(el=>el.onclick=()=>ROUTES[el.dataset.hub]());
+  screenEl.querySelectorAll('[data-hub]').forEach(el=>el.onclick=()=>ROUTES[el.dataset.hub]&&ROUTES[el.dataset.hub]());
+  wireHomeTabs();
 };
 hub('eras','Eras',eras);
 // route table extension
