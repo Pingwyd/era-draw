@@ -98,7 +98,7 @@ setInterval(emoteBar,500);
 // ---- relics ----
 Object.assign(RELICS,{
   storm:{name:'Storm Quill',desc:'Every 10th kill calls lightning on up to 4 nearby enemies.'},
-  lung:{name:'Iron Lung',desc:'+25% max HP and regenerate 0.5 HP per second.',apply:G=>{const p=G.player;p.maxHp*=1.25;p.hp=Math.min(p.maxHp,p.hp*1.25);p.regen=(p.regen||0)+.5}},
+  lung:{name:'Iron Lung',desc:'+15% max HP and regenerate 0.25 HP per second.',apply:G=>{const p=G.player;p.maxHp*=1.15;p.hp=Math.min(p.maxHp,p.hp*1.15);p.regen=(p.regen||0)+.25}},
 });
 killHooks.push(e=>{if(!G||!G.relics||!G.relics.storm)return;G.stormN=(G.stormN||0)+1;if(G.stormN%10)return;
   const t=queryGrid(e.x,e.y,220).filter(o=>o!==e&&o.hp>0).slice(0,4);for(const o of t){G.fx.push({ring:true,x:o.x,y:o.y,r:26,life:.3,max:.3,col:'#fff0a0'});hurtEnemy(o,30*G.player.dmgMul,'aoe')}if(t.length)sfx('hit')});
@@ -150,3 +150,7 @@ function challenges(){leaveRun();setRoute('challenges');
   screenEl.querySelectorAll('[data-ch]').forEach(el=>el.onclick=()=>{const id=el.dataset.ch;save.challenge=save.challenge===id?null:id;persist();sfx('pick');challenges()});
   $('back').onclick=home}
 hub('challenges','Challenges',challenges);
+
+// ---- era clear bookkeeping: every era boss of this run must fall ----
+killHooks.push(e=>{if(G&&e.bossKey){(G.bossKills||(G.bossKills={}))[e.bossKey]=1}});
+CAVE_TICK.push(()=>{if(G.netClient||G.cleared||G.t<ERA_CLEAR_T+1||G.clearHint)return;if(!eraBossesDone()){G.clearHint=true;toast('Defeat every era boss to clear the era')}});

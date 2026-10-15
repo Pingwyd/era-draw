@@ -66,22 +66,25 @@ function spawnEnemy(type,scale,at){
 function updateSpawns(dt){
   G.wave=1+Math.floor(G.t/30);
   const scale=1+G.t/300; // balance: softer HP ramp
-  G.spawnT+=dt*(1+G.t/90); // balance: softer spawn ramp
-  const cap=Math.min((typeof save!=='undefined'&&save.perf)?140:ENEMY_CAP,40+G.wave*7);
+  const bossUp=G.enemies.some(e=>e.T.boss);G.bossUp=bossUp;
+  G.spawnT+=dt*(1+G.t/90)*(bossUp?.35:1); // balance: softer spawn ramp; boss fights thin the crowd
+  const cap=Math.round(Math.min((typeof save!=='undefined'&&save.perf)?140:ENEMY_CAP,40+G.wave*7)*(bossUp?.5:1));
   while(G.spawnT>=1){G.spawnT-=1;if(G.enemies.length>=cap)break;
     const pool=G.era.spawns.filter(s=>G.t>=s.from);let tot=0;for(const s of pool)tot+=s.w;let r=Math.random()*tot,type=pool[0].type;
     for(const s of pool){r-=s.w;if(r<=0){type=s.type;break}}
     spawnEnemy(type,scale);}
   // horde events
   G.evT=(G.evT||0)+dt;
+  if(G.evT>55&&bossUp)G.evT=40;
   if(G.evT>55){G.evT=0;const ring=Math.random()<.5;const n=Math.min(32,12+G.wave*2),p=G.player,R=Math.hypot(viewW(),viewH())/2+30;
     if(ring){for(let i=0;i<n;i++){const a=i/n*6.283;spawnEnemy(G.era.swarm,scale,{x:p.x+Math.cos(a)*R,y:p.y+Math.sin(a)*R})}toast('A swarm closes in!')}
     else{const a=Math.random()*6.283,cx=p.x+Math.cos(a)*R,cy=p.y+Math.sin(a)*R;for(let i=0;i<n*.6;i++)spawnEnemy(G.t>30?G.era.flock:G.era.swarm,scale,{x:cx+rnd(-50,50),y:cy+rnd(-50,50)});toast('A flock stampedes!')}}
   const BS=G.era.bosses;
   if(!G.bossNext)G.bossNext=BS.map(b=>b.t);
-  BS.forEach((b,i)=>{if(G.t>=G.bossNext[i]){G.bossNext[i]+=b.every;spawnEnemy(b.type,scale);toast(ENEMY_TYPES[b.type].name+', '+ENEMY_TYPES[b.type].title+'!');G.shake=10;sfx('boss')}});
+  BS.forEach((b,i)=>{if(G.t>=G.bossNext[i]){G.bossNext[i]+=b.every;const be=spawnEnemy(b.type,scale);be.bossKey=b.type+'@'+b.t;toast(ENEMY_TYPES[b.type].name+', '+ENEMY_TYPES[b.type].title+'!');G.shake=10;sfx('boss')}});
 }
 function updateEnemies(dt){
+  if(G.bossUp&&!G.netClient)thinBossCrowd(dt);
   const P0=G.player;buildGrid();const FAR=Math.hypot(viewW(),viewH())/2+380;const PL=(window.partyTargets?partyTargets():null);
   for(const e of G.enemies){
     let p=P0;if(PL){let bd=1e18;for(const q of PL){const dd=(q.x-e.x)**2+(q.y-e.y)**2;if(dd<bd){bd=dd;p=q}}}
@@ -140,3 +143,9 @@ function bossLeash(e,p,d,ux,uy,dt){
   if(d>1.5*Math.max(viewW(),viewH())){const a=Math.atan2(-uy,-ux)+rnd(-.6,.6),R=Math.min(viewW(),viewH())*.42+40;
     e.leap={t:1.1,max:1.1,x:p.x+Math.cos(a)*R,y:p.y+Math.sin(a)*R};toast(e.T.name+' leaps toward you!');return true}
   return false}
+
+// while a boss is up, quietly dissolve ordinary enemies crowding it so it stays reachable
+let thinT=0;
+function thinBossCrowd(dt){if((thinT-=dt)>0)return;thinT=.25;for(const b of G.enemies){if(!b.T.boss)continue;let n=0;
+  for(const e of queryGrid(b.x,b.y,130)){if(e.T.boss||e.T.elite||e.champ||n>=3)continue;if(Math.hypot(e.x-b.x,e.y-b.y)<110+b.r){e.hp=0;e.gone=true;burst(e.x,e.y,'#3a2a2a',4);n++}}}
+  if(G.enemies.some(e=>e.gone))G.enemies=G.enemies.filter(e=>!e.gone)}

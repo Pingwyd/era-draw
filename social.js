@@ -9,12 +9,12 @@ eraCleared=(function(orig){return function(){
   const i=ERA_ORDER.indexOf(CURRENT_ERA),next=ERA_ORDER[i+1];
   if(next&&!save.eras.includes(next)&&ERAS[next]&&!ERAS[next].locked){save.eras.push(next);persist();toast(ERAS[next].name+' unlocked!')}
   sfx('chest');haptic([40,40,80]);
-  modal(pickCards('Era cleared','10:00 survived'+(next?' &middot; '+ERAS[next].name+' unlocked':''),[
-    {name:'Go endless',desc:'Keep going. Bosses return in rotation, stronger every time. Coins x1.25 from here on.',tag:'&infin;',rar:'epic',sub:'endless'},
+  modal(pickCards('Era cleared','10:00 survived, all bosses down'+(next?' &middot; '+ERAS[next].name+' unlocked':''),[
+    {name:'Go endless',desc:'Keep going. Bosses return in rotation, stronger every time. Earn +1 gem for every 2 extra minutes survived.',tag:'&infin;',rar:'epic',sub:'endless'},
     {name:'Leave victorious',desc:'End the run now and bank everything.',tag:'END',rar:'rare',sub:'finish'}]),i=>{
       if(i===0){G.endless=true;toast('Endless mode');}else{G.victory=true;setTimeout(()=>{if(mode==='run')endRun()},0)}});
 }})(eraCleared);
-const _soCoins=calcCoins;calcCoins=function(){const c=_soCoins();return G&&G.endless?Math.round(c*1.25):c};
+const _soEnd=endRun;endRun=function(){if(mode==='run'&&G&&G.endless&&!G.netClient){const g=Math.floor(Math.max(0,G.t-ERA_CLEAR_T)/60*.5);if(g>0){save.gems=(save.gems||0)+g;G.endlessGems=g;setTimeout(()=>toast('+'+g+' gems for endless minutes'),300)}}return _soEnd.apply(this,arguments)};
 
 // ---- custom seeded runs + share codes: ED1-<era><diff><mage><ink>-<seed36> ----
 const CODE_SETS=()=>({era:ERA_ORDER,diff:Object.keys(DIFFS),mage:Object.keys(MAGES),ink:Object.keys(INKS)});
