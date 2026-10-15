@@ -303,7 +303,7 @@ function orbSprite(o){const v=o.v/(ERA_XP[CURRENT_ERA]||1);if((o.n||1)>1)return 
 function onScr(x,y,m){const sx=X(x),sy=Y(y);return sx>-m&&sx<BW+m&&sy>-m&&sy<BH+m}
 function confirmBox(title,body,yes,no,onYes,onNo){show(`<div class="sheet lv cfm"><header class="row"><span class="lab">Confirm</span></header><h2 class="disp">${title}</h2><p class="sh">${body}</p>
   <nav class="menu"><button id="cfNo"><b>01</b>${no}<i>&larr;</i></button><button id="cfYes"><b>02</b>${yes}<i>&rarr;</i></button></nav></div>`);
-  $('cfNo').onclick=()=>{show('');onNo&&onNo()};$('cfYes').onclick=()=>{onYes()};setTimeout(()=>$('cfNo')&&$('cfNo').focus(),30)}
+  $('cfNo').onclick=()=>{show('');onNo&&onNo()};$('cfYes').onclick=()=>{onYes()};setTimeout(()=>$('cfNo')&&$('cfNo').focus({preventScroll:true}),30)}
 function eraBossesDone(){const need=(G.era.bosses||[]).filter(b=>b.t<=ERA_CLEAR_T);return need.every(b=>(G.bossKills||{})[b.type+'@'+b.t])}
 function finalBoss(){const b=(G.era.bosses||[]).find(x=>x.t===ERA_CLEAR_T);return b&&b.type}
 // pacing (sims): ~L9 at 5:00, ~L14-15 at 10:00 in every era; gem XP normalized per era via ERA_XP
