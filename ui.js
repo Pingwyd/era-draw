@@ -62,19 +62,22 @@ loadout=function(){leaveRun();setRoute('loadout');const sel=save.loadout.slice()
   const pane=id=>detailPane(id,save.owned.includes(id)?'':`<p class="note">Unlock in the shop for ${CREATIONS[id].cost} coins.</p>`);
   show(sheet('Loadout',`02 &mdash; Choose up to ${save.slots} &middot; <span id="loN">${sel.length}</span> selected`,`<div class="htabs lotabs" role="tablist">${eras.map(([e,n])=>`<button role="tab" data-era="${e}" aria-selected="${e===tab}" class="${e===tab?'on':''}">${n} <small>${ids.filter(id=>eraOf(id)===e&&sel.includes(id)).length||''}</small></button>`).join('')}</div>
     <div class="split"><div class="lolist"><div class="tbl" id="loGrid" role="tabpanel"></div></div><div id="loPane">${pane(focus)}</div></div>
-    <div class="losave"><span class="lab" id="loSel"></span><button id="ok" class="btn pri">Save loadout</button></div>`));
+    <div class="losave"><span class="lab" id="loSel"></span><button id="ok" class="btn pri">Done &middot; saved</button></div>`));
   const grid=$('loGrid');
   const summary=()=>{$('loN').textContent=sel.length;$('loSel').textContent=sel.map(id=>CREATIONS[id].name).join(' · ')||'Nothing equipped';$('ok').disabled=!sel.length;
     screenEl.querySelectorAll('[data-era]').forEach(b=>{const n=ids.filter(id=>eraOf(id)===b.dataset.era&&sel.includes(id)).length;b.querySelector('small').textContent=n||''})};
   const setPane=id=>{if(focus===id)return;focus=id;$('loPane').innerHTML=pane(id)};
-  const fill=()=>{grid.innerHTML=ids.filter(id=>eraOf(id)===tab).map(cell).join('');grid.scrollTop=0;
+  const fill=()=>{grid.innerHTML=ids.filter(id=>eraOf(id)===tab).map(cell).join('');grid.scrollTop=0;if(typeof paint==='function')setTimeout(paint,0);
     grid.querySelectorAll('.cell').forEach(el=>{const id=el.dataset.id;
       el.onmouseenter=()=>setPane(id);el.onfocus=()=>setPane(id);
-      el.onclick=()=>{setPane(id);if(!save.owned.includes(id)){toast('Unlock it in the shop');return}const i=sel.indexOf(id);if(i>=0)sel.splice(i,1);else if(sel.length<save.slots)sel.push(id);else{toast('Slots full');return}
-        const on=sel.includes(id);el.classList.toggle('on',on);el.setAttribute('aria-pressed',on);el.querySelector('.chk').innerHTML=on?'&#9632; Equipped':'';summary()}})};
+      el.onclick=()=>{setPane(id);if(!save.owned.includes(id)){toast('Unlock it in the shop');return}const i=sel.indexOf(id);let out=null;
+        if(i>=0){if(sel.length===1){toast('Keep at least one weapon');return}sel.splice(i,1)}else{if(sel.length>=save.slots)out=sel.shift();sel.push(id)}
+        save.loadout=sel.slice();persist();paint();if(out){toast('Replaced '+CREATIONS[out].name);const oc=grid.querySelector(`[data-id="${out}"]`);if(oc){oc.classList.remove('repl');void oc.offsetWidth;oc.classList.add('repl')}}
+        el.classList.remove('pop');void el.offsetWidth;el.classList.add('pop');summary()}})};
+  const paint=()=>grid.querySelectorAll('.cell').forEach(c=>{const on=sel.includes(c.dataset.id);c.classList.toggle('on',on);c.setAttribute('aria-pressed',on);c.querySelector('.chk').innerHTML=on?'&#9632; Equipped '+(sel.indexOf(c.dataset.id)+1):''});
   screenEl.querySelectorAll('[data-era]').forEach(b=>b.onclick=()=>{tab=loadout.tab=b.dataset.era;screenEl.querySelectorAll('[data-era]').forEach(x=>{x.classList.toggle('on',x===b);x.setAttribute('aria-selected',x===b)});fill()});
-  fill();summary();
-  $('ok').onclick=()=>{if(!sel.length)return;save.loadout=sel.slice();persist();toast('Loadout saved');home()};$('back').onclick=home};
+  fill();paint();summary();
+  $('ok').onclick=()=>{save.loadout=sel.slice();persist();home()};$('back').onclick=home};
 // shop: hovering no longer rebuilds the page (it reset the scroll); swap the detail pane in place
 const _uiShop=shop;shop=function(){_uiShop();screenEl.querySelectorAll('.li').forEach(el=>{const b=el.querySelector('.buy');if(!b)return;el.onmouseenter=()=>{const id=b.dataset.id;if(shop.focus===id)return;shop.focus=id;
   const f=SHOP.find(s=>s.id===id);const old=screenEl.querySelector('.split > .pane, .split > aside');if(f&&f.type==='creation'&&old){const t=document.createElement('div');t.innerHTML=detailPane(id);old.replaceWith(t.firstElementChild)}}})};

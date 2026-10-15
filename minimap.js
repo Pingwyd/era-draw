@@ -15,7 +15,8 @@ function mmDraw(){requestAnimationFrame(mmDraw);if(!mmOn()){if(mmCv)mmCv.style.d
   x.strokeStyle='rgba(233,220,195,.12)';x.beginPath();x.arc(48,48,24,0,6.283);x.stroke();
   x.fillStyle='#5fd3e8';for(const o of G.orbs){const a=P(o);if(inb(a))x.fillRect(a[0]|0,a[1]|0,o.v>=10?2:1,o.v>=10?2:1)}
   x.fillStyle='#ff5a4e';for(const e of G.enemies){if(e.T.boss)continue;const a=P(e);if(inb(a))x.fillRect(a[0]|0,a[1]|0,e.T.elite?2:1,e.T.elite?2:1)}
-  if(G.shrines)for(const s of G.shrines){const a=P(s);x.fillStyle='#c8bfb2';x.fillRect((a[0]|0)-1,(a[1]|0)-2,2,4)}
+  if(G.props)for(const k of G.props){if(k.dead)continue;const a=P(k);if(!inb(a))continue;x.fillStyle='#1a0f0e';x.fillRect((a[0]|0)-1,(a[1]|0)-1,3,3);x.fillStyle='#8fe07a';x.fillRect(a[0]|0,a[1]|0,1,1)}
+  if(G.shrines)for(const s of G.shrines){const a=P(s);const cx=a[0]|0,cy=a[1]|0;x.fillStyle='#1a0f0e';x.fillRect(cx-2,cy-1,5,3);x.fillRect(cx-1,cy-2,3,5);x.fillStyle='#7fd8ff';x.fillRect(cx-1,cy,3,1);x.fillRect(cx,cy-1,1,3)}
   for(const ch of G.chests){const a=P(ch);x.fillStyle='#1a0f0e';x.fillRect((a[0]|0)-2,(a[1]|0)-2,5,5);x.fillStyle='#ffd34a';x.fillRect((a[0]|0)-1,(a[1]|0)-1,3,3)}
   x.restore();
   // bosses and allies: clamp to edge so you always know the direction
