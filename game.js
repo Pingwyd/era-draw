@@ -54,13 +54,19 @@ const SAVE_KEY='eradraw.save.v1';const SAVE_VER=2;
 let save=loadSave();
 function loadSave(){
   const d={hudScale:1,zoom:1,uiScale:1,autoMove:false,coins:0,gems:0,owned:['club','spear','rock'],loadout:['club','spear','rock'],slots:3,best:0,runs:0};
-  let raw=null;try{raw=localStorage.getItem(SAVE_KEY)}catch(e){}
+  const get=k=>{try{return localStorage.getItem(k)}catch(e){return null}},put=(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}};
   const parse=t=>{try{const o=JSON.parse(t);return o&&typeof o==='object'&&!Array.isArray(o)?o:null}catch(e){return null}};
-  let s=raw?parse(raw):null;
-  if(raw&&!s){// corrupt: keep the bad copy for recovery, fall back to the last good backup
-    try{localStorage.setItem(SAVE_KEY+'.corrupt',raw)}catch(e){}s=parse(localStorage.getItem(SAVE_KEY+'.bak'));window.SAVE_RECOVERED=s?'backup':'reset'}
+  // richness score: a save with progress beats a default one (used to auto-recover lost data)
+  const score=o=>o?(+o.runs||0)*10+(+o.coins||0)/50+(+o.gems||0)+(+o.best||0)/60+(Array.isArray(o.owned)?o.owned.length-3:0)*5+(o.tutDone?1:0)+Object.keys(o).length*.01:-1;
+  const raw=get(SAVE_KEY);let s=raw?parse(raw):null;
+  if(raw&&!s&&get(SAVE_KEY+'.corrupt')!==raw)put(SAVE_KEY+'.corrupt',raw);// never lose the unreadable copy
+  // recovery: if the main save is missing, unreadable or empty-looking but a richer kept copy exists, restore it
+  let best=s,from='';for(const k of ['.bak','.premig','.orig','.corrupt']){const c=parse(get(SAVE_KEY+k));if(c&&score(c)>score(best)+1){best=c;from=k}}
+  if(from&&score(s)<5){s=best;window.SAVE_RECOVERED='backup';if(raw)put(SAVE_KEY+'.replaced',raw)}else if(raw&&!s)window.SAVE_RECOVERED='reset';
   if(!s)return Object.assign(d,{v:SAVE_VER});
-  return migrateSave(Object.assign(d,s));
+  if((s.v|0)<SAVE_VER&&raw&&!get(SAVE_KEY+'.premig'))put(SAVE_KEY+'.premig',raw);// untouched pre-migration copy
+  const merged=Object.assign(d,s);
+  try{return migrateSave(merged)}catch(e){if(raw)put(SAVE_KEY+'.orig',raw);merged.v=SAVE_VER;return merged}
 }
 // save-data versioning: bump SAVE_VER and add a step when the shape changes
 function migrateSave(s){const v=s.v|0;
@@ -70,7 +76,18 @@ function migrateSave(s){const v=s.v|0;
   for(const k of ['coins','gems','best','runs','slots'])if(k in s&&!(Number.isFinite(+s[k])&&+s[k]>=0))s[k]=k==='slots'?3:0;
   s.v=SAVE_VER;return s}
 var lastBak=0;
-function persist(){try{const t=JSON.stringify(save);localStorage.setItem(SAVE_KEY,t);const n=Date.now();if(n-lastBak>60000){lastBak=n;localStorage.setItem(SAVE_KEY+'.bak',t)}}catch(e){}}
+function saveScore(o){return o?(+o.runs||0)*10+(+o.coins||0)/50+(+o.gems||0)+(+o.best||0)/60+(Array.isArray(o.owned)?o.owned.length-3:0)*5:-1}
+function persist(){try{const t=JSON.stringify(save);
+  // stale-tab guard: never overwrite a clearly richer stored save with a near-empty in-memory one
+  let cur=null;try{cur=JSON.parse(localStorage.getItem(SAVE_KEY))}catch(e){}
+  if(cur&&saveScore(save)<5&&saveScore(cur)>saveScore(save)+20&&!window.SAVE_WIPE_OK){try{localStorage.setItem(SAVE_KEY+'.bak',JSON.stringify(cur))}catch(e){}}
+  localStorage.setItem(SAVE_KEY,t);const n=Date.now();
+  // the rolling backup only moves forward: never replace a richer backup with a poorer save
+  let bk=null;try{bk=JSON.parse(localStorage.getItem(SAVE_KEY+'.bak'))}catch(e){}
+  if(n-lastBak>60000&&!(bk&&saveScore(bk)>saveScore(save)+20)){lastBak=n;localStorage.setItem(SAVE_KEY+'.bak',t)}}catch(e){}}
+// other tabs / the updated page write the save: adopt it so an old tab never writes stale data back
+addEventListener('storage',e=>{if(e.key!==SAVE_KEY||!e.newValue)return;try{const o=JSON.parse(e.newValue);if(o&&typeof o==='object')save=migrateSave(Object.assign(save,o))}catch(x){}});
+try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist().catch(()=>{})}catch(e){}
 
 // ================= CANVAS =================
 const cv=document.getElementById('c'),ctx=cv.getContext('2d');

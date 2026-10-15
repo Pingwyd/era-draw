@@ -30,3 +30,12 @@ CAVE_TICK.push(dt=>{const s=G.tut;if(!s){if(G.tutWas){G.tutWas=0;for(const e of 
   if(s.i>1&&G.enemies.filter(e=>e.tutDummy).length<2)tDummies(2)});
 const _tHow=how;how=function(){_tHow();const sh=screenEl.querySelector('.sheet');if(!sh)return;const b=document.createElement('button');b.className='btn pri';b.id='tutReplay';b.textContent='Replay interactive tutorial';
   const h2=sh.querySelector('h2');(h2||sh.firstChild).after(b);b.onclick=()=>{if(window.goLandscape)goLandscape();tutorial()}};
+
+// ===== Informational steps freeze the simulation until Continue (A / Enter / tap) or Skip; action steps keep running =====
+const TUT_INFO=new Set(['They fight for you','Survive','Auto-attack &amp; durability','Bosses &amp; clearing an era']);
+runHooks.push(G=>{if(!G.tut)return;for(const st of TUT)if(TUT_INFO.has(st.t)){st.info=true;st.done=(G,s)=>s.ack===s.i}});
+function tutFrozen(){const s=G&&G.tut;return !!(s&&mode==='run'&&!G.paused&&TUT[s.i]&&TUT[s.i].info&&s.ack!==s.i)}
+function tutAck(){const s=G&&G.tut;if(s)s.ack=s.i}
+const _tSim=simStep;simStep=function(dt,r){if(tutFrozen())return;return _tSim(dt,r)};
+addEventListener('keydown',e=>{if(!tutFrozen())return;if(e.key==='Enter'||e.key===' '){e.preventDefault();e.stopImmediatePropagation();tutAck()}},true);
+window.tutFrozen=tutFrozen;window.tutAck=tutAck;

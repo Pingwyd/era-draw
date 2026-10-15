@@ -2,9 +2,9 @@
 // ================= CONTROLS REMAP (keyboard + gamepad) =================
 // Press-to-bind; binding a key/button that another action uses swaps them; reset to defaults; persisted in the save.
 const PAD_NAMES=['A','B','X','Y','LB','RB','LT','RT','Back','Start','L3','R3','D-up','D-down','D-left','D-right','Home'];
-const PAD_DEFAULT={dash:0,cast1:2,cast2:3,cast3:1,cast4:5,pause:9,shot:8};
+const PAD_DEFAULT={dash:0,cast1:2,cast2:3,cast3:1,cast4:5,pause:9,shot:8,skip:4};
 const KEY_DEFAULT={up:'w',down:'s',left:'a',right:'d',dash:' ',pause:'p',shot:'F2'};
-const ACT_NAMES={up:'Move up',down:'Move down',left:'Move left',right:'Move right',dash:'Dash',pause:'Pause',shot:'Screenshot',cast1:'Cast slot 1',cast2:'Cast slot 2',cast3:'Cast slot 3',cast4:'Cast slot 4'};
+const ACT_NAMES={up:'Move up',down:'Move down',left:'Move left',right:'Move right',dash:'Dash',pause:'Pause',shot:'Screenshot',skip:'Skip popup',cast1:'Cast slot 1',cast2:'Cast slot 2',cast3:'Cast slot 3',cast4:'Cast slot 4'};
 if(!save.padMap)save.padMap={};if(!save.keyMap)save.keyMap={};
 function padBinds(){return {...PAD_DEFAULT,...save.padMap}}
 function keyBinds(){return {...KEY_DEFAULT,...save.keyMap}}
@@ -23,7 +23,7 @@ addEventListener('keyup',e=>{const k=e.key.length===1?e.key.toLowerCase():e.key;
   else if(!a&&Object.values(CANON).includes(k))e.stopImmediatePropagation()},true);
 function bindSet(kind,act,val){const map=kind==='pad'?save.padMap:save.keyMap,cur=kind==='pad'?padBinds():keyBinds();
   const clash=Object.keys(cur).find(a=>a!==act&&cur[a]===val);if(clash){map[clash]=cur[act];toast(ACT_NAMES[clash]+' swapped to '+(kind==='pad'?PAD_NAMES[cur[act]]:keyLabel(cur[act])))}
-  map[act]=val;persist()}
+  map[act]=val;persist();skipGlyph()}
 function controlsHtml(){const kb=keyBinds(),pb=padBinds();
   return `<div class="lab rule">Controls &mdash; tap a binding, then press a key or button</div><div class="binds">${Object.keys(ACT_NAMES).map(a=>`<div class="bind"><span class="nm">${ACT_NAMES[a]}</span>${a in KEY_DEFAULT?`<button data-bk="${a}">${keyLabel(kb[a])}</button>`:'<i>&mdash;</i>'}${a in PAD_DEFAULT&&save.padDraw&&/^cast/.test(a)?'<i>pen</i>':a in PAD_DEFAULT?`<button data-bp="${a}">${PAD_NAMES[pb[a]]||'#'+pb[a]}</button>`:'<i>stick</i>'}</div>`).join('')}</div>
   <button id="bindReset" class="sk"><span class="nm">Reset controls to defaults</span></button><p class="sh">Keyboard and gamepad columns. Arrow keys always move. Menus: D-pad/stick, A select, B back.</p>`}
@@ -37,3 +37,5 @@ function wireControls(box){box.innerHTML=controlsHtml();
       if(performance.now()-t0>6000){BINDING=null;toast('No button pressed');wireControls(box);return}requestAnimationFrame(poll)};requestAnimationFrame(poll)});
   $('bindReset').onclick=()=>{save.padMap={};save.keyMap={};persist();toast('Controls reset');wireControls(box)}}
 const _rmSettings=settings;settings=function(inRun){_rmSettings(inRun);const host=screenEl.querySelector('.sheet');if(!host)return;const box=document.createElement('nav');box.className='menu controls';host.appendChild(box);wireControls(box)};
+
+function skipGlyph(){try{document.documentElement.style.setProperty('--skipg','"'+(PAD_NAMES[padBinds().skip]||'LB')+'"')}catch(e){}}skipGlyph();

@@ -257,8 +257,9 @@ runHooks.push(G=>{if(save.tutDone||G.daily){G.tut=null;return}G.tut={i:0,tt:0,x0
 function tutRender(){let el=$('tut');const G_=G;
   if(mode!=='run'||!G_||!G_.tut||G_.paused){if(el)el.remove();return}
   if(!el){el=document.createElement('div');el.id='tut';document.body.appendChild(el)}
-  const s=G_.tut,st=TUT[s.i];const h=`<span class="lab">Tutorial &middot; ${s.i+1} / ${TUT.length}</span><b>${st.t}</b><p>${st.d()}</p><button id="tutSkip" class="lab">Skip</button>`;
-  if(el.dataset.i!=String(s.i)){el.innerHTML=h;el.dataset.i=s.i;$('tutSkip').onclick=tutEnd}}
+  const s=G_.tut,st=TUT[s.i];const h=`<span class="lab">Tutorial &middot; ${s.i+1} / ${TUT.length}</span><b>${st.t}</b><p>${st.d()}</p>${st.info?'<button id="tutGo" class="pri">Continue<span class="pg pgA"></span></button>':''}<button id="tutSkip" class="lab" data-skip>Skip<span class="pg pgS"></span></button>`;
+  const key=s.i+(st.info?'i':'');if(el.dataset.i!=key){el.innerHTML=h;el.dataset.i=key;$('tutSkip').onclick=tutEnd;if($('tutGo'))$('tutGo').onclick=tutAck}
+  el.classList.toggle('frozen',!!st.info)}
 function tutEnd(){if(G&&G.tut){G.tut=null;G.diffDef={...G.diffDef,spawn:G.diffDef.spawn/.35}}save.tutDone=true;persist();const el=$('tut');if(el)el.remove()}
 const _updT=updatePickups;updatePickups=function(dt){_updT(dt);const s=G&&G.tut;if(!s)return;s.tt+=dt;
   if(TUT[s.i].done(G,s)){s.i++;s.tt=0;sfx('pick');haptic(15);if(s.i>=TUT.length){tutEnd();toast('Tutorial complete')}}};
