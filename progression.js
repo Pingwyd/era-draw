@@ -164,8 +164,8 @@ const PICKUP_ART={
 const PICKUP_PAL={R:'#b8382f',r:'#e8e0cc',w:'#efe6d2',W:'#b9ab90',m:'#7a2e22',M:'#b8583c',K:'#1a1416',k:'#3b3438',y:'#ffd34a'};
 SPR.pick={};for(const k in PICKUP_ART)SPR.pick[k]=outline(grid(PICKUP_ART[k],{...PAL,...PICKUP_PAL}));
 const PICKUPS={
- magnet:{name:'Magnet',w:3,fn:G=>{for(const o of G.orbs)o.pull=true;toast('Magnet: all gems pulled')}},
- meat:{name:'Drumstick',w:4,fn:G=>{const p=G.player,h=Math.round(p.maxHp*.3);p.hp=Math.min(p.maxHp,p.hp+h);floatText(p.x,p.y-40,'+'+h+' HP','#8fd17a',1.2)}},
+ magnet:{name:'Magnet',w:3,fn:G=>{const p=G.player;let n=0;for(const o of G.orbs)if(Math.hypot(o.x-p.x,o.y-p.y)<900){o.pull=true;n++}toast('Magnet: '+n+' gems pulled')}},
+ meat:{name:'Drumstick',w:4,fn:G=>{const p=G.player,h=Math.round(p.maxHp*.2);p.hp=Math.min(p.maxHp,p.hp+h);floatText(p.x,p.y-40,'+'+h+' HP','#8fd17a',1.2)}},
  bomb:{name:'Bomb',w:2,fn:G=>{const p=G.player;G.shake=18;burst(p.x,p.y,'#ffd34a',60);ring(p.x,p.y,420,'#ffd34a');
    for(const e of G.enemies.slice())if(!e.T.boss&&Math.hypot(e.x-p.x,e.y-p.y)<460)killEnemy(e);toast('Bomb!')}},
 };
@@ -192,7 +192,7 @@ runHooks.push(G=>{G.props=[];G.propT=2});
 function hitProp(k){k.hp--;k.flash=.12;k.shk=.22;burst(k.x,k.y-8,k.type==='bush'?'#5f8f3c':k.type==='urn'?'#d08a52':'#ff8a2a',10);sfx('hit');
   if(k.hp<=0){k.dead=true;burst(k.x,k.y-8,'#d9c27a',14);if(Math.random()<.3)dropPickup(k.x,k.y);else{G.orbs.push({x:k.x,y:k.y,v:3*(ERA_XP[CURRENT_ERA]||1),t:0});G.bonus=(G.bonus||0)+2;floatText(k.x,k.y-24,'+2','#d9c27a',.8)}}}
 const _updP=updatePickups;updatePickups=function(dt){_updP(dt);if(mode!=='run'||!G.props)return;const p=G.player;
-  G.propT-=dt;if(G.propT<=0&&G.props.length<14){G.propT=5+Math.random()*5;const a=Math.random()*6.283,d=220+Math.random()*220,ts=ERA_PROPS[CURRENT_ERA]||ERA_PROPS.stone;
+  G.propT-=dt;if(G.propT<=0&&G.props.length<7){G.propT=13+Math.random()*9;const a=Math.random()*6.283,d=220+Math.random()*220,ts=ERA_PROPS[CURRENT_ERA]||ERA_PROPS.stone;
     G.props.push({x:p.x+Math.cos(a)*d,y:p.y+Math.sin(a)*d,type:ts[Math.floor(Math.random()*ts.length)],hp:3,maxHp:3,cd:0})}
   for(const k of G.props){k.cd-=dt;if(k.cd>0)continue;let hit=false;
     for(const s of G.shots)if(Math.abs(s.x-k.x)<14&&Math.abs(s.y-(k.y-8))<16){hit=true;break}
