@@ -316,3 +316,7 @@ button.dot::after{content:'';position:absolute;top:4px;right:4px;width:7px;heigh
 #bossIntro.out{opacity:0}@keyframes bin{0%{transform:scaleY(0)}100%{transform:none}}
 @media (max-height:360px){#bossIntro b{font-size:28px}#bossIntro{top:24%}}
 .bb-frame{position:relative}.bb-frame::before,.bb-frame::after{content:'';position:absolute;top:0;bottom:0;width:1px;background:rgba(255,241,208,.6);z-index:2}.bb-frame::before{left:50%}.bb-frame::after{left:25%}
+#dashBtn{position:absolute;right:calc(16px + env(safe-area-inset-right,0px));bottom:calc(64px + env(safe-area-inset-bottom,0px));width:56px;height:56px;border-radius:50%;border:2px solid #e9dcc3;background:rgba(20,11,12,.55);color:#e9dcc3;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;pointer-events:auto;touch-action:none;z-index:6}
+#dashBtn b{font:9px Silkscreen,monospace;letter-spacing:.08em}#dashBtn .dc{display:flex;gap:3px}#dashBtn .dc i{width:6px;height:6px;border-radius:50%;background:#3a2e28;border:1px solid #1a0f0e}#dashBtn .dc i.on{background:#e9dcc3}
+#dashBtn.empty{opacity:.45}#dashBtn.hit{animation:dhit .2s}@keyframes dhit{0%{transform:scale(.88)}100%{transform:none}}
+@media (max-height:360px){#dashBtn{width:46px;height:46px;bottom:calc(50px + env(safe-area-inset-bottom,0px))}}
