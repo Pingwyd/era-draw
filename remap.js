@@ -2,9 +2,9 @@
 // ================= CONTROLS REMAP (keyboard + gamepad) =================
 // Press-to-bind; binding a key/button that another action uses swaps them; reset to defaults; persisted in the save.
 const PAD_NAMES=['A','B','X','Y','LB','RB','LT','RT','Back','Start','L3','R3','D-up','D-down','D-left','D-right','Home'];
-const PAD_DEFAULT={dash:0,cast1:2,cast2:3,cast3:1,cast4:5,pause:9};
-const KEY_DEFAULT={up:'w',down:'s',left:'a',right:'d',dash:' ',pause:'p'};
-const ACT_NAMES={up:'Move up',down:'Move down',left:'Move left',right:'Move right',dash:'Dash',pause:'Pause',cast1:'Cast slot 1',cast2:'Cast slot 2',cast3:'Cast slot 3',cast4:'Cast slot 4'};
+const PAD_DEFAULT={dash:0,cast1:2,cast2:3,cast3:1,cast4:5,pause:9,shot:8};
+const KEY_DEFAULT={up:'w',down:'s',left:'a',right:'d',dash:' ',pause:'p',shot:'F2'};
+const ACT_NAMES={up:'Move up',down:'Move down',left:'Move left',right:'Move right',dash:'Dash',pause:'Pause',shot:'Screenshot',cast1:'Cast slot 1',cast2:'Cast slot 2',cast3:'Cast slot 3',cast4:'Cast slot 4'};
 if(!save.padMap)save.padMap={};if(!save.keyMap)save.keyMap={};
 function padBinds(){return {...PAD_DEFAULT,...save.padMap}}
 function keyBinds(){return {...KEY_DEFAULT,...save.keyMap}}
@@ -17,6 +17,7 @@ addEventListener('keydown',e=>{if(BINDING)return;const k=e.key.length===1?e.key.
   if(!a){if(isDefault&&mode==='run'){e.stopImmediatePropagation();if(k===' ')e.preventDefault()}return}
   if(CANON[a]){e.stopImmediatePropagation();keys[CANON[a]]=true;return}
   if(a==='dash'&&k!==' '){e.stopImmediatePropagation();if(mode==='run'&&!e.repeat)tryDash();return}
+  if(a==='shot'){e.preventDefault();e.stopImmediatePropagation();if(!e.repeat&&window.takeShot)takeShot();return}
   if(a==='pause'&&k!=='p'){e.stopImmediatePropagation();if(!e.repeat)dispatchEvent(new KeyboardEvent('keydown',{key:'Escape'}));return}},true);
 addEventListener('keyup',e=>{const k=e.key.length===1?e.key.toLowerCase():e.key;const a=keyAction(k);if(a&&CANON[a]){e.stopImmediatePropagation();keys[CANON[a]]=false}
   else if(!a&&Object.values(CANON).includes(k))e.stopImmediatePropagation()},true);
