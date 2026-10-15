@@ -1,7 +1,7 @@
 'use strict';
 // ===== Provider config. Switch providers here (see docs/ADS.md). =====
 // provider: 'hilltop' (HilltopAds: sandboxed srcdoc banners + direct-link / VAST rewarded) | 'adsense' (top-level AdSense banners + H5 Games Ads)
-const AD_CONFIG={provider:'hilltop',hilltop:{vastUrl:'',rewardCoins:100},// vastUrl: paste a HilltopAds VAST tag URL to enable in-game rewarded video
+const AD_CONFIG={provider:'hilltop',hilltop:{vastUrl:'https://physicaldad.com/dKmVFpzGd.GFNgv/ZUGcUd/penm/9/uvZ/UZltkjPBTvcx1ZM/TtYK3BOrDkk/tmNxzNUuxGNcjpcE5FMlwO',rewardCoins:100},// vastUrl: paste a HilltopAds VAST tag URL to enable in-game rewarded video
   adsense:{client:'ca-pub-2853919516364773',slots:{pause:'',results:'',home:''},// fill with AdSense display ad unit slot IDs
     h5:true,interstitial:false,interstitialEvery:3,interstitialMinGap:180e3,rewardCap:5,rewardCooldown:120e3,rewardCoins:100,frequencyHint:'120s'}};
 AD_CONFIG.adcash={enabled:false,banner:'12319166',interstitial:'12319258'};// Adcash display 300x100 + interstitial (results only)
@@ -114,7 +114,7 @@ function vastRewardUI(){const host=screenEl.querySelector('.sheet');if(!host||!w
     vastPlay(AD_CONFIG.hilltop.vastUrl,()=>{const d=adDay();if(d.n>=cap)return;d.n++;d.last=Date.now();save.coins+=C;let m='+'+C+' coins';if(d.n%AD_REWARD.gemEvery===0){save.gems=(save.gems||0)+1;m+=' +1 gem'}persist();toast('Thanks! '+m);if(location.hash==='#/shop')shop()},
       why=>{if(why==='skip'){toast('Video closed early: no reward');if(location.hash==='#/shop')shop();return}el.remove();adReward()})}}
 // minimal VAST 2/3/4 client: follows wrappers, picks an MP4/WebM MediaFile, fires impression, quartile and complete pixels
-function vastFetch(url,depth,acc){return fetch(url,{credentials:'include'}).then(r=>r.text()).then(t=>{const x=new DOMParser().parseFromString(t,'text/xml'),q=(n,sel)=>[...n.getElementsByTagName(sel)];
+function vastFetch(url,depth,acc){return fetch(url,{credentials:'omit',cache:'no-store'}).then(r=>r.text()).then(t=>{const x=new DOMParser().parseFromString(t,'text/xml'),q=(n,sel)=>[...n.getElementsByTagName(sel)];
   const ad=q(x,'Ad')[0];if(!ad)throw new Error('no ad');const txt=n=>(n&&n.textContent||'').trim();
   q(ad,'Impression').forEach(n=>txt(n)&&acc.imp.push(txt(n)));q(ad,'Error').forEach(n=>txt(n)&&acc.err.push(txt(n)));
   q(ad,'Tracking').forEach(n=>{const e=n.getAttribute('event');if(txt(n))(acc.trk[e]=acc.trk[e]||[]).push(txt(n))});q(ad,'ClickTracking').forEach(n=>txt(n)&&acc.clk.push(txt(n)));
