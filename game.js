@@ -12,11 +12,11 @@ let CURRENT_ERA = 'stone';
 
 // shape: how to draw it. life = seconds before breaking, uses = hits before breaking
 const CREATIONS = {
-  club:  { name:'Club', icon:'🪵', era:'stone', shape:'short line', kind:'melee', dmg:14, life:9,  uses:30, rate:0.55, range:70, knock:260, cost:0 },
-  spear: { name:'Spear', icon:'🗡️', era:'stone', shape:'long line', kind:'ranged', dmg:16, life:10, uses:16, rate:0.75, speed:620, pierce:4, cost:0 },
-  rock:  { name:'Rock', icon:'🪨', era:'stone', shape:'circle', kind:'ranged', dmg:20, life:10, uses:12, rate:1.15, speed:380, aoe:70, cost:0 },
-  sling: { name:'Sling', icon:'🪃', era:'stone', shape:'V shape', kind:'ranged', dmg:7, life:11, uses:40, rate:0.28, speed:720, pierce:1, cost:150 },
-  dagger:{ name:'Bone Dagger', icon:'🦴', era:'stone', shape:'zigzag', kind:'melee', dmg:8, life:10, uses:60, rate:0.22, range:46, knock:60, cost:250, orbitSpeed:5 },
+  club:  { name:'Club', icon:'🪵', era:'stone', shape:'short line', kind:'melee', dmg:13, life:9,  uses:30, rate:0.55, range:70, knock:210, cost:0 },
+  spear: { name:'Spear', icon:'🗡️', era:'stone', shape:'long line', kind:'ranged', dmg:12, life:10, uses:14, rate:0.85, speed:620, pierce:3, cost:0 },
+  rock:  { name:'Rock', icon:'🪨', era:'stone', shape:'circle', kind:'ranged', dmg:27, life:10, uses:14, rate:1.15, speed:380, aoe:78, cost:0 },
+  sling: { name:'Sling', icon:'🪃', era:'stone', shape:'V shape', kind:'ranged', dmg:10, life:11, uses:40, rate:0.28, speed:720, pierce:2, cost:150 },
+  dagger:{ name:'Bone Dagger', icon:'🦴', era:'stone', shape:'zigzag', kind:'melee', dmg:10, life:10, uses:60, rate:0.22, range:54, knock:60, cost:250, orbitSpeed:5 },
 };
 // Max active creations per CATEGORY (def.kind). Upgrades can raise each one via G.player.caps[kind].
 const BASE_CAPS = { melee:3, ranged:2 };
