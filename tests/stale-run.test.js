@@ -18,6 +18,6 @@ await kill();await chk('escThenPlay',async()=>{await p.keyboard.press('Escape');
 await kill();await chk('hashPlay',async()=>{await p.evaluate(()=>{location.hash='#/play'})});
 await kill();await chk('eras',async()=>{await p.goto(base+'#/eras');await p.waitForTimeout(200);await p.click('[data-era=stone]');await p.waitForTimeout(150);await p.keyboard.press('Escape');await p.waitForTimeout(200);await p.click('#play')});
 await kill();await chk('daily',async()=>{await p.goto(base+'#/daily');await p.waitForTimeout(200);await p.click('#dgo')});
-await chk('giveUpThenPlay',async()=>{await p.keyboard.press('Escape');await p.waitForTimeout(150);await p.click('#quit');await p.waitForTimeout(200);await p.click('#retry')});
+await chk('giveUpThenPlay',async()=>{await p.keyboard.press('Escape');await p.waitForTimeout(150);await p.click('#quit');await p.waitForTimeout(200);await p.click('#cfYes');await p.waitForTimeout(300);await p.click('#retry')});
 await kill();await chk('refreshPlay',async()=>{await p.goto(base+'#/play');await p.reload()});
 console.log(JSON.stringify(R,null,0));console.log(ok?'PASS':'FAIL',errs);await b.close();process.exit(ok?0:1)})();

@@ -24,7 +24,9 @@ updateSpawns=function(dt){
   if(G.evNext==null){G.evNext=50;G.evI=0}
   if(G.t>=G.evNext){if(bossUp)G.evNext=G.t+15;else{G.evNext=G.t+rnd(42,58);runEvent(G.evI++%4,scale)}}
   const BS=G.era.bosses;if(!G.bossNext)G.bossNext=BS.map(b=>b.t);
-  BS.forEach((b,i)=>{if(G.t>=G.bossNext[i]){G.bossNext[i]+=b.every;const be=spawnEnemy(b.type,scale);be.bossKey=b.type+'@'+b.t;toast(ENEMY_TYPES[b.type].name+', '+ENEMY_TYPES[b.type].title+'!');G.shake=10;sfx('boss')}});
+  // one boss at a time: the next is deferred until ~25s after the previous dies (its slot still counts for the era clear)
+  if(G.bossWas&&!bossUp)G.bossGap=G.t+25;G.bossWas=bossUp;
+  BS.forEach((b,i)=>{if(G.t>=G.bossNext[i]&&!G.bossUp&&G.t>=(G.bossGap||0)){G.bossUp=true;G.bossNext[i]+=b.every;const be=spawnEnemy(b.type,scale);be.bossKey=b.type+'@'+b.t;toast(ENEMY_TYPES[b.type].name+', '+ENEMY_TYPES[b.type].title+'!');G.shake=10;sfx('boss')}});
 };
 function ringPos(){const p=G.player,R=Math.hypot(viewW(),viewH())/2+30,a=Math.random()*6.283;return {p,R,a}}
 function runEvent(k,scale){const {p,R,a}=ringPos();const n=Math.min(32,12+G.wave*2);
